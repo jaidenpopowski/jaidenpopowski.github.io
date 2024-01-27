@@ -1,0 +1,47 @@
+/* Whole document: */
+body{
+  font-family: Inter, sans-serif;
+  font-size: 10pt;
+}
+/* Headers */
+h1{
+  font-size: 24pt;
+  font-weight: bold;
+  font-family: Inter, sans-serif;
+}
+
+a{
+  color: black;
+}
+
+a:hover{
+  color: blue;
+}
+a:active{
+  color: blue;
+}
+
+.navbar {
+  padding: 0;
+  background-color: darkblue;
+}
+.navbar-default .navbar-brand {
+    color: white;
+    font-weight: bold;
+}
+.navbar-default .navbar-nav>li>a{
+  color: white;
+  font-weight: bold;
+}
+.navbar-default .navbar-nav>.active>a{
+  color: white;
+  background-color: darkblue;
+}
+.main-container {
+  max-width: 95% !important;
+  margin: auto;
+}
+.figcaption {
+  font-style: italic;
+  text-align: center;
+}
