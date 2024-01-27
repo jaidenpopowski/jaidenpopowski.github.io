@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Jaiden" />
+
+
+<title>Explaining the SuperCoach AFL scoring system</title>
+
+<script src="site_libs/header-attrs-2.25/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/core-js-2.5.3/shim.min.js"></script>
+<script src="site_libs/react-18.2.0/react.min.js"></script>
+<script src="site_libs/react-18.2.0/react-dom.min.js"></script>
+<script src="site_libs/reactwidget-1.0.0/react-tools.js"></script>
+<script src="site_libs/htmlwidgets-1.6.2/htmlwidgets.js"></script>
+<link href="site_libs/reactable-0.4.4/reactable.css" rel="stylesheet" />
+<script src="site_libs/reactable-binding-0.4.4/reactable.js"></script>
+<link href="site_libs/font-awesome-6.4.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet" />
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Stats By Jaiden</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="blog.html">Blog</a>
+</li>
+<li>
+  <a href="fantasy.html">Fantasy</a>
+</li>
+<li>
+  <a href="supercoach.html">SuperCoach</a>
+</li>
+<li>
+  <a href="aflw.html">AFLW</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://twitter.com/jaiden_popowski">
+    <span class="fa fa-brands fa-twitter"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://instagram.com/statsbyjaiden">
+    <span class="fa fa-brands fa-instagram"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Explaining the SuperCoach AFL scoring
+system</h1>
+<h4 class="author">Jaiden</h4>
+<h4 class="date">Last updated on 2024-01-27</h4>
+
+</div>
+
+
+<p>SuperCoach AFL is a very popular fantasy sports game in Australia.
+Footy fans become the ‘coach’ of a fantasy team, where each player is
+scored each match based on their game performance. It has just opened to
+the public for 2024 and avid punters can now put together their starting
+squad.</p>
+<p>The main premise of SuperCoach, and its scoring system in particular,
+is that every action in a game of Australian Football has an impact on
+the result of the match. Some actions are more important than others.
+Players can determine a game in a shot for goal, or save their lead in a
+massive pack-mark on the goal line. In essence, each statistic is scored
+based on how much it improves the chances of winning.</p>
+<p>However, this scoring system is kept secret - we essentially have to
+believe what each player scores is legitimate. There is no definitive
+list of which stats are included, or how collated stats get broken down,
+leaving the community to guess what is going on.</p>
+<div id="where-do-we-start" class="section level1">
+<h1>Where do we start?</h1>
+<p>I’ve spent the offseason researching the game of SuperCoach and which
+stats might be included in the scoring system. This includes X
+(Twitter), online AFL forums,
+<a href= "https://www.championdata.com/glossary/afl/">the Champion Data
+glossary</a>, but as a student I didn’t wanna pay up for a Herald Sun
+subscription. It probably would’ve been wise in hindsight.</p>
+<p>At the heart of the ranking points system is that it considers
+players winning the ball, disposing of it, and where on the ground they
+do it. It seems that we only need to focus on the things a player does
+with the ball, plus a few of the simpler defensive actions. Straight
+away, I can remove positional data like centre bounce attendances and
+time on ground percentage, and also aggregated stats like total
+disposals &amp; total clearances when we have better breakdowns already
+available.</p>
+<p>Last year, I attempted this same feat by applying “known” values to
+each match. For example, we’ve heard that goals are worth 8 points.
+While this is more useful than nothing, SuperCoach has deeper
+intricacies in its scoring system. Unlike other fantasy games, ranking
+points are weighted and adjusted by the time-elapsed in a match and the
+current margin. This means that scoring in close games looks a lot
+different to scoring in a blowout.</p>
+<p>Finally, every regular-season game has 4 premiership points for the
+winner, so the last step for SuperCoach is similar, ensuring there are
+3300 total points allocated in each match.</p>
+<p>After review of last year’s analysis, which had good (but unusable)
+results, I decided that I need to get fancier. I needed more match
+statistics than ever before, and it seemed there was enough variety
+across AFL stats sources - the AFL website, the AFL app, Champion Data,
+and other match centres.</p>
+<p>With my research in mind, I came up with a plan of action: 1.
+Collect, calculate and collate as many statistics as possible 2.
+Determine the zone in which each stat occurred (D50, MID, F50) for more
+precision 3. Create a model to weight all the stats with respect to each
+player’s final score 4. Remove statistics that are insignificant or are
+better described in more detail 5. Add scaling to the 3300 figure for
+each match 6. Summarise the results and present the average value each
+stat is worth</p>
+<div id="sourcing-the-advanced-stats" class="section level2">
+<h2>Sourcing the advanced stats</h2>
+<p>You might be familiar with the possibilities of Stats Pro in the AFL
+app. On mobile, you can watch player highlights in short clips of their
+involvements for the match.</p>
+<div class="float">
+<img src="img/supercoach_article/statspro.jpg"
+alt="Will Hoskin-Elliott gathers and kicks the ball to seal Collingwood’s 2023 premiership!" />
+<div class="figcaption">Will Hoskin-Elliott gathers and kicks the ball
+to seal Collingwood’s 2023 premiership!</div>
+</div>
+<p>The best thing about this feature is that every stat is time-stamped.
+I first started by downloading every player’s set of actions from each
+match, and then combined them all in chronological order. This means we
+can view each game from an individual stat perspective, and we can get
+an idea of how the ball moves. Take this famous example from last season
+- see if you can recognise it.</p>
+<div class="float">
+<img src="img/supercoach_article/timestamps.png"
+alt="An example of the data I am working with" />
+<div class="figcaption">An example of the data I am working with</div>
+</div>
+<p>This has changed how I work with statistics for the fantasy
+platforms, as I am now assessing player performance via when they win
+the ball, the state in which they get involved (stoppages, turnover,
+etc) and where on the ground they are. The last point is the key - we
+know that SuperCoach points are likely to be boosted when in
+defensive-50 or forward-50.</p>
+</div>
+<div id="the-model" class="section level2">
+<h2>The model</h2>
+<p>I’ve been collecting data from these sources, but unfortunately a lot
+of it has been manual interpretation. This includes calculating kick
+distances, kick direction, kick effectiveness, how the kick was
+received, who generated score assists, whether each mark was from a
+teammate or opponent, the result of spoils, kick-in playing on vs taking
+it from the square, the result of hitouts… it is a complicated task. Oh,
+and grouping every stat by D50, MID or F50 zones!</p>
+<p>Assuming each recorded statistic is worth the same amount each game,
+we should be able to calculate an ‘average’ points value for each stat
+across all game scenarios - close or a blowout. As every game is worth
+the same approximate 3300 points, the scaling should be similar across
+all games too. What this means is that we can estimate what our players
+typically get rewarded for a specific act on the footy field.</p>
+<p>In <a href="fantasy.afl.com.au">AFL Fantasy</a>/DreamTeam, stats are
+weighted equally. Every kick is worth 3 points, no matter when or where
+it happened. The goal of this SuperCoach analysis is to give you an idea
+of what each stat is worth, similar to how we associate +3 points with
+every kick in AF/DT.</p>
+<p>To find an average value for each statistic, I’ve decided to go with
+a simple linear model where we try to minimise deviation from the real
+score. My results yielded a R-squared value of 0.968, meaning that 96.8%
+of variation in SuperCoach scoring is explained by this model. I think
+that’s pretty good considering we aren’t scaling stats based on the
+margin or how much of the game has elapsed! The mean absolute error
+(MAE) for each SuperCoach score was 4.23, meaning that on average, this
+model was only 4.23 points off the real SuperCoach score for each
+player.</p>
+<p>This is a <em>significant</em> improvement from the last time
+<a href="https://jaidenpopowski.github.io/StatsByJaiden/">I tried to
+figure out SuperCoach scoring</a>, which had results of 90.2% R-squared
+and 7.81 MAE.</p>
+</div>
+</div>
+<div id="statistics-breakdown" class="section level1">
+<h1>Statistics Breakdown</h1>
+<div id="possession" class="section level3">
+<h3>Possession</h3>
+<div style="display: flex;">
+<div class="column" style="width:55%;">
+<p><strong>Loose ball-get</strong> - Picking up the ball at ground level
+without pressure</p>
+<p><strong>Hard ball-get</strong> - Picking up the ball at ground level
+under pressure</p>
+<p><strong>Loose crumb</strong> - Collecting the ball without pressure
+that comes to ground via marking contest</p>
+<p><strong>Hard crumb</strong> - Collecting the ball with pressure that
+comes to ground via marking contest</p>
+<p><strong>Gather</strong> - Receiving the ball from a teammate</p>
+<p><strong>Gather from opposition</strong> - Receiving the ball from
+opposition turnover</p>
+<p><strong>Gather from hitout</strong> - Receiving the ball from a
+hitout to advantage</p>
+<p><strong>Handball Receive</strong> - Receiving the ball from a
+teammate’s handball</p>
+<p><strong>Free For</strong> - Receiving a free kick from an opponent’s
+error</p>
+</div>
+<div class="column" style="width:45%;">
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-3343c8845359e7e4a3c8" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-3343c8845359e7e4a3c8">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Loose Ball Get","Hard Ball Get","Loose Ball Get - Crumb","Hard Ball Get - Crumb","Gather","Gather from Oppo","Gather from Hitout","Handball Receive","Free For"],"MID":[3.4,3.3,3.2,3.1,1.1,2.4,1.4,1,3.1],"D50":[4,3.9,3.9,3.6,1.3,3,1.9,1.2,3.9],"F50":[4,3.8,3.8,3.8,1.1,2.5,1.7,1.2,3.8]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","minWidth":20},{"id":"D50","name":"D50","type":"numeric","minWidth":20},{"id":"F50","name":"F50","type":"numeric","minWidth":20}],"dataKey":"740d179a9b61e7c0699da05b051154b9"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p><img src="img/supercoach_article/possession.jpg" /></p>
+</div>
+<div id="disposal" class="section level3">
+<h3>Disposal</h3>
+<div style="display: flex;">
+<div class="column" style="width:55%;">
+<p><strong>Effective Handball</strong> - Handballing to your teammate
+effectively</p>
+<p><strong>Effective Kick: Short</strong> - A short kick that hits the
+target</p>
+<p><strong>Effective Kick: Long</strong> - A 40+ metre kick that reaches
+a contest</p>
+<p><strong>Effective Kick: Long to Advantage</strong> - A 40+ metre kick
+where a teammate receives the ball uncontested</p>
+<p><strong>Effective Kick: Backwards</strong> - A backwards kick that
+hits the target. Backward kicks inside 50 are scored as normal kicks</p>
+<p><strong>Ineffective kick/handball</strong> - Disposals that don’t
+reach the intended target</p>
+<p><strong>Clanger Handball</strong> - Handballs that directly result in
+opposition possession</p>
+<p><strong>Clanger Kick</strong> - Kicks that directly result in an
+opposition possession</p>
+<p><strong>Clanger Kick: Backwards</strong> - A backwards kick that
+results in opposition possession</p>
+</div>
+<div class="column" style="width:45%;">
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-183d2fd8a69b6f229244" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-183d2fd8a69b6f229244">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Effective Handball","Effective Kick Short","Effective Kick Long","Effective Kick Long to Advantage","Effective Kick Backwards","Ineffective Kick/Handball","Clanger Handball","Clanger Kick","Clanger Kick Backwards"],"MID":[1,2.9,3,3.6,0.7,0,-2.7,-2.7,-2.6],"D50":[1.1,3.2,3.5,4.5,0.6,0,-3.5,-3.2,-3],"F50":[1.1,3.2,3.5,4.9,"NA",0,-3.3,-3,-3.1]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","minWidth":20},{"id":"D50","name":"D50","type":"numeric","minWidth":20},{"id":"F50","name":"F50","type":"numeric","minWidth":20}],"dataKey":"2f15253399ad33e0721c9f4b56e4250b"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p><img src="img/supercoach_article/disposal.jpg" /></p>
+</div>
+<div id="kick-ins" class="section level3">
+<h3>Kick-Ins</h3>
+<div style="display: flex;">
+<div class="column" style="width:55%;">
+<p><strong>Kick-In: Play-On</strong> - Run the ball out of the square.
+The kick is scored by disposal values above</p>
+<p><strong>Kick-In: Short</strong> - Kicking the ball short to a
+teammate (from the square)</p>
+<p><strong>Kick-In: Long</strong> - Kicking the ball 40m+ (from the
+square)</p>
+<p><strong>Kick-In: Clanger</strong> - Kicking the ball out on the full
+or to the opposition (from the square)</p>
+</div>
+<div class="column" style="width:45%;">
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-cc221461a39e503523e3" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-cc221461a39e503523e3">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Kick-In Play-On","Kick-In Short","Kick-In Long","Kick-In Clanger"],"Value":[0.25,1,2.75,-3.15]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"Value","name":"Value","type":"numeric","minWidth":20}],"dataKey":"dc64657b18fe2cc40c2e723ea0723827"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p><img
+src="https://resources.fremantlefc.com.au/photo-resources/2023/05/11/b3b7968f-77ea-42bd-90b2-c8d53bebfff6/Luke-Ryan-kick-in.jpg?width=1064&amp;height=600" /></p>
+</div>
+<div id="marks" class="section level3">
+<h3>Marks</h3>
+<div style="display: flex;">
+<div class="column" style="width:55%;">
+<p><strong>Contested Mark</strong> - Marking the ball under physical
+pressure</p>
+<p><strong>Uncontested Mark</strong> - Marking the ball without physical
+pressure</p>
+<p><strong>Lead Mark</strong> - Marking the ball on a lead from a
+teammate’s kick</p>
+<p><strong>Intercept Mark</strong> - Marking the ball from an opponent’s
+kick; can be contested or uncontested</p>
+<p><img
+src="https://resources.afl.com.au/photo-resources/2023/07/29/11af6fa0-a43d-45ad-b53a-a30aa28c6124/LAeLUJXg.jpg?width=1064&amp;height=600" /></p>
+</div>
+<div class="column" style="width:45%;">
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-af51350ce14312fc3c42" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-af51350ce14312fc3c42">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Contested Mark","Uncontested Mark","Lead Mark","Intercept Mark: Contested","Intercept Mark: Uncontested"],"MID":[4.1,1.4,3.3,5.8,3],"D50":[5,1.7,3.8,7.2,3.8],"F50":[5.3,1.7,4.3,9,3.3]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","minWidth":20},{"id":"D50","name":"D50","type":"numeric","minWidth":20},{"id":"F50","name":"F50","type":"numeric","minWidth":20}],"dataKey":"0760c85f3081721dd518d481f29b6dc5"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+</div>
+<div id="scoring" class="section level3">
+<h3>Scoring</h3>
+<div style="display: flex;">
+<div class="column" style="width:55%;">
+<p><strong>Goals</strong> - Scoring a goal</p>
+<p><strong>Behinds</strong> - Scoring a behind</p>
+<p><strong>Goal Assists</strong> - Getting the ball to a teammate who
+scores a goal</p>
+<p><strong>Behind Assists</strong> - Getting the ball to a teammate who
+scores a behind</p>
+</div>
+<div class="column" style="width:45%;">
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-c72917ee87a6758c4dee" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-c72917ee87a6758c4dee">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Goal","Behind","Goal Assist","Behind Assist"],"Value":[7.4,0.9,3.2,3.5]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"Value","name":"Value","type":"numeric","minWidth":20}],"dataKey":"8d9e85c210f4de9824202f18072b8b9b"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p><img src="img/supercoach_article/scoring.jpeg" /></p>
+</div>
+<div id="defence" class="section level3">
+<h3>Defence</h3>
+<div style="display: flex;">
+<div class="column" style="width:55%;">
+<p><strong>Tackle</strong> - Physically preventing an opponent from
+effectively disposing of the ball</p>
+<p><strong>Spoil: Effective</strong> - Spoiling the ball away from an
+opponent, resulting in teammate possession</p>
+<p><strong>Spoil: Neutral</strong> - Spoiling the ball away from an
+opponent, and ending the play by causing a stoppage</p>
+<p><strong>Spoil: Ineffective</strong> - Spoiling the ball away from an
+opponent, resulting in opposition possession</p>
+<p><strong>Spoil: Gain Possession</strong> - Spoiling the ball away from
+an opponent and winning the next possession</p>
+</div>
+<div class="column" style="width:45%;">
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-7c1356ad9189964d70f5" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-7c1356ad9189964d70f5">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Tackle","Spoil: Effective","Spoil: Neutral","Spoil: Ineffective","Spoil: Gain Possession"],"MID":[2.9,2.1,2,0.9,2],"D50":[3.4,1.6,2.6,0.9,1.8],"F50":[3.4,2.4,1.4,1.6,2.4]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","minWidth":20},{"id":"D50","name":"D50","type":"numeric","minWidth":20},{"id":"F50","name":"F50","type":"numeric","minWidth":20}],"dataKey":"ebd239e8199bf57eb1031c47c8ee0311"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p><img src="img/supercoach_article/defence.jpg" /></p>
+</div>
+<div id="ruck-contests" class="section level3">
+<h3>Ruck Contests</h3>
+<div style="display: flex;">
+<div class="column" style="width:55%;">
+<p><strong>Hitout to Advantage</strong> - Tapping the ball directly to a
+teammate</p>
+<p><strong>Hitout to Opposition</strong> - Sharked hitouts are not
+tagged in any dataset, so I’ve tried to calculate them manually. Pure
+hitouts aren’t accurate enough; I’ve gone halfway there by looking at
+who wins first possession. If a ruck wins the hitout but first
+possession is an opponent, I’ve called it a hitout to opposition. These
+are around twice as common as ‘sharked hitouts’ as fumbling receives by
+the initial midfielder aren’t recorded.</p>
+<p><strong>Ruck Hard Ball Get</strong> - Grabbing the ball out of the
+ruck instead of tapping it (contested possession)</p>
+</div>
+<div class="column" style="width:45%;">
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-3b8cc2f11e1f1ce8b463" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-3b8cc2f11e1f1ce8b463">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Hitout to Advantage","Hitout to Opposition","Ruck Hard Ball Get"],"MID":[3.5,-0.5,3.4],"D50":[4.2,-0.7,3.7],"F50":[4.3,-0.6,4.1]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","minWidth":20},{"id":"D50","name":"D50","type":"numeric","minWidth":20},{"id":"F50","name":"F50","type":"numeric","minWidth":20}],"dataKey":"c0b534b47e124430a1aa9ba7203924d5"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p><img
+src="https://resources.afl.com.au/photo-resources/2023/05/27/82ce0ad1-2f1f-4f5f-bfb4-2646c4f0f7a0/0zYQI0jO.jpg?width=1064&amp;height=600" /></p>
+</div>
+<div id="one-percenters" class="section level3">
+<h3>One Percenters</h3>
+<div style="display: flex;">
+<div class="column" style="width:55%;">
+<p>One percenter totals also include spoils.</p>
+<p><strong>Contested knock-on</strong> - Tapping the ball (under
+pressure) to a teammate</p>
+<p><strong>Knock-on</strong> - Tapping the ball to a teammate</p>
+<p><strong>Smother</strong> - Preventing an opponent’s disposal by
+deflecting the motion of the ball</p>
+<p><strong>Shepherd</strong> - Protecting a teammate in possession by
+physically getting in the way of an opponent</p>
+<p><strong>Block</strong> - Protecting a teammate marking the ball by
+physically preventing an opponent from contesting it. Illegal in the
+rules, yet still recorded (yes… Willie Rioli was officially rewarded a
+block stat for preventing Maynard reaching Dom Sheed)</p>
+<p><strong>Touched</strong> - Touching the ball on the line preventing
+it from going through as a goal, causing a touched behind</p>
+<p><strong>Running bounce</strong> - Bouncing the ball while in
+possession (not a one-percenter but I had to put it somewhere!)</p>
+</div>
+<div class="column" style="width:45%;">
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-0c9284bf8ada8dc9971c" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-0c9284bf8ada8dc9971c">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Contested Knock-On","Knock-On","Smother","Shepherd","Block","Touched","Running Bounce"],"MID":[4,2.4,1.9,1.2,1,"NA",1.4],"D50":[4.6,1.7,2.3,1.3,2.2,3.1,1.5],"F50":[4.8,2.5,1.9,1.9,"NA","NA",3.5]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","minWidth":20},{"id":"D50","name":"D50","type":"numeric","minWidth":20},{"id":"F50","name":"F50","type":"numeric","minWidth":20}],"dataKey":"14efceac4eb9c9f6ed516736bcaf13cf"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+</div>
+<div id="clangers" class="section level3">
+<h3>Clangers</h3>
+<div style="display: flex;">
+<div class="column" style="width:55%;">
+<p>Clanger kicks, clanger handballs and clanger kick-ins are also
+included in clangers.</p>
+<p><strong>Free Against</strong> - Conceding a free kick to the
+opposition via an error</p>
+<p><strong>50m Penalty</strong> - Conceding a more severe or secondary
+free kick that advances the opposition 50m forward. I couldn’t reverse
+engineer D50/F50 splits for these</p>
+<p><strong>Dropped Mark</strong> - Dropping an uncontested mark</p>
+<p><strong>Dropped Mark (Gain)</strong> - Dropping an uncontested mark
+but picking it up uncontested. Counted as a clanger if it’s inside F50
+which is why it is equivalent to normal dropped marks. The gain itself
+is scored as a possession</p>
+<p><strong>Debit</strong> - Ruining a teammate’s chance at an
+uncontested mark by going for the mark too</p>
+<p><strong>No Pressure Error</strong> - Dropping the ball and losing
+possession under no pressure</p>
+</div>
+<div class="column" style="width:45%;">
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-4cded0ab235b6932ce75" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-4cded0ab235b6932ce75">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Free Against","50m Penalty Against","Dropped Mark","Dropped Mark (Gain)","Debit","No Pressure Error"],"MID":[-2.8,-6.3,-2.9,-1.3,-1.3,-2.6],"D50":[-3.2,"NA",-3,-1.5,-2.4,-3.7],"F50":[-3.1,"NA",-3.7,-3.7,-2.4,-3.4]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","minWidth":20},{"id":"D50","name":"D50","type":"numeric","minWidth":20},{"id":"F50","name":"F50","type":"numeric","minWidth":20}],"dataKey":"f07e99a11650e1794b7db6c26279fc1e"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+</div>
+<div id="whats-not-included" class="section level3">
+<h3>What’s not included?</h3>
+<p>Many common stats used in the AFL landscape are not actually included
+in the all-encompassing SuperCoach formula. Typically these stats are
+better broken down by stats already mentioned. For example, most
+clearances have both a possession and a disposal that comprise a
+clearance. I’m confident that these stats aren’t included based on their
+lack of statistical significance on the model:</p>
+<ul>
+<li>Clearances (better scored as possession + disposal)</li>
+<li>Inside-50s (disposal + potential score/assist)</li>
+<li>Metres Gained (long kicks bonus)</li>
+<li>Hitouts (0)</li>
+<li>Ineffective Kicks/Handballs (0)</li>
+<li>Score Launches (usually involves an intercept)</li>
+<li>Score Involvements (only the assist player or scorer)</li>
+<li>Pressure Acts</li>
+<li>Turnovers (40m+ long kicks can be effective yet still turn the ball
+over)</li>
+<li>Marking contest wins/losses (Contested Mark)</li>
+<li>Intercepts (either intercept mark or a gather from opposition)</li>
+</ul>
+</div>
+<div id="conclusion" class="section level3">
+<h3>Conclusion</h3>
+<p>I hope you have gained some clarity on the facets that are important
+for scoring in SuperCoach AFL. It’s been a long process and
+<em>many</em> hours browsing Twitter, BigFooty and using the fancy
+exploits of Google Search to gain info from paywalled articles.
+Ultimately, we won’t ever get all the pieces due to intellectual
+property policies, but I really wanted to understand where players
+excel.</p>
+<p>The benefit of this analysis is that unlike ever before, we can look
+at how players score their points. Each game’s stats are now calculated
+for all players and we can answer complex questions with ease. Which
+player had the most effective handballs inside 50? Which player gains
+the most points from kicking it long? Who are the best spoilers in the
+game?</p>
+<p>These questions are just the beginning. I look forward to looking
+into specific stats as preseason 2024 continues. To make sure you don’t
+miss out you can <a href="twitter.com/jaiden_popowski">Follow me on
+Twitter/X</a> and <a href="instagram.com">follow me on Instagram</a>.
+I’m always open to your questions so tag me in a post, I’d love to
+answer!</p>
+<p>Thanks for reading! Your support ensures I can continue to create
+content like this. Consider
+<a href="https://ko-fi.com/statsbyjaiden">buying me a coffee via
+Kofi!</a></p>
+</div>
+</div>
+
+<hr>
+
+
+<p style="text-align: center;"> Stats By Jaiden </p>
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
