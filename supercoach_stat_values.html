@@ -9,7 +9,6 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Jaiden" />
 
 
 <title>Explaining the SuperCoach AFL scoring system</title>
@@ -296,12 +295,13 @@ $(document).ready(function () {
 
 <h1 class="title toc-ignore">Explaining the SuperCoach AFL scoring
 system</h1>
-<h4 class="author">Jaiden</h4>
-<h4 class="date">Last updated on 2024-01-27</h4>
+<h4 class="date">27/01/2024</h4>
 
 </div>
 
 
+<div style="display: flex;">
+<div class="column" style="width:55%;">
 <p>SuperCoach AFL is a very popular fantasy sports game in Australia.
 Footy fans become the ‘coach’ of a fantasy team, where each player is
 scored each match based on their game performance. It has just opened to
@@ -312,72 +312,75 @@ is that every action in a game of Australian Football has an impact on
 the result of the match. Some actions are more important than others.
 Players can determine a game in a shot for goal, or save their lead in a
 massive pack-mark on the goal line. In essence, each statistic is scored
-based on how much it improves the chances of winning.</p>
+on how much it improves the chances of winning.</p>
 <p>However, this scoring system is kept secret - we essentially have to
 believe what each player scores is legitimate. There is no definitive
 list of which stats are included, or how collated stats get broken down,
-leaving the community to guess what is going on.</p>
+leaving the community to guess what is going on. My offseason project is
+to figure out which stats matter, what they’re all worth, and create
+advanced player stats. Let’s go!</p>
+</div>
+<div class="column" style="width:45%;">
+<p><img src="img/supercoach_article/teamexample.PNG" /></p>
+</div>
+</div>
 <div id="where-do-we-start" class="section level1">
 <h1>Where do we start?</h1>
 <p>I’ve spent the offseason researching the game of SuperCoach and which
-stats might be included in the scoring system. This includes X
+stats might be included in the scoring system. This includes browsing X
 (Twitter), online AFL forums,
 <a href= "https://www.championdata.com/glossary/afl/">the Champion Data
 glossary</a>, but as a student I didn’t wanna pay up for a Herald Sun
-subscription. It probably would’ve been wise in hindsight.</p>
+subscription. It probably would’ve been wise in hindsight…</p>
 <p>At the heart of the ranking points system is that it considers
 players winning the ball, disposing of it, and where on the ground they
 do it. It seems that we only need to focus on the things a player does
-with the ball, plus a few of the simpler defensive actions. Straight
-away, I can remove positional data like centre bounce attendances and
-time on ground percentage, and also aggregated stats like total
-disposals &amp; total clearances when we have better breakdowns already
-available.</p>
+with the ball, plus a few of the simpler defensive actions.</p>
 <p>Last year, I attempted this same feat by applying “known” values to
 each match. For example, we’ve heard that goals are worth 8 points.
 While this is more useful than nothing, SuperCoach has deeper
-intricacies in its scoring system. Unlike other fantasy games, ranking
+intricacies to its scoring system. Unlike other fantasy games, ranking
 points are weighted and adjusted by the time-elapsed in a match and the
 current margin. This means that scoring in close games looks a lot
-different to scoring in a blowout.</p>
-<p>Finally, every regular-season game has 4 premiership points for the
-winner, so the last step for SuperCoach is similar, ensuring there are
-3300 total points allocated in each match.</p>
+different to scoring in a blowout. A goal could be 10 points or 5; it
+always changes.</p>
+<p>We also know that events that happen in <strong>D50 or F50</strong>
+are <strong>worth ~20% more</strong> compared to the midfield. You are
+rewarded more for perfoming acts in scoring zones. Finally, SuperCoach
+also stick to the ‘3300 rule’ - a match scaling rule that ensures every
+game finishes with the same amount of points.</p>
 <p>After review of last year’s analysis, which had good (but unusable)
 results, I decided that I need to get fancier. I needed more match
 statistics than ever before, and it seemed there was enough variety
 across AFL stats sources - the AFL website, the AFL app, Champion Data,
 and other match centres.</p>
-<p>With my research in mind, I came up with a plan of action: 1.
-Collect, calculate and collate as many statistics as possible 2.
-Determine the zone in which each stat occurred (D50, MID, F50) for more
-precision 3. Create a model to weight all the stats with respect to each
-player’s final score 4. Remove statistics that are insignificant or are
-better described in more detail 5. Add scaling to the 3300 figure for
-each match 6. Summarise the results and present the average value each
-stat is worth</p>
-<div id="sourcing-the-advanced-stats" class="section level2">
-<h2>Sourcing the advanced stats</h2>
+<p>With my research in mind, I came up with a plan of action:</p>
+<ol style="list-style-type: decimal">
+<li><p>Collect, calculate and collate as many statistics as
+possible</p></li>
+<li><p>Determine the zone in which each stat occurred (D50, MID, F50)
+for more precision</p></li>
+<li><p>Create a model to weight all the stats with respect to each
+player’s final score</p></li>
+<li><p>Remove statistics that are insignificant or better described in
+more detail</p></li>
+<li><p>Add scaling to the 3300 figure for each match</p></li>
+<li><p>Summarise the results and present the <strong>average</strong>
+value each stat is worth</p></li>
+</ol>
+</div>
+<div id="sourcing-the-advanced-stats" class="section level1">
+<h1>Sourcing the advanced stats</h1>
+<div style="display: flex;">
+<div class="column" style="width:55%;">
 <p>You might be familiar with the possibilities of Stats Pro in the AFL
 app. On mobile, you can watch player highlights in short clips of their
 involvements for the match.</p>
-<div class="float">
-<img src="img/supercoach_article/statspro.jpg"
-alt="Will Hoskin-Elliott gathers and kicks the ball to seal Collingwood’s 2023 premiership!" />
-<div class="figcaption">Will Hoskin-Elliott gathers and kicks the ball
-to seal Collingwood’s 2023 premiership!</div>
-</div>
 <p>The best thing about this feature is that every stat is time-stamped.
 I first started by downloading every player’s set of actions from each
 match, and then combined them all in chronological order. This means we
 can view each game from an individual stat perspective, and we can get
-an idea of how the ball moves. Take this famous example from last season
-- see if you can recognise it.</p>
-<div class="float">
-<img src="img/supercoach_article/timestamps.png"
-alt="An example of the data I am working with" />
-<div class="figcaption">An example of the data I am working with</div>
-</div>
+an idea of how the ball moves.</p>
 <p>This has changed how I work with statistics for the fantasy
 platforms, as I am now assessing player performance via when they win
 the ball, the state in which they get involved (stoppages, turnover,
@@ -385,47 +388,55 @@ etc) and where on the ground they are. The last point is the key - we
 know that SuperCoach points are likely to be boosted when in
 defensive-50 or forward-50.</p>
 </div>
-<div id="the-model" class="section level2">
-<h2>The model</h2>
+<div class="column" style="width:45%;">
+<div class="float">
+<img src="img/supercoach_article/statspro.jpg"
+alt="Will Hoskin-Elliott gathers and kicks the ball to seal Collingwood’s 2023 premiership!" />
+<div class="figcaption">Will Hoskin-Elliott gathers and kicks the ball
+to seal Collingwood’s 2023 premiership!</div>
+</div>
+</div>
+</div>
+<p>We can combine these new stats with what we already have from the AFL
+website and other stats providers to <em>hopefully</em> give us
+everything we need for an accurate model.</p>
+</div>
+<div id="the-model" class="section level1">
+<h1>The model</h1>
 <p>I’ve been collecting data from these sources, but unfortunately a lot
 of it has been manual interpretation. This includes calculating kick
 distances, kick direction, kick effectiveness, how the kick was
 received, who generated score assists, whether each mark was from a
 teammate or opponent, the result of spoils, kick-in playing on vs taking
-it from the square, the result of hitouts… it is a complicated task. Oh,
-and grouping every stat by D50, MID or F50 zones!</p>
-<p>Assuming each recorded statistic is worth the same amount each game,
-we should be able to calculate an ‘average’ points value for each stat
-across all game scenarios - close or a blowout. As every game is worth
-the same approximate 3300 points, the scaling should be similar across
-all games too. What this means is that we can estimate what our players
-typically get rewarded for a specific act on the footy field.</p>
-<p>In <a href="fantasy.afl.com.au">AFL Fantasy</a>/DreamTeam, stats are
-weighted equally. Every kick is worth 3 points, no matter when or where
-it happened. The goal of this SuperCoach analysis is to give you an idea
-of what each stat is worth, similar to how we associate +3 points with
-every kick in AF/DT.</p>
+it from the square, the result of hitouts… it was a complicated task.
+Oh, and grouping every stat by D50, MID or F50 zones! It was certainly
+an entire-offseason project.</p>
+<p>With all stats collected, we should be able to calculate an
+<strong>average</strong> points value for each stat across all game
+scenarios - close or a blowout. As every game is worth the same
+approximate 3300 points, the scaling should be similar across all games
+too. What this means is that we can estimate what our players typically
+get rewarded for a specific act on the footy field.</p>
 <p>To find an average value for each statistic, I’ve decided to go with
 a simple linear model where we try to minimise deviation from the real
-score. My results yielded a R-squared value of 0.968, meaning that 96.8%
-of variation in SuperCoach scoring is explained by this model. I think
-that’s pretty good considering we aren’t scaling stats based on the
-margin or how much of the game has elapsed! The mean absolute error
-(MAE) for each SuperCoach score was 4.23, meaning that on average, this
-model was only 4.23 points off the real SuperCoach score for each
-player.</p>
+score. My results yielded a <strong>R-squared value of 0.968</strong>,
+meaning that 96.8% of variation in SuperCoach scoring is explained by
+this model. I think that’s pretty good considering we aren’t scaling
+stats based on the margin or how much of the game has elapsed! The
+<strong>mean absolute error (MAE)</strong> for each SuperCoach score was
+<strong>4.23</strong>, meaning that on average, this model was only 4.23
+points off the real SuperCoach score for each player.</p>
 <p>This is a <em>significant</em> improvement from the last time
 <a href="https://jaidenpopowski.github.io/StatsByJaiden/">I tried to
 figure out SuperCoach scoring</a>, which had results of 90.2% R-squared
-and 7.81 MAE.</p>
-</div>
+and 7.81 MAE, and had a lot of scaling issues.</p>
 </div>
 <div id="statistics-breakdown" class="section level1">
 <h1>Statistics Breakdown</h1>
 <div id="possession" class="section level3">
 <h3>Possession</h3>
 <div style="display: flex;">
-<div class="column" style="width:40%;">
+<div class="column" style="width:55%;">
 <p><strong>Loose ball-get</strong> - Picking up the ball at ground level
 without pressure</p>
 <p><strong>Hard ball-get</strong> - Picking up the ball at ground level
@@ -444,17 +455,17 @@ teammate’s handball</p>
 <p><strong>Free For</strong> - Receiving a free kick from an opponent’s
 error</p>
 </div>
-<div class="column" style="width:60%;">
-<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-aff88f51e8491895f6c7" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-aff88f51e8491895f6c7">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Loose Ball Get","Hard Ball Get","Loose Ball Get - Crumb","Hard Ball Get - Crumb","Gather","Gather from Oppo","Gather from Hitout","Handball Receive","Free For"],"MID":[3.4,3.3,3.2,3.1,1.1,2.4,1.4,1,3.1],"D50":[4,3.9,3.9,3.6,1.3,3,1.9,1.2,3.9],"F50":[4,3.8,3.8,3.8,1.1,2.5,1.7,1.2,3.8]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","minWidth":20},{"id":"D50","name":"D50","type":"numeric","minWidth":20},{"id":"F50","name":"F50","type":"numeric","minWidth":20}],"dataKey":"740d179a9b61e7c0699da05b051154b9"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
-</div>
-</div>
+<div class="column" style="width:45%;">
 <p><img src="img/supercoach_article/possession.jpg" /></p>
+</div>
+</div>
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-e04bcc0af9f83e3b27d2" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-e04bcc0af9f83e3b27d2">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Loose Ball Get","Hard Ball Get","Loose Ball Get - Crumb","Hard Ball Get - Crumb","Gather","Gather from Opposition","Gather from Hitout","Handball Receive","Free For"],"MID":[3.4,3.3,3.2,3.1,1.1,2.4,1.4,1,3.1],"D50":[4,3.9,3.9,3.6,1.3,3,1.9,1.2,3.9],"F50":[4,3.8,3.8,3.8,1.1,2.5,1.7,1.2,3.8]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20},{"id":"D50","name":"D50","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20},{"id":"F50","name":"F50","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20}],"dataKey":"571cb2ee39285ddf23e50b71f6366e81"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
 <div id="disposal" class="section level3">
 <h3>Disposal</h3>
 <div style="display: flex;">
-<div class="column" style="width:40%;">
+<div class="column" style="width:55%;">
 <p><strong>Effective Handball</strong> - Handballing to your teammate
 effectively</p>
 <p><strong>Effective Kick: Short</strong> - A short kick that hits the
@@ -474,17 +485,17 @@ opposition possession</p>
 <p><strong>Clanger Kick: Backwards</strong> - A backwards kick that
 results in opposition possession</p>
 </div>
-<div class="column" style="width:60%;">
-<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-492bdb93c12d1f463ad2" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-492bdb93c12d1f463ad2">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Effective Handball","Effective Kick Short","Effective Kick Long","Effective Kick Long to Advantage","Effective Kick Backwards","Ineffective Kick/Handball","Clanger Handball","Clanger Kick","Clanger Kick Backwards"],"MID":[1,2.9,3,3.6,0.7,0,-2.7,-2.7,-2.6],"D50":[1.1,3.2,3.5,4.5,0.6,0,-3.5,-3.2,-3],"F50":[1.1,3.2,3.5,4.9,"NA",0,-3.3,-3,-3.1]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","minWidth":20},{"id":"D50","name":"D50","type":"numeric","minWidth":20},{"id":"F50","name":"F50","type":"numeric","minWidth":20}],"dataKey":"2f15253399ad33e0721c9f4b56e4250b"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
-</div>
-</div>
+<div class="column" style="width:45%;">
 <p><img src="img/supercoach_article/disposal.jpg" /></p>
+</div>
+</div>
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-92e324471e3dfb284a3e" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-92e324471e3dfb284a3e">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Effective Handball","Effective Kick Short","Effective Kick Long","Effective Kick Long to Advantage","Effective Kick Backwards","Ineffective Kick/Handball","Clanger Handball","Clanger Kick","Clanger Kick Backwards"],"MID":[1,2.9,3,3.6,0.7,0,-2.7,-2.7,-2.6],"D50":[1.1,3.2,3.5,4.5,0.6,0,-3.5,-3.2,-3],"F50":[1.1,3.2,3.5,4.9,"NA",0,-3.3,-3,-3.1]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20},{"id":"D50","name":"D50","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20},{"id":"F50","name":"F50","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20}],"dataKey":"cd7ad3f5fca39da2506d42e756fbaa74"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
 <div id="kick-ins" class="section level3">
 <h3>Kick-Ins</h3>
 <div style="display: flex;">
-<div class="column" style="width:40%;">
+<div class="column" style="width:55%;">
 <p><strong>Kick-In: Play-On</strong> - Run the ball out of the square.
 The kick is scored by disposal values above</p>
 <p><strong>Kick-In: Short</strong> - Kicking the ball short to a
@@ -494,18 +505,18 @@ square)</p>
 <p><strong>Kick-In: Clanger</strong> - Kicking the ball out on the full
 or to the opposition (from the square)</p>
 </div>
-<div class="column" style="width:60%;">
-<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-7e286c362c15c3b8add0" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-7e286c362c15c3b8add0">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Kick-In Play-On","Kick-In Short","Kick-In Long","Kick-In Clanger"],"Value":[0.25,1,2.75,-3.15]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"Value","name":"Value","type":"numeric","minWidth":20}],"dataKey":"dc64657b18fe2cc40c2e723ea0723827"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
-</div>
-</div>
+<div class="column" style="width:45%;">
 <p><img
 src="https://resources.fremantlefc.com.au/photo-resources/2023/05/11/b3b7968f-77ea-42bd-90b2-c8d53bebfff6/Luke-Ryan-kick-in.jpg?width=1064&amp;height=600" /></p>
+</div>
+</div>
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-0b35120365c7131fd790" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-0b35120365c7131fd790">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Kick-In Play-On","Kick-In Short","Kick-In Long","Kick-In Clanger"],"Value":[0.25,1,2.75,-3.15]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"Value","name":"Value","type":"numeric","format":{"cell":{"digits":2},"aggregated":{"digits":2}},"minWidth":20}],"dataKey":"aca4eefa9b78568986893c0de330b7b2"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
 <div id="marks" class="section level3">
 <h3>Marks</h3>
 <div style="display: flex;">
-<div class="column" style="width:40%;">
+<div class="column" style="width:55%;">
 <p><strong>Contested Mark</strong> - Marking the ball under physical
 pressure</p>
 <p><strong>Uncontested Mark</strong> - Marking the ball without physical
@@ -514,37 +525,37 @@ pressure</p>
 teammate’s kick</p>
 <p><strong>Intercept Mark</strong> - Marking the ball from an opponent’s
 kick; can be contested or uncontested</p>
+</div>
+<div class="column" style="width:45%;">
 <p><img
 src="https://resources.afl.com.au/photo-resources/2023/07/29/11af6fa0-a43d-45ad-b53a-a30aa28c6124/LAeLUJXg.jpg?width=1064&amp;height=600" /></p>
 </div>
-<div class="column" style="width:60%;">
-<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-566fc900f12492552041" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-566fc900f12492552041">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Contested Mark","Uncontested Mark","Lead Mark","Intercept Mark: Contested","Intercept Mark: Uncontested"],"MID":[4.1,1.4,3.3,5.8,3],"D50":[5,1.7,3.8,7.2,3.8],"F50":[5.3,1.7,4.3,9,3.3]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","minWidth":20},{"id":"D50","name":"D50","type":"numeric","minWidth":20},{"id":"F50","name":"F50","type":"numeric","minWidth":20}],"dataKey":"0760c85f3081721dd518d481f29b6dc5"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
-</div>
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-b6cb32adf3a0f8642168" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-b6cb32adf3a0f8642168">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Contested Mark","Uncontested Mark","Lead Mark","Intercept Mark: Contested","Intercept Mark: Uncontested"],"MID":[4.1,1.4,3.3,5.8,3],"D50":[5,1.7,3.8,7.2,3.8],"F50":[5.3,1.7,4.3,9,3.3]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20},{"id":"D50","name":"D50","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20},{"id":"F50","name":"F50","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20}],"dataKey":"77e101d0f4e3ece892312dd65a3350aa"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
 <div id="scoring" class="section level3">
 <h3>Scoring</h3>
 <div style="display: flex;">
-<div class="column" style="width:40%;">
-<p><strong>Goals</strong> - Scoring a goal</p>
-<p><strong>Behinds</strong> - Scoring a behind</p>
-<p><strong>Goal Assists</strong> - Getting the ball to a teammate who
+<div class="column" style="width:55%;">
+<p><strong>Goal</strong> - Scoring a goal</p>
+<p><strong>Behind</strong> - Scoring a behind</p>
+<p><strong>Goal Assist</strong> - Getting the ball to a teammate who
 scores a goal</p>
-<p><strong>Behind Assists</strong> - Getting the ball to a teammate who
+<p><strong>Behind Assist</strong> - Getting the ball to a teammate who
 scores a behind</p>
 </div>
-<div class="column" style="width:60%;">
-<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-4e96bdf148a3bda9aaeb" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-4e96bdf148a3bda9aaeb">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Goal","Behind","Goal Assist","Behind Assist"],"Value":[7.4,0.9,3.2,3.5]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"Value","name":"Value","type":"numeric","minWidth":20}],"dataKey":"8d9e85c210f4de9824202f18072b8b9b"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
-</div>
-</div>
+<div class="column" style="width:45%;">
 <p><img src="img/supercoach_article/scoring.jpeg" /></p>
+</div>
+</div>
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-f976c537880cfd1e0389" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-f976c537880cfd1e0389">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Goal","Behind","Goal Assist","Behind Assist"],"Value":[7.4,0.9,3.2,3.5]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"Value","name":"Value","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20}],"dataKey":"4a1a6ab0eeb24bf43c6245b2a39feabb"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
 <div id="defence" class="section level3">
 <h3>Defence</h3>
 <div style="display: flex;">
-<div class="column" style="width:40%;">
+<div class="column" style="width:55%;">
 <p><strong>Tackle</strong> - Physically preventing an opponent from
 effectively disposing of the ball</p>
 <p><strong>Spoil: Effective</strong> - Spoiling the ball away from an
@@ -554,43 +565,42 @@ opponent, and ending the play by causing a stoppage</p>
 <p><strong>Spoil: Ineffective</strong> - Spoiling the ball away from an
 opponent, resulting in opposition possession</p>
 <p><strong>Spoil: Gain Possession</strong> - Spoiling the ball away from
-an opponent and winning the next possession</p>
+an opponent and winning the next possession. Possession scored
+separately</p>
 </div>
-<div class="column" style="width:60%;">
-<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-27c8729d4f00ba5375ff" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-27c8729d4f00ba5375ff">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Tackle","Spoil: Effective","Spoil: Neutral","Spoil: Ineffective","Spoil: Gain Possession"],"MID":[2.9,2.1,2,0.9,2],"D50":[3.4,1.6,2.6,0.9,1.8],"F50":[3.4,2.4,1.4,1.6,2.4]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","minWidth":20},{"id":"D50","name":"D50","type":"numeric","minWidth":20},{"id":"F50","name":"F50","type":"numeric","minWidth":20}],"dataKey":"ebd239e8199bf57eb1031c47c8ee0311"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
-</div>
-</div>
+<div class="column" style="width:45%;">
 <p><img src="img/supercoach_article/defence.jpg" /></p>
+</div>
+</div>
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-07b26ce88deb42108278" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-07b26ce88deb42108278">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Tackle","Spoil: Effective","Spoil: Neutral","Spoil: Ineffective","Spoil: Gain Possession"],"MID":[2.9,2.1,2,0.9,2],"D50":[3.4,1.6,2.6,0.9,1.8],"F50":[3.4,2.4,1.4,1.6,2.4]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20},{"id":"D50","name":"D50","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20},{"id":"F50","name":"F50","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20}],"dataKey":"2fc9f4e0677051081a28734214341c8a"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
 <div id="ruck-contests" class="section level3">
 <h3>Ruck Contests</h3>
 <div style="display: flex;">
-<div class="column" style="width:40%;">
+<div class="column" style="width:55%;">
 <p><strong>Hitout to Advantage</strong> - Tapping the ball directly to a
 teammate</p>
-<p><strong>Hitout to Opposition</strong> - Sharked hitouts are not
-tagged in any dataset, so I’ve tried to calculate them manually. Pure
-hitouts aren’t accurate enough; I’ve gone halfway there by looking at
-who wins first possession. If a ruck wins the hitout but first
-possession is an opponent, I’ve called it a hitout to opposition. These
-are around twice as common as ‘sharked hitouts’ as fumbling receives by
-the initial midfielder aren’t recorded.</p>
+<p><strong>Hitout to Opposition</strong> - Hitouts where the next
+possession is won by an opponent. Calculated manually, this is twice as
+accurate as using plain hitouts, but not as good as ‘sharked hitouts’.
+It’s as close as I can get, and they’re around twice as common as
+sharked hitout numbers.</p>
 <p><strong>Ruck Hard Ball Get</strong> - Grabbing the ball out of the
 ruck instead of tapping it (contested possession)</p>
 </div>
-<div class="column" style="width:60%;">
-<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-db51b7cd0cfd1ff37475" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-db51b7cd0cfd1ff37475">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Hitout to Advantage","Hitout to Opposition","Ruck Hard Ball Get"],"MID":[3.5,-0.5,3.4],"D50":[4.2,-0.7,3.7],"F50":[4.3,-0.6,4.1]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","minWidth":20},{"id":"D50","name":"D50","type":"numeric","minWidth":20},{"id":"F50","name":"F50","type":"numeric","minWidth":20}],"dataKey":"c0b534b47e124430a1aa9ba7203924d5"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
-</div>
-</div>
+<div class="column" style="width:45%;">
 <p><img
 src="https://resources.afl.com.au/photo-resources/2023/05/27/82ce0ad1-2f1f-4f5f-bfb4-2646c4f0f7a0/0zYQI0jO.jpg?width=1064&amp;height=600" /></p>
+</div>
+</div>
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-1925068cf8b902cd78c6" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-1925068cf8b902cd78c6">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Hitout to Advantage","Hitout to Opposition","Ruck Hard Ball Get"],"MID":[3.5,-0.5,3.4],"D50":[4.2,-0.7,3.7],"F50":[4.3,-0.6,4.1]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20},{"id":"D50","name":"D50","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20},{"id":"F50","name":"F50","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20}],"dataKey":"35fa7ea8424fb3f963cf70fdcc56481f"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
 <div id="one-percenters" class="section level3">
 <h3>One Percenters</h3>
 <div style="display: flex;">
-<div class="column" style="width:40%;">
+<div class="column" style="width:55%;">
 <p>One percenter totals also include spoils.</p>
 <p><strong>Contested knock-on</strong> - Tapping the ball (under
 pressure) to a teammate</p>
@@ -608,18 +618,20 @@ it from going through as a goal, causing a touched behind</p>
 <p><strong>Running bounce</strong> - Bouncing the ball while in
 possession (not a one-percenter but I had to put it somewhere!)</p>
 </div>
-<div class="column" style="width:60%;">
-<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-810f9078e5c3baf7471b" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-810f9078e5c3baf7471b">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Contested Knock-On","Knock-On","Smother","Shepherd","Block","Touched","Running Bounce"],"MID":[4,2.4,1.9,1.2,1,"NA",1.4],"D50":[4.6,1.7,2.3,1.3,2.2,3.1,1.5],"F50":[4.8,2.5,1.9,1.9,"NA","NA",3.5]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","minWidth":20},{"id":"D50","name":"D50","type":"numeric","minWidth":20},{"id":"F50","name":"F50","type":"numeric","minWidth":20}],"dataKey":"14efceac4eb9c9f6ed516736bcaf13cf"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<div class="column" style="width:45%;">
+<p><img
+src="https://resources.afl.com.au/photo-resources/2023/09/08/9cd0e317-64ac-4e0a-9f47-f3f47407a2fa/EF1CaSy23MW6376.jpg?width=1064&amp;height=600" /></p>
 </div>
 </div>
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-6e186bba4ffcdd46ec23" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-6e186bba4ffcdd46ec23">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Contested Knock-On","Knock-On","Smother","Shepherd","Block","Touched","Running Bounce"],"MID":[4,2.4,1.9,1.2,1,"NA",1.4],"D50":[4.6,1.7,2.3,1.3,2.2,3.1,1.5],"F50":[4.8,2.5,1.9,1.9,2,"NA",3.5]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20},{"id":"D50","name":"D50","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20},{"id":"F50","name":"F50","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20}],"dataKey":"c90efa0a27eb24a8e4b691e6aa8036ec"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
 <div id="clangers" class="section level3">
 <h3>Clangers</h3>
 <div style="display: flex;">
-<div class="column" style="width:40%;">
+<div class="column" style="width:55%;">
 <p>Clanger kicks, clanger handballs and clanger kick-ins are also
-included in clangers.</p>
+included in clangers totals.</p>
 <p><strong>Free Against</strong> - Conceding a free kick to the
 opposition via an error</p>
 <p><strong>50m Penalty</strong> - Conceding a more severe or secondary
@@ -635,11 +647,13 @@ uncontested mark by going for the mark too</p>
 <p><strong>No Pressure Error</strong> - Dropping the ball and losing
 possession under no pressure</p>
 </div>
-<div class="column" style="width:60%;">
-<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-5bf7290514e5651e2d06" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-5bf7290514e5651e2d06">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Free Against","50m Penalty Against","Dropped Mark","Dropped Mark (Gain)","Debit","No Pressure Error"],"MID":[-2.8,-6.3,-2.9,-1.3,-1.3,-2.6],"D50":[-3.2,"NA",-3,-1.5,-2.4,-3.7],"F50":[-3.1,"NA",-3.7,-3.7,-2.4,-3.4]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","minWidth":20},{"id":"D50","name":"D50","type":"numeric","minWidth":20},{"id":"F50","name":"F50","type":"numeric","minWidth":20}],"dataKey":"f07e99a11650e1794b7db6c26279fc1e"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<div class="column" style="width:45%;">
+<p><img
+src="https://resources.afl.com.au/photo-resources/2023/04/02/1081a27f-a45e-41ea-9916-9732db6624dd/UvZKmHy4.jpg?width=1064&amp;height=600" /></p>
 </div>
 </div>
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-2cf8697d3eef7bc98831" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-2cf8697d3eef7bc98831">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Stat":["Free Against","50m Penalty Against","Dropped Mark","Dropped Mark (Gain)","Debit","No Pressure Error"],"MID":[-2.8,-6.3,-2.9,-1.3,-1.3,-2.6],"D50":[-3.2,"NA",-3,-1.5,-2.4,-3.7],"F50":[-3.1,"NA",-3.7,-3.7,-2.4,-3.4]},"columns":[{"id":"Stat","name":"Stat","type":"character","minWidth":40},{"id":"MID","name":"MID","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20},{"id":"D50","name":"D50","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20},{"id":"F50","name":"F50","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":20}],"dataKey":"946a989ab107480aca7c944e09c84d21"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 </div>
 <div id="whats-not-included" class="section level3">
 <h3>What’s not included?</h3>
@@ -660,7 +674,7 @@ lack of statistical significance on the model:</p>
 <li>Pressure Acts</li>
 <li>Turnovers (40m+ long kicks can be effective yet still turn the ball
 over)</li>
-<li>Marking contest wins/losses (Contested Mark)</li>
+<li>1-on-1 marking contest wins/losses (Contested Mark)</li>
 <li>Intercepts (either intercept mark or a gather from opposition)</li>
 </ul>
 </div>
