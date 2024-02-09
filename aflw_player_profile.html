@@ -297,7 +297,7 @@ ID = Parameters.get("ID");
 
 if(!ID) {
   ID = 1005279;
-  window.location.href = `player_profile.html?ID=${ID}`;
+  window.location.href = `aflw_player_profile.html?ID=${ID}`;
 }
 
 var xhttp = new XMLHttpRequest();
@@ -319,7 +319,7 @@ xhttp.onreadystatechange = function() {
     }
 };
 
-xhttp.open("GET", "https:://jaidenpopowski.github.io/data/afl/aflw_details.json", true);
+xhttp.open("GET", "data/afl/aflw_details.json", true);
 
 xhttp.send();
 
