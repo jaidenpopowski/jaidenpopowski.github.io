@@ -313,13 +313,16 @@ xhttp.onreadystatechange = function() {
        }
        
        if(playerDetails) {
+       document.getElementById('player-name').innerHTML = playerDetails[ID].playerName;
        document.getElementById('player-age').innerHTML = playerDetails[ID].age;
        document.getElementById('player-picture').src = "https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/" + playerDetails[ID].lastSeason +"264/" + String(ID) + ".png";
+              document.getElementById('player-age').innerHTML = playerDetails[ID].age;
+
        }
     }
 };
 
-xhttp.open("GET", "data/afl/aflw_details.json", true);
+xhttp.open("GET", "data/aflw/aflw_details.json", true);
 
 xhttp.send();
 
@@ -331,6 +334,12 @@ xhttp.send();
 <p>
 <strong>Age: </strong>
 <span id="player-age"></span>
+<strong>Height: </strong>
+<span id="player-height"></span>
+<strong>Career Games: </strong>
+<span id="career-games"></span>
+<strong>Career Goals: </strong>
+<span id="career-goals"></span>
 </p>
 </div>
 </div>
