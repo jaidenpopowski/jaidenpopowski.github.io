@@ -309,14 +309,16 @@ xhttp.onreadystatechange = function() {
        
        if(json[ID]) {
        playerDetails = {};
-       playerDetails[ID] = json[ID];
+       playerDetails = json[ID][0][0];
        }
        
        if(playerDetails) {
-       document.getElementById('player-name').innerHTML = playerDetails[ID].playerName;
-       document.getElementById('player-age').innerHTML = playerDetails[ID].age;
-       document.getElementById('player-picture').src = "https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/" + playerDetails[ID].lastSeason +"264/" + String(ID) + ".png";
-              document.getElementById('player-age').innerHTML = playerDetails[ID].age;
+       document.getElementById('player-name').innerHTML = playerDetails.playerName;
+       document.getElementById('player-age').innerHTML = playerDetails.age;
+       document.getElementById('player-picture').src = "https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/" + playerDetails.lastSeason +"264/" + String(ID) + ".png";
+       document.getElementById('player-height').innerHTML = playerDetails.height + "cm";
+       document.getElementById('career-goals').innerHTML = playerDetails.careerGoals;
+       document.getElementById('career-games').innerHTML = playerDetails.careerGames;
 
        }
     }
@@ -328,8 +330,10 @@ xhttp.send();
 
 </script>
 <div id="player-profile">
-<img id="player-picture"/>
+<div class="row">
+<img id="player-picture" style="height:40px;"/>
 <h2 id="player-name"></h2>
+</div>
 <div class="row">
 <p>
 <strong>Age: </strong>
