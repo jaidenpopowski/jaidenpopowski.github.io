@@ -319,7 +319,7 @@ xhttp.onreadystatechange = function() {
        document.getElementById('player-height').innerHTML = playerDetails.height + "cm";
        document.getElementById('career-goals').innerHTML = playerDetails.careerGoals;
        document.getElementById('career-games').innerHTML = playerDetails.careerGames;
-
+       document.getElementById('h1').display = "none";
        }
     }
 };
@@ -329,24 +329,6 @@ xhttp.open("GET", "data/aflw/aflw_details.json", true);
 xhttp.send();
 
 </script>
-<div id="player-profile">
-<div class="row">
-<img id="player-picture" style="height:40px;"/>
-<h2 id="player-name"></h2>
-</div>
-<div class="row">
-<p>
-<strong>Age: </strong>
-<span id="player-age"></span>
-<strong>Height: </strong>
-<span id="player-height"></span>
-<strong>Career Games: </strong>
-<span id="career-games"></span>
-<strong>Career Goals: </strong>
-<span id="career-goals"></span>
-</p>
-</div>
-</div>
 
 <hr>
 

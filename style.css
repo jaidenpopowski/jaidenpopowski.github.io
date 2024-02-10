@@ -65,5 +65,11 @@ a:active{
   max-width: 100%;
 }
 .player-name {
-  font-size: 28px;
+  font-size: 60px;
+  font-size: 3.5vw;
+  font-weight: bold;
+}
+.player-picture {
+  height: 5vw;
+  width: 5vw;
 }
