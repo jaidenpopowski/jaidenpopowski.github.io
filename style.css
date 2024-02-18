@@ -32,6 +32,7 @@ a:active{
 .navbar {
   padding: 0;
   background-color: darkblue;
+  align-items: none;
 }
 .navbar-default .navbar-brand {
     color: white;
@@ -64,12 +65,34 @@ a:active{
   padding-right: 10px;
   max-width: 100%;
 }
+.container-player {
+  display: flex;
+  align-items: center;
+  height: 200px;,
+  max-width: 100%;
+}
+
+.player-details {
+  margin-right: 15px;
+}
+.text-container {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  align-items: left;
+}
+@media (max-width: 768px) {
+  .text-container {
+    flex-direction: column;
+    overflow: hidden;
+  }
+}
 .player-name {
-  font-size: 60px;
-  font-size: 3.5vw;
   font-weight: bold;
+  font-size: 45px;
 }
 .player-picture {
-  height: 5vw;
-  width: 5vw;
+  width: 33%;
+  height: 100%;
+  object-fit: scale-down; /* Adjust "cover" for different scaling options */
 }
