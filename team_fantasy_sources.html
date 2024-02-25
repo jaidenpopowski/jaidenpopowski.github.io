@@ -11,7 +11,7 @@
 
 
 
-<title>AFL Fantasy Statistics</title>
+<title>Team Score Scores - AFL Fantasy</title>
 
 <script src="site_libs/header-attrs-2.25/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
@@ -32,6 +32,13 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/core-js-2.5.3/shim.min.js"></script>
+<script src="site_libs/react-18.2.0/react.min.js"></script>
+<script src="site_libs/react-18.2.0/react-dom.min.js"></script>
+<script src="site_libs/reactwidget-1.0.0/react-tools.js"></script>
+<script src="site_libs/htmlwidgets-1.6.2/htmlwidgets.js"></script>
+<link href="site_libs/reactable-0.4.4/reactable.css" rel="stylesheet" />
+<script src="site_libs/reactable-binding-0.4.4/reactable.js"></script>
 <link href="site_libs/font-awesome-6.4.2/css/all.min.css" rel="stylesheet" />
 <link href="site_libs/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet" />
 
@@ -286,28 +293,25 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">AFL Fantasy Statistics</h1>
+<h1 class="title toc-ignore">Team Score Scores - AFL Fantasy</h1>
 
 </div>
 
 
-<p>AFL Fantasy Stats home page coming soon</p>
-<p><a href="worthwhile_fantasy.html">Worthwhile Averages for AFL Fantasy
-2024</a></p>
-<div id="score-sources" class="section level1">
-<h1>Score sources</h1>
-<p><a href="fantasy_score_sources.html">Player Score Sources</a></p>
-<p><a href="team_fantasy_sources.html">Team Score Sources</a></p>
-</div>
-<div id="stoppagetransition-scores-by-round" class="section level1">
-<h1>Stoppage/Transition scores by round</h1>
-<p><a href="fantasy_stoppage_points.html">Stoppage Points</a> |
-<a href="fantasy_stoppage_share.html">Stoppage Share (%)</a></p>
-<p><a href="fantasy_transition_points.html">Transition Points</a> |
-<a href="fantasy_transition_share.html">Transition Share (%)</a></p>
-<p><a href="fantasy_captains_rankings.html">2023 AFL Fantasy Captains
-Rankings</a></p>
-</div>
+<p>Assess team game styles with stoppage and transition splits below
+using the 2023 H&amp;A season data.</p>
+<ul>
+<li><strong>Stoppages</strong> - Total stoppage points from centre
+bounce (<strong>CB</strong>), ball-ups (<strong>BU</strong>), and
+throw-ins (<strong>TI</strong>)</li>
+<li><strong>Transition</strong> - Total transition points from
+opposition turnover (<strong>TO</strong>) and kick-in/kick-in-receives
+(<strong>KI</strong>)</li>
+</ul>
+<p><em>Note AF totals are slightly off due to late scores adjustments
+(not reflected in stoppage data)</em></p>
+<div class="reactable html-widget html-fill-item-overflow-hidden html-fill-item" id="fantasy-score-sources-table" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="fantasy-score-sources-table">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"Team":["ADE","BRL","CAR","COL","ESS","FRE","GWS","GEE","GCS","HAW","MEL","NTH","PTA","RIC","STK","SYD","WCE","WBD"],"Fantasy":[1600.95652173913,1553.91304347826,1613.52173913043,1598.08695652174,1600.95652173913,1586.78260869565,1602.65217391304,1536.17391304348,1514.13043478261,1591.69565217391,1568,1487.30434782609,1481.65217391304,1524.39130434783,1681.69565217391,1556.26086956522,1467.78260869565,1584.69565217391],"Stoppages":[602.217391304348,557.95652173913,553.95652173913,556.434782608696,490.434782608696,582.04347826087,526.95652173913,512.521739130435,512.130434782609,509.869565217391,505.434782608696,503.826086956522,530.826086956522,506.521739130435,509.913043478261,518.173913043478,481.739130434783,589.086956521739],"CB":[182,165.173913043478,164.913043478261,177.695652173913,183.260869565217,181.95652173913,160.217391304348,159.478260869565,140.521739130435,178.652173913043,157.521739130435,154.478260869565,188.304347826087,148.608695652174,160.913043478261,158.869565217391,155.434782608696,162.217391304348],"BU":[200.434782608696,202.521739130435,199.173913043478,204.04347826087,151.565217391304,216.608695652174,174.434782608696,187,187.826086956522,184.304347826087,162.434782608696,196.695652173913,170.217391304348,181.260869565217,184.782608695652,172.782608695652,186.608695652174,230.565217391304],"TI":[219.782608695652,190.260869565217,189.869565217391,174.695652173913,155.608695652174,183.478260869565,192.304347826087,166.04347826087,183.782608695652,146.913043478261,185.478260869565,152.652173913043,172.304347826087,176.652173913043,164.217391304348,186.521739130435,139.695652173913,196.304347826087],"Transition":[998.739130434783,995.95652173913,1059.5652173913,1041.65217391304,1110.52173913043,1004.73913043478,1075.69565217391,1023.65217391304,1002,1081.82608695652,1062.5652173913,983.478260869565,950.826086956522,1017.86956521739,1171.78260869565,1038.08695652174,986.04347826087,995.608695652174],"TO":[870.565217391304,870.652173913043,916.347826086957,903.347826086957,943.695652173913,898.304347826087,942.304347826087,885.521739130435,863.521739130435,940.130434782609,954.913043478261,825.086956521739,830,902.304347826087,1002.95652173913,899.130434782609,788.347826086957,831.695652173913],"KI":[128.173913043478,125.304347826087,143.217391304348,138.304347826087,166.826086956522,106.434782608696,133.391304347826,138.130434782609,138.478260869565,141.695652173913,107.652173913043,158.391304347826,120.826086956522,115.565217391304,168.826086956522,138.95652173913,197.695652173913,163.913043478261]},"columns":[{"id":"Team","name":"Team","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55,"defaultSortDesc":false,"sticky":"left"},{"id":"Fantasy","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"Stoppages","name":"Stoppages","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"sticky":"left"},{"id":"CB","name":"CB","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":45},{"id":"BU","name":"BU","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":45},{"id":"TI","name":"TI","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":45},{"id":"Transition","name":"Transition","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"sticky":"left"},{"id":"TO","name":"TO","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":45},{"id":"KI","name":"KI","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":45}],"searchable":true,"defaultSortDesc":true,"defaultSorted":[{"id":"Fantasy","desc":true}],"defaultPageSize":18,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px"},"elementId":"fantasy-score-sources-table","dataKey":"cce6115d4398298734e78db74df3c18d"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
 
 <hr>
 
