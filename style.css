@@ -96,3 +96,6 @@ a:active{
   height: 100%;
   object-fit: scale-down; /* Adjust "cover" for different scaling options */
 }
+.boldedrow {
+  font-weight: bold;
+}
