@@ -11,7 +11,7 @@
 
 
 
-<title>AFL Fantasy Statistics</title>
+<title>Premium Stats</title>
 
 <script src="site_libs/header-attrs-2.26/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
@@ -292,27 +292,47 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">AFL Fantasy Statistics</h1>
+<h1 class="title toc-ignore">Premium Stats</h1>
 
 </div>
 
 
-<p>AFL Fantasy Stats home page coming soon</p>
-<p>NEW: <a href="fantasy_price_changes">R0 Breakevens &amp; Price
-Changes</a></p>
-<p><a href="worthwhile_fantasy">Worthwhile Averages for AFL Fantasy
-2024</a></p>
-<div id="score-sources" class="section level1">
-<h1>2023 Score Sources</h1>
-<p><a href="fantasy_score_sources">Player Score Sources</a></p>
-<p><a href="team_fantasy_sources">Team Score Sources</a></p>
-<p><a href="fantasy_stoppage_points">Stoppage Points by Round</a> |
-<a href="fantasy_stoppage_share.html">Stoppage Share (%)</a></p>
-<p><a href="fantasy_transition_points">Transition Points by Round</a> |
-<a href="fantasy_transition_share.html">Transition Share (%)</a></p>
-<p><a href="fantasy_captains_rankings">2023 AFL Fantasy Captains
-Rankings</a></p>
+<script>
+const Parameters = new URLSearchParams(location.search);
+ID = Parameters.get("u");
+
+document.addEventListener("DOMContentLoaded", function() {
+if(ID) {
+  if(ID == "1491") {
+    document.getElementById("default-div").style.display = "none";
+    document.getElementById("links-div").style.display = "block";
+  }
+}
+});
+
+</script>
+<div id="default-div">
+<p>Premium stats are available for supporters via Kofi! If you feel
+obliged, tip me a coffee and you’ll receive an email with a link to the
+available stats. Currently included (2024 stats):</p>
+<ul>
+<li>AFL Fantasy Projections</li>
+<li>Stoppage &amp; transition breakdowns for each round</li>
+<li>Team difficulty analysis using score sources</li>
+</ul>
+<p>All are available to be downloaded as a spreadsheet for your own
+use.</p>
+<iframe id="kofiframe" src="https://ko-fi.com/statsbyjaiden/?hidefeed=true&amp;widget=true&amp;embed=true&amp;preview=true" style="border:none;width:90%;padding:4px;background:#f9f9f9;" height="712" title="statsbyjaiden">
+</iframe>
 </div>
+<div id="links-div" style="display: none">
+
+<p>Thankyou for the Ko-Fi! You now have access to all these fancy stats
+I love using. Bookmark this page so you don’t lose it (it needs the
+small number on the end to function) and come back weekly for
+updates!</p>
+<p><a href="fantasy_projections">Fantasy Projections</a></p>
+<p><a href="premium_score_sources">Fantasy Score Sources</a></p>
 
 <hr>
 
