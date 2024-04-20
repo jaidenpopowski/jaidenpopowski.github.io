@@ -1,6 +1,0 @@
----
-title: "Latest Blog Posts"
-output: html_document
----
-
-<a href="supercoach_stat_values.html">Explaining the SuperCoach scoring system</a>
