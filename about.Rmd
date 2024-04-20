@@ -1,8 +1,0 @@
----
-title: "About This Website"
-output: html_document
----
-
-This website presents data related to the Australian Football League (AFL/AFLW) and its most popular fantasy platforms AFL Fantasy and SuperCoach AFL.
-
-<a href="https://mail.google.com/mail/?view=cm&to=jaidenstats@gmail.com">Contact me via email for feedback or suggestions.<a>
