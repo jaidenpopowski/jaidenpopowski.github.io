@@ -1,0 +1,77 @@
+---
+title: "SuperCoach Score Breakdowns"
+output: html_document
+---
+
+<a href="supercoach_stat_values.html">Explaining the SuperCoach scoring system</a>
+
+```{r, warning = F, echo=F,message=F}
+library(reactable)
+library(htmltools)
+library(dplyr)
+
+table_data <- readRDS("C:/Users/jpopo/Documents/Rstats/SuperCoach Breakdowns 2023.rds") %>% 
+  select(playerId,Player = player, Team,Pos, SC = score, Poss = possession, Disp = disposal, Mark = marks, Tack = tackles, Ruck = ruck, `1%ers` = onepercenters, Clangers= clangers, Scores = scoring) %>% 
+     mutate(playerId = ifelse(playerId == "CD_I1012013","CD_I1026850",playerId))
+
+htmltools::browsable(
+  tagList(
+    tags$button("Download table", onclick = "Reactable.downloadDataCSV('supercoach-breakdowns')"),
+
+reactable(
+  table_data,
+  defaultSortOrder = "desc",
+  defaultSorted = "SC",
+  showSortIcon = FALSE,
+  showPageSizeOptions = T,
+  pageSizeOptions = c(20,50,100),
+  striped = TRUE,
+  sortable = T,
+  searchable=T,
+  defaultPageSize = 20,
+  elementId = "supercoach-breakdowns",
+  style = list(
+    fontSize = '12px',
+    width = "auto",
+    height = "auto"
+  ),
+  defaultColDef = colDef(
+    format = colFormat(digits = 1)
+  ),
+  columns = list(
+    playerId = colDef(show = F),
+    Player = colDef(
+      name = "Player",
+      sticky = "left",
+      defaultSortOrder = "asc",
+      style = NULL,
+      cell=function(value,index){
+        image <- img(src = paste0("https://fantasy.afl.com.au/assets/media/players/afl/",readr::parse_number(table_data$playerId[index]),"_450.png"), style = "height: 24px;vertical-align:middle")
+        tagList(
+          div(style = "vertical-align:bottom;",image,paste0(" ",value))
+        )},
+      minWidth = 180,
+      width = 180
+    ),
+    SC = colDef(
+      name = "SC",
+      format = colFormat(digits =1),
+      minWidth = 50,
+      width = 50
+    ),
+    Pos = colDef(
+      minWidth = 75
+    ),
+    Team = colDef(
+      minWidth = 55
+    ),
+    Clangers = colDef(
+      defaultSortOrder = "asc"
+    )
+  )
+)
+
+)
+)
+
+```

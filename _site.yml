@@ -1,0 +1,29 @@
+name: "statsbyjaiden"
+output_dir: "docs"
+navbar:
+  title: "Stats By Jaiden"
+  left:
+    - text: "Home"
+      href: index
+    - text: "Blog"
+      href: blog
+    - text: "Fantasy"
+      href: fantasy
+    - text: "SuperCoach"
+      href: supercoach
+    - text: "AFLW"
+      href: aflw
+  right:
+    - icon: fa-solid fa-mug-hot
+      href: https://ko-fi.com/statsbyjaiden
+    - icon: fa-brands fa-twitter
+      href: https://twitter.com/jaiden_popowski
+    - icon: fa-brands fa-instagram
+      href: https://instagram.com/statsbyjaiden
+    - text: "About"
+      href: about
+output:
+  html_document:
+    css: style.css
+    include:
+      after_body: footer.Rhtml

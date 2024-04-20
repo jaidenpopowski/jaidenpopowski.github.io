@@ -1,0 +1,102 @@
+---
+title: "Transition Points - AFL Fantasy"
+output: html_document
+---
+
+Transition points measure the amount of points a player scores while their team moves the ball. This is either from an opposition turnover or kick-in, so defenders score a large majority of their points in transition.
+
+<a href="fantasy_transition_share.html">Transition Points Share</a> | <a href="fantasy_stoppage_points.html">Stoppage Points</a> | <a href="fantasy_stoppage_share.html">Stoppage Points Share</a>
+
+```{r, echo = F, warning = F, message = F}
+library(dplyr)
+library(tidyr)
+library(reactable)
+library(htmltools)
+library(crosstalk)
+library(httr)
+
+# players <-
+#   GET(
+#     paste0("https://api.afl.com.au/cfs/afl/players?seasonId=CD_S",2023,"014"),
+#     httr::add_headers("x-media-mis-token" = httr::content(httr::POST("https://api.afl.com.au/cfs/afl/WMCTok"))$token)
+#   ) %>% 
+#     httr::content(as = "text", encoding = "UTF-8") %>%
+#     jsonlite::fromJSON(flatten = TRUE) %>% 
+#   .$players
+
+table <- readRDS("C:/Users/jpopo/Documents/Rstats/Breakdowns.rds") %>% 
+  filter(season == 2023) %>% 
+    mutate(playerId = ifelse(playerId == "CD_I1012013","CD_I1026850",playerId)) %>% 
+  left_join(httr::content(httr::GET('https://fantasy.afl.com.au/data/afl/squads.json'),as = "text",encoding = 'UTF-8') %>% jsonlite::fromJSON(flatten = TRUE), by = join_by(Team == full_name)) %>%
+  left_join(readRDS("C:/Users/jpopo/Documents/Rstats/Worthwhile Averages 2024.rds") %>% transmute(playerId = paste0("CD_I",playerId),Pos = Position), by = "playerId") %>% 
+  select(season,playerId,Player,Pos,Team = short_name,Round,Stoppages=Transition) %>% 
+  mutate(Stoppages = replace_na(Stoppages,replace = 0L)) %>% 
+  group_by(season,playerId) %>% 
+  mutate(AV = mean(Stoppages,na.rm=T)) %>% 
+  ungroup() %>% 
+  arrange(season,Round) %>% 
+  pivot_wider(names_from = Round,names_prefix = "R",values_from = Stoppages) %>% select(-season)
+  
+
+reactable(
+  table,
+  defaultSorted = c("AV"),
+  defaultSortOrder = "desc",
+  showSortIcon = FALSE,
+  showPageSizeOptions = TRUE,
+  striped = TRUE,
+  pageSizeOptions = c(50,100,200),
+  defaultPageSize = 50,
+  elementId = "stoppagetable",
+  defaultColDef = colDef(
+    minWidth = 40,
+    style = function(value) {
+      if (value >= 75 & !is.na(value) & is.numeric(value)) {
+        color <- "#FDE725FF"
+      } else if (value >= 55 & !is.na(value) & is.numeric(value)) {
+        color <- "#7AD151FF"
+      } else if (value >= 35 & !is.na(value) & is.numeric(value)) {
+        color <- "#22A884FF"
+      } else {
+        color <- "white"
+      }
+      list(background = color)
+    }
+  ),
+  style = list(
+    fontSize = '12px'
+  ),
+  searchable = T,
+  columns = list(
+    Player = colDef(
+      name = "Player",
+      sticky = "left",
+      defaultSortOrder = "asc",
+      style = NULL,
+      cell=function(value,index){
+        image <- img(src = paste0("https://fantasy.afl.com.au/assets/media/players/afl/",readr::parse_number(table$playerId[index]),"_450.png"), style = "height: 24px;vertical-align:middle")
+        tagList(
+          div(style = "vertical-align:bottom;",image,paste0(" ",value))
+        )},
+      minWidth = 160
+    ),
+    Team = colDef(
+      minWidth = 55,
+      style = NULL
+    ),
+    AV = colDef(
+      name = "AV",
+      format = colFormat(digits =1),
+      sticky = "left",
+      minWidth = 45,
+      style = list(background = "white")
+    ),
+    Pos = colDef(
+      minWidth = 75,
+      style = NULL
+    ),
+    playerId = colDef(show=F)
+  )
+)
+```
+

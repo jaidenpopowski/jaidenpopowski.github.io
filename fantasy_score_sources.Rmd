@@ -1,0 +1,107 @@
+---
+title: "Score Sources - AFL Fantasy"
+output: html_document
+---
+
+There are five unique situations where a player can score their fantasy points. Centre bounces, ball-ups, and throw-ins are included in **Stoppages**, while turnover and kick-ins are **Transition** points.
+
+View player averages for each source across the 2023 H&A season below.
+
+* **Pos** - 2024 Fantasy/SuperCoach position
+* **Team** - 2023 AFL team, **G** - 2023 H&A games played, **AF** - 2023 AFL Fantasy average
+* **Stoppages** - Total stoppage points from centre bounce (**CB**), ball-ups (**BU**), and throw-ins (**TI**)
+* **Transition** - Total transition points from opposition turnover (**TO**) and kick-in/kick-in-receives (**KI**)
+
+<a href="fantasy_stoppage_points.html">Stoppage Points (games)</a> | <a href="fantasy_transition_points.html">Transition Points (games)</a>
+
+```{r, echo = F, warning = F, message = F}
+library(dplyr)
+library(tidyr)
+library(reactable)
+library(htmltools)
+library(crosstalk)
+library(httr)
+
+table <- readRDS("C:/Users/jpopo/Documents/Rstats/Breakdowns.rds") %>% 
+   mutate(playerId = ifelse(playerId == "CD_I1012013","CD_I1026850",playerId)) %>% 
+  filter(season == 2023,Round<=24) %>% 
+  group_by(playerId,Player,Team) %>% 
+  summarise(
+    games = n(),
+    across(`Fantasy`:`Throw In`, ~ sum(.x,na.rm=T)/n()),
+    .groups = 'drop'
+  ) %>% 
+    left_join(httr::content(httr::GET('https://fantasy.afl.com.au/data/afl/squads.json'),as = "text",encoding = 'UTF-8') %>% jsonlite::fromJSON(flatten = TRUE), by = join_by(Team == full_name)) %>%
+  left_join(httr::content(httr::GET('https://fantasy.afl.com.au/data/afl/archive/2023/players.json'),as = "text",encoding = 'UTF-8') %>% jsonlite::fromJSON(flatten = TRUE) %>%  transmute(playerId = paste0("CD_I",id),fantasy = stats.avg_points), by = join_by(playerId)) %>%
+    left_join(readRDS("C:/Users/jpopo/Documents/Rstats/Worthwhile Averages 2024.rds") %>% transmute(playerId = paste0("CD_I",playerId),Pos = Position), by = "playerId") %>% 
+  mutate(across(`Fantasy`:`Throw In`, ~fantasy*.x/Fantasy)) %>% 
+  select(playerId,Player,Pos,Team=short_name,Games = games,Fantasy,Stoppages,CB = `Centre Bounce`, BU = `Ball Up`,TI = `Throw In`,Transition,`TO` = Turnover, `KI` = KickIn)
+
+htmltools::browsable(
+  tagList(
+    tags$button("Download table", onclick = "Reactable.downloadDataCSV('fantasy-score-sources-table')"),
+    
+reactable(
+  table,
+  defaultSorted = c("Fantasy"),
+  defaultSortOrder = "desc",
+  showSortIcon = FALSE,
+  showPageSizeOptions = TRUE,
+  striped = TRUE,
+  pageSizeOptions = c(50,100,200),
+  defaultPageSize = 50,
+  elementId = "fantasy-score-sources-table",
+  style = list(
+    fontSize = '12px'
+  ),
+  defaultColDef = colDef(
+    format = colFormat(digits = 1),
+    minWidth = 45
+  ),
+  searchable = T,
+  columns = list(
+    Player = colDef(
+      name = "Player",
+      sticky = "left",
+      defaultSortOrder = "asc",
+      style = NULL,
+      cell=function(value,index){
+        image <- img(src = paste0("https://fantasy.afl.com.au/assets/media/players/afl/",readr::parse_number(table$playerId[index]),"_450.png"), style = "height: 24px;vertical-align:middle")
+        tagList(
+          div(style = "vertical-align:bottom;",image,paste0(" ",value))
+        )},
+      minWidth = 160
+    ),
+    Team = colDef(
+      minWidth = 55,
+      defaultSortOrder = "asc",
+      style = NULL
+    ),
+    Games = colDef(
+      name = "G",
+      format = colFormat(digits = 0),
+    ),
+    Stoppages = colDef(
+      sticky = "left",
+      minWidth = 60
+    ),
+    Transition = colDef(
+      sticky = "left",
+      minWidth = 60
+    ),
+    Fantasy = colDef(
+      name = "AF",
+      minWidth = 55
+    ),
+    Pos = colDef(
+      minWidth = 75,
+      style = NULL,
+      defaultSortOrder = "asc"
+    ),
+    playerId = colDef(show=F)
+  )
+)
+)
+)
+```
+

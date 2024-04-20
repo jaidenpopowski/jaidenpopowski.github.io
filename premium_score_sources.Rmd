@@ -1,0 +1,214 @@
+---
+title: "Score Sources (Premium) - AFL Fantasy"
+output: html_document
+---
+
+Score sources can help to determine a player's role in their own team. We are able to measure their impact in different aspects of the game; we don't want to select players who have a good role but no impact. There are five unique situations where a player can score their fantasy points. Centre bounces, ball-ups, and throw-ins are included in **Stoppages**, while turnover and kick-ins are **Transition** points.
+
+* **Pos** - 2024 Fantasy/SuperCoach position
+* **G** - 2024 H&A games played, **AF** - 2024 AFL Fantasy average
+* **Stoppages** - Total stoppage points from centre bounce (**CB**), ball-ups (**BU**), and throw-ins (**TI**)
+* **Transition** - Total transition points from opposition turnover (**TO**) and kick-in/kick-in-receives (**KI**)
+
+# 2024 Season Averages
+
+```{r, echo = F, warning = F, message = F}
+library(dplyr)
+library(tidyr)
+library(reactable)
+library(htmltools)
+library(httr)
+
+squads <- httr::content(httr::GET('https://fantasy.afl.com.au/data/afl/squads.json'),as = "text",encoding = 'UTF-8') %>% jsonlite::fromJSON(flatten = TRUE) %>% 
+  bind_rows(data.frame(full_name = c("GWS GIANTS","Gold Coast SUNS"),short_name = c("GWS","GCS")))
+
+players <- content(GET('https://fantasy.afl.com.au/data/afl/players.json'),as = "text",encoding = 'UTF-8') %>%  jsonlite::fromJSON(flatten = TRUE) %>% 
+  left_join(squads, by = join_by(squad_id == id)) %>%
+  transmute(
+    playerId = paste0("CD_I",id), 
+    Player = paste(first_name,last_name), 
+    Team = short_name,
+    Average = stats.avg_points, 
+    Position = as.character(positions)) %>% 
+  mutate(Position = stringr::str_replace_all(Position, c("1"="DEF","2"="MID","3"="RUC","4"="FWD",":"="/",", "="/","[()c]"=""))) %>% 
+    mutate(playerId = ifelse(playerId == "CD_I1026850","CD_I1012013",playerId))
+
+full <- readRDS("C:/Users/jpopo/Documents/Rstats/Fantasy Score Sources.rds") %>% 
+  filter(season == 2024) %>% 
+  select(-Team) %>% 
+  left_join(players %>% select(-Player), by = "playerId") %>% 
+  left_join(squads %>% select(full_name,short_name), by = join_by(Opponent == full_name)) %>% 
+  mutate(Opponent = short_name) %>% 
+  select(-short_name) %>% 
+  mutate(across(Fantasy:`Throw In`, ~replace_na(.x,0L)))
+
+table <- full %>% 
+  group_by(playerId,Player,Position,Team,Average) %>% 
+  summarise(
+    games = n(),
+    across(`Fantasy`:`Throw In`, ~ sum(.x,na.rm=T)/n()),
+    .groups = 'drop'
+  ) %>% 
+  select(playerId,Player,Position,Team,Games = games,Fantasy,Stoppages,CB = `Centre Bounce`, BU = `Ball Up`,TI = `Throw In`,Transition,`TO` = Turnover, `KI` = KickIn)
+
+htmltools::browsable(
+  tagList(
+    tags$button("Download table", onclick = "Reactable.downloadDataCSV('premium-season-data')"),
+    
+reactable(
+  table,
+  defaultSorted = c("Fantasy"),
+  defaultSortOrder = "desc",
+  showSortIcon = FALSE,
+  showPageSizeOptions = TRUE,
+  striped = TRUE,
+  pageSizeOptions = c(15,50,100,200),
+  filterable = T,
+  defaultPageSize = 15,
+  elementId = "premium-season-data",
+  style = list(
+    fontSize = '12px'
+  ),
+  defaultColDef = colDef(
+    format = colFormat(digits = 1),
+    minWidth = 45
+  ),
+  searchable = F,
+  columns = list(
+    Player = colDef(
+      name = "Player",
+      sticky = "left",
+      defaultSortOrder = "asc",
+      style = NULL,
+      cell=function(value,index){
+        image <- img(src = paste0("https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2024014/",readr::parse_number(table$playerId[index]),".png"), style = "height: 24px;vertical-align:middle")
+        tagList(
+          div(style = "vertical-align:bottom;",image,paste0(" ",value))
+        )},
+      minWidth = 160
+    ),
+    Team = colDef(
+      minWidth = 55,
+      defaultSortOrder = "asc",
+      style = NULL
+    ),
+    Games = colDef(
+      name = "G",
+      format = colFormat(digits = 0),
+    ),
+    Stoppages = colDef(
+      sticky = "left",
+      minWidth = 60
+    ),
+    Transition = colDef(
+      sticky = "left",
+      minWidth = 60
+    ),
+    Fantasy = colDef(
+      name = "AF",
+      minWidth = 55
+    ),
+    Position = colDef(
+      name = "Pos",
+      minWidth = 75,
+      style = NULL,
+      defaultSortOrder = "asc"
+    ),
+    playerId = colDef(show=F)
+  )
+)
+)
+)
+
+h1("2024 Games")
+
+htmltools::browsable(
+  tagList(
+    tags$button("Download table", onclick = "Reactable.downloadDataCSV('premium-round-data')"),
+    
+reactable(
+  full %>% select(playerId,Player,Position,Team,Opponent,Round,Fantasy,Stoppages,`Centre Bounce`,`Ball Up`,`Throw In`,Transition,Turnover,KickIn),
+  defaultSorted = c("Round","Fantasy"),
+  defaultSortOrder = "desc",
+  showSortIcon = FALSE,
+  showPageSizeOptions = TRUE,
+  filterable = T,
+  striped = TRUE,
+  searchable = F,
+  pageSizeOptions = c(50,100,200),
+  defaultPageSize = 20,
+  elementId = "premium-round-data",
+  style = list(
+    fontSize = '12px'
+  ),
+  defaultColDef = colDef(
+    format = colFormat(digits = 0),
+    minWidth = 40
+  ),
+  columns = list(
+    Player = colDef(
+      name = "Player",
+      sticky = "left",
+      defaultSortOrder = "asc",
+      style = NULL,
+      cell=function(value,index){
+        image <- img(src = paste0("https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2024014/",readr::parse_number(full$playerId[index]),".png"), style = "height: 24px;vertical-align:middle")
+        tagList(
+          div(style = "vertical-align:bottom;",image,paste0(" ",value))
+        )},
+      minWidth = 160
+    ),
+    Position = colDef(
+      name = "Pos",
+      minWidth = 75,
+      style = NULL,
+      defaultSortOrder = "asc"
+    ),
+    Team = colDef(
+      minWidth = 55,
+      defaultSortOrder = "asc",
+      style = NULL
+    ),
+    Opponent = colDef(
+      name = "Oppo",
+      defaultSortOrder = "asc",
+      minWidth = 55
+    ),
+    Round = colDef(
+      minWidth = 35
+    ),
+    Fantasy = colDef(
+      name = "AF",
+      minWidth = 55
+    ),
+    Stoppages = colDef(
+      sticky = "left",
+      minWidth = 60
+    ),
+    `Centre Bounce` = colDef(
+      name = "CB"
+    ),
+    `Ball Up` = colDef(
+      name = "BU"
+    ),
+    `Throw In` = colDef(
+      name = "TI"
+    ),
+    Transition = colDef(
+      sticky = "left",
+      minWidth = 60
+    ),
+    Turnover = colDef(
+      name = "TO"
+    ),
+    KickIn = colDef(
+      name = "KI"
+    ),
+    playerId = colDef(show=F),
+    season = colDef(show=F),
+    Average = colDef(show=F)
+  )
+)
+)
+)
+```

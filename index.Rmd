@@ -1,0 +1,28 @@
+---
+title: "Stats By Jaiden"
+output: html_document
+---
+
+Welcome to Stats by Jaiden!
+
+Over the next few months, I will be populating this website with advanced statistics for AFL and its fantasy platforms.
+
+Aims:
+
+* Player pages with every stat you could possibly need in one place
+* Stats tables showing all statistics for all players
+* Team-by-team breakdowns
+* Historical stats for AFL Fantasy and SuperCoach
+* AFL Fantasy weekly par scores and ownership
+* Worthwhile selection averages for Fantasy & SuperCoach 2024
+* AFLW Fantasy stats that I've already been producing
+
+Why?
+
+I create/collect/use a lot of data, but the accessibility isn't there for me yet. I want to be able to easily lookup stats I need, without needing to open my full programming suite. If I want to share stats with you all, I've had to do that using Google Sheets in the past. What if I could update everything with the click of a button?
+
+You can help with the production of this site by supporting me with a coffee! I'd massively appreciate it. Thank you to those who have provided already :)
+
+<iframe id='kofiframe' src='https://ko-fi.com/statsbyjaiden/?hidefeed=true&widget=true&embed=true&preview=true' style='border:none;width:90%;padding:4px;background:#f9f9f9;' height='712' title='statsbyjaiden'></iframe>
+
+Cheers!

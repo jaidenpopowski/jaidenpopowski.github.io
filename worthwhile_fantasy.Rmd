@@ -1,0 +1,108 @@
+---
+title: "Worthwhile Averages - AFL Fantasy"
+output: html_document
+---
+
+When selecting players for our starting squad, we look for players with upside. But how much upside do they need? I've determined **Worthwhile Averages** as a way to measure what each player must average to be an elite pick. This model is trained on a decade of data, and adjusts values based on player price and position offset. DEFs and FWDs are typically much lower than a similarly priced MID or RUC, highlighting value across positions.
+
+As it is a worthwhile *average*, it focuses only on points and not cash generation. If you believe a player will score their required points, you must start them in AFL Fantasy.
+
+```{r, echo=F, message=F, warning=F}
+library(dplyr)
+library(reactable)
+library(htmltools)
+
+table <- readRDS("C:/Users/jpopo/Documents/Rstats/Worthwhile Averages 2024.rds") %>%
+  mutate(bye50 = (Worthwhile*23 - 50)/22,bye75 = (Worthwhile*23 - 75)/22) %>% 
+  mutate(across(ByeAdj:bye75, ~ifelse(Team %in% c("CAR","BRL","RIC","GCS","GWS","COL","MEL","SYD"),.x,NA)))
+
+htmltools::browsable(
+  tagList(
+    tags$button("Download table", onclick = "Reactable.downloadDataCSV('worthwhile_table')"),
+reactable(
+  table,
+  defaultSorted = c("Worthwhile","Price"),
+  defaultSortOrder = "desc",
+  showSortIcon = FALSE,
+  showPageSizeOptions = TRUE,
+  striped = TRUE,
+  pageSizeOptions = c(50,100,200),
+  defaultPageSize = 50,
+  elementId = "worthwhile_table",
+  searchable = T,
+  style = list(
+    fontSize = '12px'
+  ),
+  defaultColDef = colDef(sticky = NULL),
+  columns = list(
+    playerId = colDef(show=F),
+    Diff = colDef(show=F),
+    Player = colDef(
+      name = "Player",
+      sticky = "left",
+      defaultSortOrder = "asc",
+      cell=function(value,index){
+        image <- img(src = paste0("https://fantasy.afl.com.au/assets/media/players/afl/",table$playerId[index],"_450.png"), style = "height: 24px;vertical-align:middle")
+        tagList(
+          div(style = "vertical-align:bottom;",image,paste0(" ",value))
+        )},
+      minWidth = 160
+    ),
+    Price = colDef(
+      cell = JS("function(cellInfo) {return '$' + cellInfo.value/1000 + 'K'}"),
+      minWidth = 60
+    ),
+    Position = colDef(
+      name = "POS",
+      minWidth = 60
+    ),
+    Team = colDef(
+      minWidth = 50,
+      sticky = NULL
+    ),
+    PricedAt = colDef(
+      name = "Priced At",
+      format = colFormat(digits = 1),
+      minWidth = 60
+    ),
+    Worthwhile = colDef(
+      name = "Worthwhile Av",
+      format = colFormat(digits = 1),
+      minWidth = 75
+    ),
+    ByeAdj = colDef(
+      name = "0",
+      format = colFormat(digits = 1),
+      minWidth = 50
+    ),
+    bye50 = colDef(
+      name = "50",
+      format = colFormat(digits = 1),
+      minWidth = 50
+    ),
+    bye75 = colDef(
+      name = "75",
+      format = colFormat(digits = 1),
+      minWidth = 50
+    ),
+    Average = colDef(
+      name = "2023 Av",
+      format = colFormat(digits =1),
+      minWidth = 60
+    ),
+    Own = colDef(
+      name = "Own %",
+      format = colFormat(digits = 1),
+      show = F
+    )
+  ),
+  columnGroups = list(
+    colGroup(name = "Early Bye Cover",columns = c("ByeAdj","bye50","bye75"),sticky = NULL),
+    colGroup(name = "",columns = c("Team","Position","Price","Average","PricedAt","Worthwhile"),sticky = NULL)
+  )
+)
+)
+)
+  
+```
+

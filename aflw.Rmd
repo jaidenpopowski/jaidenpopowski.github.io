@@ -1,0 +1,86 @@
+---
+title: "AFLW Statistics"
+output: html_document
+---
+
+AFLW Player Stats coming soon!
+
+<a href="aflw.html?season=2023">2023</a>
+<a href="aflw.html?season=2101">2022B</a>
+<a href="aflw.html?season=2022">2022A</a>
+<a href="aflw.html?season=2021">2021</a>
+<a href="aflw.html?season=2020">2020</a>
+
+```{r eval=FALSE, warning=FALSE, include=FALSE}
+library(reactable)
+library(htmltools)
+
+table <- jsonlite::fromJSON("https://raw.githubusercontent.com/jaidenpopowski/jaidenpopowski.github.io/main/data/aflw/aflw_test_2023.json") %>% 
+  as.data.frame()
+
+reactable(
+  table[,-c(1)],
+  defaultSorted = c("Disposals","Games"),
+  defaultSortOrder = "desc",
+  showSortIcon = FALSE,
+  showPageSizeOptions = TRUE,
+  striped = TRUE,
+  pageSizeOptions = c(20, 50, 100),
+  defaultPageSize = 20,
+  columns = list(
+    Player = colDef(
+      name = "Player",
+      sticky = "left",
+      defaultSortOrder = "asc",
+      cell=function(value,index){
+        image <- img(src = table$image[index], style = "height: 24px;vertical-align:middle")
+        tagList(
+          div(style = "vertical-align:bottom;",image,paste0(" ",value))
+        )},
+      width = 300
+    ),
+    Team = colDef(
+      width = 140
+    )
+  )
+) #%>% reactablefmtr::save_reactable_test(output = "test_table.html")
+```
+
+```{r eval=FALSE, warning=FALSE, include=FALSE}
+library(reactable)
+library(htmltools)
+
+table <- jsonlite::fromJSON("https://raw.githubusercontent.com/jaidenpopowski/jaidenpopowski.github.io/main/data/aflw/aflw_test_2023.json") %>% 
+  as.data.frame() %>% 
+  mutate(image = paste0('<img src="',image,'" style = "height: 24px; vertical-align: middle;">'))
+
+reactable(
+  table,
+  defaultSorted = c("Disposals","Games"),
+  defaultSortOrder = "desc",
+  showSortIcon = FALSE,
+  showPageSizeOptions = TRUE,
+  striped = TRUE,
+  wrap = FALSE,
+  pageSizeOptions = c(20, 50, 100),
+  defaultPageSize = 20,
+  columns = list(
+    image = colDef(
+      name = "",
+      sticky = "left",
+      sortable = FALSE,
+      filterable = FALSE,
+      searchable = FALSE,
+      html = TRUE
+    ),
+    Player = colDef(
+      name = "Player",
+      sticky = "left",
+      defaultSortOrder = "asc"
+    ),
+    Team = colDef(
+      defaultSortOrder = "asc"
+    )
+  )
+) #%>% reactablefmtr::save_reactable_test(output = "test_table.html")
+```

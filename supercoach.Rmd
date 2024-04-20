@@ -1,0 +1,122 @@
+---
+title: "SuperCoach AFL Home"
+output: html_document
+---
+
+<a href="supercoach_stat_values.html">Explaining the SuperCoach scoring system</a>
+
+<a href="worthwhile_supercoach.html">Worthwhile Averages - SuperCoach 2024</a>
+
+<a href="supercoach_breakdowns.html">SuperCoach Score Breakdowns 2023</a>
+
+```{r, warning = F, echo=F,message=F}
+library(reactable)
+library(htmltools)
+library(dplyr)
+data <- readRDS("C:/Users/jpopo/Documents/Rstats/SuperCoach Breakdowns 2024.rds") %>% 
+  rename(Marking = Marks, `1%ers` = `One Percenters`, Scores = Scoring, Tackling = Tackles) %>% 
+  mutate(player = stringr::str_replace(player,"[a-z]+-","-"))
+
+make_table <- function(stat) {
+  
+  table_data <- data %>% 
+    select(playerId,Player = player, G = games, SC = score, Stat = {{stat}}) %>% 
+    filter(G>=2/3*max(G)) %>% 
+    slice_max(abs(Stat),n=10) %>% 
+    setNames(c("playerId","Player","G","SC",stat))
+
+  reactable(
+    table_data,
+    defaultSortOrder = "desc",
+    showSortIcon = FALSE,
+    showPageSizeOptions = FALSE,
+    striped = TRUE,
+    sortable = FALSE,
+    defaultPageSize = 10,
+    elementId = paste0("supercoach_leaders_",stat),
+    style = list(
+      fontSize = '12px',
+      width = "auto",
+      height = "auto"
+    ),
+    defaultColDef = colDef(
+      format = colFormat(digits = 1)
+    ),
+    searchable = F,
+    columns = list(
+      playerId = colDef(show = F),
+      Player = colDef(
+        name = "Player",
+        sticky = "left",
+        defaultSortOrder = "asc",
+        style = NULL,
+        cell=function(value,index){
+          image <- img(src = paste0("https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2024014/",readr::parse_number(table_data$playerId[index]),".png"), style = "height: 24px;vertical-align:middle")
+          tagList(
+            div(style = "vertical-align:bottom;",image,paste0(" ",value))
+          )},
+        minWidth = 180,
+        width = 180
+      ),
+      G = colDef(
+        minWidth = 35,
+        width = 35,
+        style = NULL,
+        format = colFormat(digits = 0)
+      ),
+      SC = colDef(
+        name = "SC",
+        format = colFormat(digits =1),
+        minWidth = 50,
+        width = 50
+      )
+    )
+  )
+  
+}
+
+
+div(class = "row",
+    div(
+      class = "sc-leader",
+      h3("Possession Points"),
+      make_table("Possession")
+    ),
+    div(
+      class = "sc-leader",
+      h3("Disposal Points"),
+      make_table("Disposal")
+    ),
+    div(
+      class = "sc-leader",
+      h3("Marking Points"),
+      make_table("Marking")
+    ),
+    div(
+      class = "sc-leader",
+      h3("Tackling Points"),
+      make_table("Tackling")
+    ),
+    div(
+      class = "sc-leader",
+      h3("Ruck Points"),
+      make_table("Ruck")
+    ),
+    div(
+      class = "sc-leader",
+      h3("One-Percenter Points"),
+      make_table("1%ers")
+    ),
+    div(
+      class = "sc-leader",
+      h3("Clanger Points"),
+      make_table("Clangers")
+    ),
+    div(
+      class = "sc-leader",
+      h3("Scoring Points"),
+      make_table("Scores")
+    )
+    )
+
+```

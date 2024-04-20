@@ -1,0 +1,122 @@
+---
+title: "AFL Fantasy Projections"
+output: html_document
+---
+
+Jaiden's projections are currently available via the <a href="https://www.patreon.com/dttalk">DT TALK Patreon!</a>
+
+Projections are trained on over a decade of data and is completely automated using a computer model. No more bias! Jaiden has been using his projections to automatically pick his captains each week; no more C/VC decisions and it was successful. In 2023, the model had a better #1 captain average than other captain pickers by over 5 points.
+
+```{js, echo=F, warning=F, message=F}
+const Parameters = new URLSearchParams(location.search);
+ID = Parameters.get("p");
+
+document.addEventListener("DOMContentLoaded", function() {
+if(ID) {
+  if(ID == "3892") {
+    document.getElementById("projections-div").style.display = "block";
+  }
+}
+});
+
+```
+
+
+```{r, echo=F, warning=F, message=F}
+library(dplyr)
+library(reactable)
+library(htmltools)
+library(htmlwidgets)
+
+table <- readRDS("C:/Users/jpopo/Documents/Rstats/Projections.rds") %>% 
+  mutate(Projected = as.numeric(Projected),`Proj - PricedAt` = as.numeric(`Proj - PricedAt`)) %>% 
+  left_join(httr::content(httr::GET('https://fantasy.afl.com.au/data/afl/squads.json'),as = "text",encoding = 'UTF-8') %>% jsonlite::fromJSON(flatten = TRUE) %>% select(full_name,short_name), by = join_by(Team == full_name)) %>%
+  mutate(Team = short_name) %>% 
+  select(-short_name) %>% 
+  mutate(playerId = ifelse(playerId == "CD_I1012013","CD_I1026850",playerId)) %>% 
+  relocate(Projected, .before = Team)
+
+
+div(id = "projections-div", style = "display: none",
+reactable(
+  table,
+  defaultSorted = c("Projected"),
+  defaultSortOrder = "desc",
+  showSortIcon = FALSE,
+  showPageSizeOptions = TRUE,
+  striped = TRUE,
+  pageSizeOptions = c(50,100,200),
+  defaultPageSize = 50,
+  elementId = "projections_table",
+  searchable = T,
+  style = list(
+    fontSize = '12px'
+  ),
+  defaultColDef = colDef(sticky = NULL),
+  columns = list(
+    playerId = colDef(show=F),
+    Player = colDef(
+      name = "Player",
+      sticky = "left",
+      defaultSortOrder = "asc",
+      cell=function(value,index){
+        image <- img(src = paste0("https://fantasy.afl.com.au/assets/media/players/afl/",readr::parse_number(table$playerId[index]),"_450.png"), style = "height: 24px;vertical-align:middle")
+        tagList(
+          div(style = "vertical-align:bottom;",image,paste0(" ",value))
+        )},
+      minWidth = 160
+    ),
+    `AF Price` = colDef(
+      name = "Price",
+      cell = JS("function(cellInfo) {return '$' + cellInfo.value/1000 + 'K'}"),
+      minWidth = 60
+    ),
+    `AF Pos` = colDef(
+      name = "POS",
+      minWidth = 60
+    ),
+    Team = colDef(
+      minWidth = 50,
+      sticky = NULL
+    ),
+    PricedAt = colDef(
+      name = "Priced At",
+      format = colFormat(digits = 1),
+      minWidth = 60
+    ),
+    Projected = colDef(
+      name = "Proj",
+      format = colFormat(digits = 2),
+      minWidth = 65
+    ),
+    Average = colDef(
+      name = "AVG",
+      format = colFormat(digits =1),
+      minWidth = 60
+    ),
+    `Auto Position` = colDef(
+      name = "POS (Auto)",
+      minWidth = 100
+    ),
+    `AF Own%` = colDef(
+      name = "Own %",
+      minWidth = 60,
+      format = colFormat(digits = 1)
+    ),
+    `CBA%` = colDef(
+      minWidth = 50,
+      format = colFormat(digits = 1)
+    ),
+    `KIs` = colDef(
+      minWidth = 50,
+      format = colFormat(digits = 1)
+      
+    )
+  )
+)
+
+)
+
+```
+
+Projections not showing? You'll need to click the link from the Patreon post :)

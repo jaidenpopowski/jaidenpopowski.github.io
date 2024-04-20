@@ -1,0 +1,161 @@
+---
+title: "R0 Breakevens - AFL Fantasy"
+output: html_document
+---
+
+The introduction of Opening Round creates more things to consider for Fantasy coaches. Part of this is R0 being included in price changes, but these changes won't show up until after Round 1.
+
+**Opening Round Magic Number: 9337** (+3.4% on original 9026)
+
+Hidden change represents what is going on in the system, but won't be shown (no changes until after R1). "Full BE" represents the approximate score the player needs to get to not change in price between now and the post-R1 change.
+
+```{r, echo=F, message=F, warning=F}
+library(dplyr)
+library(reactable)
+library(htmltools)
+
+table <- readRDS("C:/Users/jpopo/Documents/Rstats/R0Prices.rds") %>%
+  mutate(newprice = 1000*round(newprice/1000)) %>% 
+  relocate(pa,.after = newprice) %>% 
+  select(1:10)
+
+table2 <- readRDS("C:/Users/jpopo/Documents/Rstats/R0Prices.rds") %>% select(playerId,Player,Price, c25, c50, c75, c100, c125) %>% 
+  mutate(cc25 = c25 - Price, cc50 = c50 - Price, cc75 = c75 - Price, cc100 = c100 - Price, cc125 = c125 - Price) %>% 
+  select(playerId,Player,Price,c25,cc25,c50,cc50,c75,cc75,c100,cc100,c125,cc125)
+
+htmltools::browsable(
+  tagList(
+    tags$button("Download", onclick = "Reactable.downloadDataCSV('breakevens_table')"),
+reactable(
+  table,
+  defaultSorted = c("diff"),
+  defaultSortOrder = "desc",
+  showSortIcon = FALSE,
+  showPageSizeOptions = TRUE,
+  striped = TRUE,
+  pageSizeOptions = c(15,50,100,200),
+  defaultPageSize = 15,
+  elementId = "breakevens_table",
+  searchable = T,
+  style = list(
+    fontSize = '12px'
+  ),
+  defaultColDef = colDef(sticky = NULL),
+  columns = list(
+    playerId = colDef(show=F),
+    Diff = colDef(show=F),
+    Player = colDef(
+      name = "Player",
+      sticky = "left",
+      defaultSortOrder = "asc",
+      cell=function(value,index){
+        image <- img(src = paste0("https://fantasy.afl.com.au/assets/media/players/afl/",readr::parse_number(table$playerId[index]),"_450.png"), style = "height: 24px;vertical-align:middle")
+        tagList(
+          div(style = "vertical-align:bottom;",image,paste0(" ",value))
+        )},
+      minWidth = 160
+    ),
+    Price = colDef(
+      cell = JS("function(cellInfo) {return '$' + cellInfo.value/1000 + 'K'}"),
+      minWidth = 60
+    ),
+    Position = colDef(
+      name = "POS",
+      minWidth = 60
+    ),
+    pa = colDef(
+      name = "Priced At",
+      format = colFormat(digits = 1),
+      minWidth = 60
+    ),
+    newprice = colDef(
+      name = "New Price",
+      cell = JS("function(cellInfo) {return '$' + cellInfo.value/1000 + 'K'}"),
+      minWidth = 75
+    ),
+    Score = colDef(
+      name = "Score",
+      format = colFormat(digits = 0),
+      minWidth = 55
+    ),
+    be = colDef(
+      name = "New BE",
+      format = colFormat(digits = 1),
+      minWidth = 60
+    ),
+    obe = colDef(
+      name = "Full BE",
+      format = colFormat(digits = 1),
+      minWidth = 60
+    ),
+    diff = colDef(
+      name = "Change",
+      cell = JS("function(cellInfo) {return '$' + Math.round(cellInfo.value/1000) + 'K'}"),
+      minWidth = 65
+    )
+  ),
+  columnGroups = list(
+    colGroup(name = "Hidden Change",columns = c("newprice","pa","diff","be"),sticky = NULL),
+    colGroup(name = "", columns = c("Position","Price","Score"))
+  )
+)
+  )
+)
+
+h1("Total Price Change based on Round 1 score")
+
+reactable(
+  table2,
+  defaultSorted = c("cc125"),
+  defaultSortOrder = "desc",
+  showSortIcon = FALSE,
+  showPageSizeOptions = TRUE,
+  striped = TRUE,
+  pageSizeOptions = c(15,50,100,200),
+  defaultPageSize = 15,
+  elementId = "changes_table",
+  searchable = T,
+  style = list(
+    fontSize = '12px'
+  ),
+  defaultColDef = colDef(sticky = NULL,cell = JS("function(cellInfo) {return '$' + Math.round(cellInfo.value/1000) + 'K'}"),minWidth = 60),
+  columns = list(
+    playerId = colDef(show=F),
+    Diff = colDef(show=F),
+    Player = colDef(
+      name = "Player",
+      sticky = "left",
+      defaultSortOrder = "asc",
+      cell=function(value,index){
+        image <- img(src = paste0("https://fantasy.afl.com.au/assets/media/players/afl/",readr::parse_number(table$playerId[index]),"_450.png"), style = "height: 24px;vertical-align:middle")
+        tagList(
+          div(style = "vertical-align:bottom;",image,paste0(" ",value))
+        )},
+      minWidth = 160
+    ),
+    Price = colDef(
+      # cell = JS("function(cellInfo) {return '$' + cellInfo.value/1000 + 'K'}"),
+      minWidth = 60
+    ),
+    c25 = colDef(name = "New"),
+    c50 = colDef(name = "New"),
+    c75 = colDef(name = "New"),
+    c100 = colDef(name = "New"),
+    c125 = colDef(name = "New"),
+    cc25 = colDef(name = "Diff"),
+    cc50 = colDef(name = "Diff"),
+    cc75 = colDef(name = "Diff"),
+    cc100 = colDef(name = "Diff"),
+    cc125 = colDef(name = "Diff")
+  ),
+  columnGroups = list(
+    colGroup(name = "25", columns = c("c25","cc25")),
+    colGroup(name = "50", columns = c("c50","cc50")),
+    colGroup(name = "75", columns = c("c75","cc75")),
+    colGroup(name = "100", columns = c("c100","cc100")),
+    colGroup(name = "125", columns = c("c125","cc125"))
+  )
+)
+
+```
+
