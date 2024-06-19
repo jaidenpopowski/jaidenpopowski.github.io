@@ -1,0 +1,3940 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Potential player positions for AFLW Fantasy 2024</title>
+
+<script src="site_libs/header-attrs-2.26/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/core-js-2.5.3/shim.min.js"></script>
+<script src="site_libs/react-18.2.0/react.min.js"></script>
+<script src="site_libs/react-18.2.0/react-dom.min.js"></script>
+<script src="site_libs/reactwidget-1.0.0/react-tools.js"></script>
+<script src="site_libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+<link href="site_libs/reactable-0.4.4/reactable.css" rel="stylesheet" />
+<script src="site_libs/reactable-binding-0.4.4/reactable.js"></script>
+<link href="site_libs/font-awesome-6.4.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet" />
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Stats By Jaiden</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index">Home</a>
+</li>
+<li>
+  <a href="blog">Blog</a>
+</li>
+<li>
+  <a href="fantasy">Fantasy</a>
+</li>
+<li>
+  <a href="supercoach">SuperCoach</a>
+</li>
+<li>
+  <a href="aflw">AFLW</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://ko-fi.com/statsbyjaiden">
+    <span class="fa fa-solid fa-mug-hot"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://twitter.com/jaiden_popowski">
+    <span class="fa fa-brands fa-twitter"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://instagram.com/statsbyjaiden">
+    <span class="fa fa-brands fa-instagram"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="about">About</a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Potential player positions for AFLW Fantasy
+2024</h1>
+
+</div>
+
+
+<p>Last year we celebrated as the AFLW launched their own fantasy footy
+platform, spreading the game to tens of thousands of fans. Ahead of the
+second official season, and with the fixture announced, my mind has
+sprung into AFLW mode again. Maybe it’s just my desire for another hat?
+We expect AFLW Fantasy to launch in mid-July.</p>
+<p><img src="img/aflw_player_positions_2024/header.PNG" /></p>
+<p>The most influential factor on a player’s relevancy is their
+position. In AFLW this is even more important as in the inaugural season
+there were no dual-position players. In the AFLM game, we get added
+flexibility with some players able to be selected in a secondary
+position. This luxury did not make it into the AFLW version meaning that
+there aren’t as many creative options. This ensures that certain
+positions become a lot more relevant to think about.</p>
+<p>I’ve decided to run the same code that
+<a href="https://x.com/jaiden_popowski/status/1779798960926069226">successfully
+predicted nearly all dual-position (DPP) players in AFLM this
+season.</a> This gives us an insight into the positions that our AFLW
+players might receive. It’s not perfect, and the platform has taken some
+<em>oddly creative</em> positions in the past.</p>
+<div id="defenders" class="section level1">
+<h1>Defenders</h1>
+<p>The defensive line will remain very similar to 2023. The biggest loss
+is <strong>Ange Stannett</strong> (set to be FWD) who will miss the
+entire season with an ACL. Looking across the rest of the top 2023
+Fantasy defenders, all the familiar names of <strong>Charlotte
+Thomas</strong>, <strong>Emma Kearney</strong>, <strong>Eilish
+Sheerin</strong> &amp; <strong>Ella Heads</strong> will hold DEF status.
+We saw Eilish Sheerin finish the year in the midfield which is
+exciting.</p>
+<p>Players likely to lose DEF status include Breanna Koenen (FWD),
+<strong>Hannah Priest</strong> (MID) &amp; <strong>Amy Smith</strong>
+(FWD). Smith is a particularly weird case as she was classified a
+MID/FWD in 2022 (Season 7) yet was randomly given DEF status last year.
+These are important things to look out for, we could get another mistake
+which helps our teams.</p>
+<div id="hnyyzsbjlg" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>@import url("https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+#hnyyzsbjlg table {
+  font-family: Inter, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#hnyyzsbjlg thead, #hnyyzsbjlg tbody, #hnyyzsbjlg tfoot, #hnyyzsbjlg tr, #hnyyzsbjlg td, #hnyyzsbjlg th {
+  border-style: none;
+}
+
+#hnyyzsbjlg p {
+  margin: 0;
+  padding: 0;
+}
+
+#hnyyzsbjlg .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#hnyyzsbjlg .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#hnyyzsbjlg .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#hnyyzsbjlg .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#hnyyzsbjlg .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#hnyyzsbjlg .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#hnyyzsbjlg .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#hnyyzsbjlg .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#hnyyzsbjlg .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#hnyyzsbjlg .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#hnyyzsbjlg .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#hnyyzsbjlg .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#hnyyzsbjlg .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#hnyyzsbjlg .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#hnyyzsbjlg .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#hnyyzsbjlg .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#hnyyzsbjlg .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#hnyyzsbjlg .gt_row {
+  padding-top: 0px;
+  padding-bottom: 0px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#hnyyzsbjlg .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#hnyyzsbjlg .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#hnyyzsbjlg .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#hnyyzsbjlg .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#hnyyzsbjlg .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#hnyyzsbjlg .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#hnyyzsbjlg .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#hnyyzsbjlg .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#hnyyzsbjlg .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#hnyyzsbjlg .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#hnyyzsbjlg .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#hnyyzsbjlg .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#hnyyzsbjlg .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#hnyyzsbjlg .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#hnyyzsbjlg .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#hnyyzsbjlg .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#hnyyzsbjlg .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#hnyyzsbjlg .gt_left {
+  text-align: left;
+}
+
+#hnyyzsbjlg .gt_center {
+  text-align: center;
+}
+
+#hnyyzsbjlg .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#hnyyzsbjlg .gt_font_normal {
+  font-weight: normal;
+}
+
+#hnyyzsbjlg .gt_font_bold {
+  font-weight: bold;
+}
+
+#hnyyzsbjlg .gt_font_italic {
+  font-style: italic;
+}
+
+#hnyyzsbjlg .gt_super {
+  font-size: 65%;
+}
+
+#hnyyzsbjlg .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#hnyyzsbjlg .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#hnyyzsbjlg .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#hnyyzsbjlg .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#hnyyzsbjlg .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#hnyyzsbjlg .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#hnyyzsbjlg .gt_indent_5 {
+  text-indent: 25px;
+}
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id=""></th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id=""></th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Games">Games</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Average">Average</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="2023">2023</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Expected Pos">Expected Pos</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1021419.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Charlotte Thomas</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">72.7</td>
+<td headers="2023" class="gt_row gt_left">DEF</td>
+<td headers="Expected Pos" class="gt_row gt_left">DEF</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/998150.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Emma Kearney</td>
+<td headers="Games" class="gt_row gt_right">13</td>
+<td headers="Average" class="gt_row gt_right">72.2</td>
+<td headers="2023" class="gt_row gt_left">DEF</td>
+<td headers="Expected Pos" class="gt_row gt_left">DEF</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1018403.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Eilish Sheerin</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">71.4</td>
+<td headers="2023" class="gt_row gt_left">DEF</td>
+<td headers="Expected Pos" class="gt_row gt_left">DEF</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1022745.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Ella Heads</td>
+<td headers="Games" class="gt_row gt_right">12</td>
+<td headers="Average" class="gt_row gt_right">68.4</td>
+<td headers="2023" class="gt_row gt_left">DEF</td>
+<td headers="Expected Pos" class="gt_row gt_left">DEF</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1013026.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Elisabeth Georgostathis</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">68.4</td>
+<td headers="2023" class="gt_row gt_left">MID</td>
+<td headers="Expected Pos" class="gt_row gt_left">DEF</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009882.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Gabrielle Newton</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">66.5</td>
+<td headers="2023" class="gt_row gt_left">FWD</td>
+<td headers="Expected Pos" class="gt_row gt_left">DEF</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1012242.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Emma O'Driscoll</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">65.8</td>
+<td headers="2023" class="gt_row gt_left">DEF</td>
+<td headers="Expected Pos" class="gt_row gt_left">DEF</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1017292.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Tarni Evans</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">65.6</td>
+<td headers="2023" class="gt_row gt_left">DEF</td>
+<td headers="Expected Pos" class="gt_row gt_left">DEF</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1011095.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Madison Newman</td>
+<td headers="Games" class="gt_row gt_right">13</td>
+<td headers="Average" class="gt_row gt_right">64.2</td>
+<td headers="2023" class="gt_row gt_left">MID</td>
+<td headers="Expected Pos" class="gt_row gt_left">DEF</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009860.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Rebecca Webster</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">63.2</td>
+<td headers="2023" class="gt_row gt_left">MID</td>
+<td headers="Expected Pos" class="gt_row gt_left">DEF</td></tr>
+  </tbody>
+  
+  
+</table>
+</div>
+</div>
+<div id="midfielders" class="section level1">
+<h1>Midfielders</h1>
+<p>Similarly, the top line midfielders continue to dominate in AFLW
+Fantasy, and they will in the future. <strong>Ebony Marinoff</strong>,
+<strong>Jasmine Garner</strong> &amp; <strong>Charlie Rowbottom</strong>
+highlight the top of the list, but in 2023 they were joined by
+<strong>Laura Gardiner</strong> who averaged a whopping 114.9 from 12
+games. She loses FWD status and will be a midfielder in 2024.</p>
+<div id="njepmrupuj" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>@import url("https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+#njepmrupuj table {
+  font-family: Inter, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#njepmrupuj thead, #njepmrupuj tbody, #njepmrupuj tfoot, #njepmrupuj tr, #njepmrupuj td, #njepmrupuj th {
+  border-style: none;
+}
+
+#njepmrupuj p {
+  margin: 0;
+  padding: 0;
+}
+
+#njepmrupuj .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#njepmrupuj .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#njepmrupuj .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#njepmrupuj .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#njepmrupuj .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#njepmrupuj .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#njepmrupuj .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#njepmrupuj .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#njepmrupuj .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#njepmrupuj .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#njepmrupuj .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#njepmrupuj .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#njepmrupuj .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#njepmrupuj .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#njepmrupuj .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#njepmrupuj .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#njepmrupuj .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#njepmrupuj .gt_row {
+  padding-top: 0px;
+  padding-bottom: 0px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#njepmrupuj .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#njepmrupuj .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#njepmrupuj .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#njepmrupuj .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#njepmrupuj .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#njepmrupuj .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#njepmrupuj .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#njepmrupuj .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#njepmrupuj .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#njepmrupuj .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#njepmrupuj .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#njepmrupuj .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#njepmrupuj .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#njepmrupuj .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#njepmrupuj .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#njepmrupuj .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#njepmrupuj .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#njepmrupuj .gt_left {
+  text-align: left;
+}
+
+#njepmrupuj .gt_center {
+  text-align: center;
+}
+
+#njepmrupuj .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#njepmrupuj .gt_font_normal {
+  font-weight: normal;
+}
+
+#njepmrupuj .gt_font_bold {
+  font-weight: bold;
+}
+
+#njepmrupuj .gt_font_italic {
+  font-style: italic;
+}
+
+#njepmrupuj .gt_super {
+  font-size: 65%;
+}
+
+#njepmrupuj .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#njepmrupuj .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#njepmrupuj .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#njepmrupuj .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#njepmrupuj .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#njepmrupuj .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#njepmrupuj .gt_indent_5 {
+  text-indent: 25px;
+}
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id=""></th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id=""></th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Games">Games</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Average">Average</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="2023">2023</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Expected Pos">Expected Pos</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1005279.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Ebony Marinoff</td>
+<td headers="Games" class="gt_row gt_right">13</td>
+<td headers="Average" class="gt_row gt_right">126.5</td>
+<td headers="2023" class="gt_row gt_left">MID</td>
+<td headers="Expected Pos" class="gt_row gt_left">MID</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/296154.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Jasmine Garner</td>
+<td headers="Games" class="gt_row gt_right">13</td>
+<td headers="Average" class="gt_row gt_right">123.5</td>
+<td headers="2023" class="gt_row gt_left">MID</td>
+<td headers="Expected Pos" class="gt_row gt_left">MID</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1014359.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Laura Gardiner</td>
+<td headers="Games" class="gt_row gt_right">12</td>
+<td headers="Average" class="gt_row gt_right">114.9</td>
+<td headers="2023" class="gt_row gt_left">FWD</td>
+<td headers="Expected Pos" class="gt_row gt_left">MID</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1015068.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Charlie Rowbottom</td>
+<td headers="Games" class="gt_row gt_right">9</td>
+<td headers="Average" class="gt_row gt_right">113.1</td>
+<td headers="2023" class="gt_row gt_left">MID</td>
+<td headers="Expected Pos" class="gt_row gt_left">MID</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/998030.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Kiara Bowers</td>
+<td headers="Games" class="gt_row gt_right">6</td>
+<td headers="Average" class="gt_row gt_right">111.8</td>
+<td headers="2023" class="gt_row gt_left">MID</td>
+<td headers="Expected Pos" class="gt_row gt_left">MID</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1010265.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Ash Riddell</td>
+<td headers="Games" class="gt_row gt_right">13</td>
+<td headers="Average" class="gt_row gt_right">110.6</td>
+<td headers="2023" class="gt_row gt_left">MID</td>
+<td headers="Expected Pos" class="gt_row gt_left">MID</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1010104.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Monique Conti</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">106.5</td>
+<td headers="2023" class="gt_row gt_left">MID</td>
+<td headers="Expected Pos" class="gt_row gt_left">MID</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1005269.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Anne Hatchard</td>
+<td headers="Games" class="gt_row gt_right">12</td>
+<td headers="Average" class="gt_row gt_right">105.5</td>
+<td headers="2023" class="gt_row gt_left">MID</td>
+<td headers="Expected Pos" class="gt_row gt_left">MID</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/296125.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Ellie Blackburn</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">100.0</td>
+<td headers="2023" class="gt_row gt_left">MID</td>
+<td headers="Expected Pos" class="gt_row gt_left">MID</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009885.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Madison Prespakis</td>
+<td headers="Games" class="gt_row gt_right">11</td>
+<td headers="Average" class="gt_row gt_right">96.5</td>
+<td headers="2023" class="gt_row gt_left">MID</td>
+<td headers="Expected Pos" class="gt_row gt_left">MID</td></tr>
+  </tbody>
+  
+  
+</table>
+</div>
+<p><strong>Ella Roberts</strong> was an elite starting pick in 2023 as a
+FWD. She played enough midfield time to be relevant but also hit the
+scoreboard, albeit inaccurately. On paper she seemed a lock to keep her
+FWD status. However with the midseason coach change, she was given more
+midfield time in the second half of the year. Unfortunately, according
+to the classifications, she is now a MID only (not even MID/FWD) meaning
+I can’t expect her to be dominating our FWD lines again.</p>
+<div id="phxsxikvzv" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#phxsxikvzv table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#phxsxikvzv thead, #phxsxikvzv tbody, #phxsxikvzv tfoot, #phxsxikvzv tr, #phxsxikvzv td, #phxsxikvzv th {
+  border-style: none;
+}
+
+#phxsxikvzv p {
+  margin: 0;
+  padding: 0;
+}
+
+#phxsxikvzv .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#phxsxikvzv .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#phxsxikvzv .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#phxsxikvzv .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#phxsxikvzv .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#phxsxikvzv .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#phxsxikvzv .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#phxsxikvzv .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#phxsxikvzv .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#phxsxikvzv .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#phxsxikvzv .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#phxsxikvzv .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#phxsxikvzv .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#phxsxikvzv .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#phxsxikvzv .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#phxsxikvzv .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#phxsxikvzv .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#phxsxikvzv .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#phxsxikvzv .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#phxsxikvzv .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#phxsxikvzv .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#phxsxikvzv .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#phxsxikvzv .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#phxsxikvzv .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#phxsxikvzv .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#phxsxikvzv .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#phxsxikvzv .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#phxsxikvzv .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#phxsxikvzv .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#phxsxikvzv .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#phxsxikvzv .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#phxsxikvzv .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#phxsxikvzv .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#phxsxikvzv .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#phxsxikvzv .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#phxsxikvzv .gt_left {
+  text-align: left;
+}
+
+#phxsxikvzv .gt_center {
+  text-align: center;
+}
+
+#phxsxikvzv .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#phxsxikvzv .gt_font_normal {
+  font-weight: normal;
+}
+
+#phxsxikvzv .gt_font_bold {
+  font-weight: bold;
+}
+
+#phxsxikvzv .gt_font_italic {
+  font-style: italic;
+}
+
+#phxsxikvzv .gt_super {
+  font-size: 65%;
+}
+
+#phxsxikvzv .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#phxsxikvzv .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#phxsxikvzv .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#phxsxikvzv .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#phxsxikvzv .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#phxsxikvzv .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#phxsxikvzv .gt_indent_5 {
+  text-indent: 25px;
+}
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    <tr class="gt_col_headings gt_spanner_row">
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="11" scope="colgroup" id="&lt;img src='https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1022823.png' style='height:60px;'&gt; &lt;strong&gt;Ella Roberts - Centre Bounce Attendances&lt;/strong&gt;">
+        <span class="gt_column_spanner"><img src='https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1022823.png' style='height:60px;'> <strong>Ella Roberts - Centre Bounce Attendances</strong></span>
+      </th>
+    </tr>
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id=""></th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R1">R1</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R2">R2</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R3">R3</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R4">R4</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R5">R5</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R6">R6</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R7">R7</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R8">R8</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R9">R9</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R10">R10</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td headers="name" class="gt_row gt_left">CBAs</td>
+<td headers="R1" class="gt_row gt_right">2</td>
+<td headers="R2" class="gt_row gt_right">9</td>
+<td headers="R3" class="gt_row gt_right">4</td>
+<td headers="R4" class="gt_row gt_right">2</td>
+<td headers="R5" class="gt_row gt_right">2</td>
+<td headers="R6" class="gt_row gt_right">2</td>
+<td headers="R7" class="gt_row gt_right">9</td>
+<td headers="R8" class="gt_row gt_right">0</td>
+<td headers="R9" class="gt_row gt_right">7</td>
+<td headers="R10" class="gt_row gt_right">18</td></tr>
+    <tr><td headers="name" class="gt_row gt_left">CBA %</td>
+<td headers="R1" class="gt_row gt_right">20.0%</td>
+<td headers="R2" class="gt_row gt_right">40.9%</td>
+<td headers="R3" class="gt_row gt_right">21.1%</td>
+<td headers="R4" class="gt_row gt_right">18.2%</td>
+<td headers="R5" class="gt_row gt_right">14.3%</td>
+<td headers="R6" class="gt_row gt_right">16.7%</td>
+<td headers="R7" class="gt_row gt_right">56.2%</td>
+<td headers="R8" class="gt_row gt_right">0.0%</td>
+<td headers="R9" class="gt_row gt_right">50.0%</td>
+<td headers="R10" class="gt_row gt_right">90.0%</td></tr>
+  </tbody>
+  
+  
+</table>
+</div>
+</div>
+<div id="rucks" class="section level1">
+<h1>Rucks</h1>
+<p>There’s only one major change in the rucks this season, with
+<strong>Sabrina Frederick</strong> rightfully switching from FWD to RUC.
+The rest of the premium options are still there, and coaches may be keen
+to start revelation <strong>Ally Morphett</strong> who missed a few
+games with injury. Value options in the ruck will always present though…
+just take a look at <strong>Matilda Scholz</strong>!</p>
+<div id="mkogikvonz" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>@import url("https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+#mkogikvonz table {
+  font-family: Inter, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#mkogikvonz thead, #mkogikvonz tbody, #mkogikvonz tfoot, #mkogikvonz tr, #mkogikvonz td, #mkogikvonz th {
+  border-style: none;
+}
+
+#mkogikvonz p {
+  margin: 0;
+  padding: 0;
+}
+
+#mkogikvonz .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#mkogikvonz .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#mkogikvonz .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#mkogikvonz .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#mkogikvonz .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#mkogikvonz .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#mkogikvonz .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#mkogikvonz .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#mkogikvonz .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#mkogikvonz .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#mkogikvonz .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#mkogikvonz .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#mkogikvonz .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#mkogikvonz .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#mkogikvonz .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#mkogikvonz .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#mkogikvonz .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#mkogikvonz .gt_row {
+  padding-top: 0px;
+  padding-bottom: 0px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#mkogikvonz .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#mkogikvonz .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#mkogikvonz .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#mkogikvonz .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#mkogikvonz .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#mkogikvonz .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#mkogikvonz .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#mkogikvonz .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#mkogikvonz .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#mkogikvonz .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#mkogikvonz .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#mkogikvonz .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#mkogikvonz .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#mkogikvonz .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#mkogikvonz .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#mkogikvonz .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#mkogikvonz .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#mkogikvonz .gt_left {
+  text-align: left;
+}
+
+#mkogikvonz .gt_center {
+  text-align: center;
+}
+
+#mkogikvonz .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#mkogikvonz .gt_font_normal {
+  font-weight: normal;
+}
+
+#mkogikvonz .gt_font_bold {
+  font-weight: bold;
+}
+
+#mkogikvonz .gt_font_italic {
+  font-style: italic;
+}
+
+#mkogikvonz .gt_super {
+  font-size: 65%;
+}
+
+#mkogikvonz .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#mkogikvonz .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#mkogikvonz .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#mkogikvonz .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#mkogikvonz .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#mkogikvonz .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#mkogikvonz .gt_indent_5 {
+  text-indent: 25px;
+}
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id=""></th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id=""></th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Games">Games</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Average">Average</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="2023">2023</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Expected Pos">Expected Pos</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1015012.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Ally Morphett</td>
+<td headers="Games" class="gt_row gt_right">7</td>
+<td headers="Average" class="gt_row gt_right">87.9</td>
+<td headers="2023" class="gt_row gt_left">RUC</td>
+<td headers="Expected Pos" class="gt_row gt_left">RUC</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1007023.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Breann Moody</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">83.6</td>
+<td headers="2023" class="gt_row gt_left">RUC</td>
+<td headers="Expected Pos" class="gt_row gt_left">RUC</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1012694.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Alice Edmonds</td>
+<td headers="Games" class="gt_row gt_right">9</td>
+<td headers="Average" class="gt_row gt_right">80.6</td>
+<td headers="2023" class="gt_row gt_left">RUC</td>
+<td headers="Expected Pos" class="gt_row gt_left">RUC</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1017347.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Mim Strom</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">79.3</td>
+<td headers="2023" class="gt_row gt_left">RUC</td>
+<td headers="Expected Pos" class="gt_row gt_left">RUC</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1003019.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Sabrina Frederick</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">78.8</td>
+<td headers="2023" class="gt_row gt_left">FWD</td>
+<td headers="Expected Pos" class="gt_row gt_left">RUC</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1023943.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Matilda Scholz</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">75.6</td>
+<td headers="2023" class="gt_row gt_left">RUC</td>
+<td headers="Expected Pos" class="gt_row gt_left">RUC</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1022236.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Jessica Good</td>
+<td headers="Games" class="gt_row gt_right">9</td>
+<td headers="Average" class="gt_row gt_right">71.0</td>
+<td headers="2023" class="gt_row gt_left">RUC</td>
+<td headers="Expected Pos" class="gt_row gt_left">RUC</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1027783.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Stephanie Wales</td>
+<td headers="Games" class="gt_row gt_right">11</td>
+<td headers="Average" class="gt_row gt_right">70.0</td>
+<td headers="2023" class="gt_row gt_left">RUC</td>
+<td headers="Expected Pos" class="gt_row gt_left">RUC</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1017025.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Gabrielle Seymour</td>
+<td headers="Games" class="gt_row gt_right">8</td>
+<td headers="Average" class="gt_row gt_right">65.9</td>
+<td headers="2023" class="gt_row gt_left">RUC</td>
+<td headers="Expected Pos" class="gt_row gt_left">RUC</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009844.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Tahlia Hickie</td>
+<td headers="Games" class="gt_row gt_right">13</td>
+<td headers="Average" class="gt_row gt_right">65.4</td>
+<td headers="2023" class="gt_row gt_left">RUC</td>
+<td headers="Expected Pos" class="gt_row gt_left">RUC</td></tr>
+  </tbody>
+  
+  
+</table>
+</div>
+</div>
+<div id="forwards" class="section level1">
+<h1>Forwards</h1>
+<p>The forwards are always the most important position - and probably
+why you’re still reading at this point. There are a lot of changes,
+losing <strong>Laura Gardiner</strong>, <strong>Nina Morrison</strong>,
+<strong>Ella Roberts</strong> &amp; <strong>Lucy Single</strong> to the
+midfield. It’s always a challenge, but we have to find new midfield
+time!</p>
+<p><strong>Zarlie Goldsworthy</strong> was the breakout star of the
+competition in 2024 and proved to be the key to AFLW Fantasy success as
+a FWD. For her season in totality, Champion Data has classified her as a
+midfielder/forward. At this stage, there is no DPP in AFLW Fantasy,
+meaning that she can only get one of these. Her splits must be fairly
+even with at least 35% time spent as a MID and as a FWD - which one is
+the primary we will not know. My guess is FWD!</p>
+<div id="twdkolxgcx" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#twdkolxgcx table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#twdkolxgcx thead, #twdkolxgcx tbody, #twdkolxgcx tfoot, #twdkolxgcx tr, #twdkolxgcx td, #twdkolxgcx th {
+  border-style: none;
+}
+
+#twdkolxgcx p {
+  margin: 0;
+  padding: 0;
+}
+
+#twdkolxgcx .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#twdkolxgcx .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#twdkolxgcx .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#twdkolxgcx .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#twdkolxgcx .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#twdkolxgcx .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#twdkolxgcx .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#twdkolxgcx .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#twdkolxgcx .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#twdkolxgcx .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#twdkolxgcx .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#twdkolxgcx .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#twdkolxgcx .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#twdkolxgcx .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#twdkolxgcx .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#twdkolxgcx .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#twdkolxgcx .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#twdkolxgcx .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#twdkolxgcx .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#twdkolxgcx .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#twdkolxgcx .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#twdkolxgcx .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#twdkolxgcx .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#twdkolxgcx .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#twdkolxgcx .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#twdkolxgcx .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#twdkolxgcx .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#twdkolxgcx .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#twdkolxgcx .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#twdkolxgcx .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#twdkolxgcx .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#twdkolxgcx .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#twdkolxgcx .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#twdkolxgcx .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#twdkolxgcx .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#twdkolxgcx .gt_left {
+  text-align: left;
+}
+
+#twdkolxgcx .gt_center {
+  text-align: center;
+}
+
+#twdkolxgcx .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#twdkolxgcx .gt_font_normal {
+  font-weight: normal;
+}
+
+#twdkolxgcx .gt_font_bold {
+  font-weight: bold;
+}
+
+#twdkolxgcx .gt_font_italic {
+  font-style: italic;
+}
+
+#twdkolxgcx .gt_super {
+  font-size: 65%;
+}
+
+#twdkolxgcx .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#twdkolxgcx .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#twdkolxgcx .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#twdkolxgcx .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#twdkolxgcx .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#twdkolxgcx .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#twdkolxgcx .gt_indent_5 {
+  text-indent: 25px;
+}
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    <tr class="gt_col_headings gt_spanner_row">
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="11" scope="colgroup" id="&lt;img src='https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1022358.png' style='height:60px;'&gt; &lt;strong&gt;Zarlie Goldsworthy - Centre Bounce Attendances&lt;/strong&gt;">
+        <span class="gt_column_spanner"><img src='https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1022358.png' style='height:60px;'> <strong>Zarlie Goldsworthy - Centre Bounce Attendances</strong></span>
+      </th>
+    </tr>
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id=""></th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R1">R1</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R2">R2</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R3">R3</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R4">R4</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R5">R5</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R6">R6</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R7">R7</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R8">R8</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R9">R9</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="R10">R10</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td headers="name" class="gt_row gt_left">CBAs</td>
+<td headers="R1" class="gt_row gt_right">6</td>
+<td headers="R2" class="gt_row gt_right">13</td>
+<td headers="R3" class="gt_row gt_right">6</td>
+<td headers="R4" class="gt_row gt_right">9</td>
+<td headers="R5" class="gt_row gt_right">3</td>
+<td headers="R6" class="gt_row gt_right">4</td>
+<td headers="R7" class="gt_row gt_right">8</td>
+<td headers="R8" class="gt_row gt_right">9</td>
+<td headers="R9" class="gt_row gt_right">9</td>
+<td headers="R10" class="gt_row gt_right">4</td></tr>
+    <tr><td headers="name" class="gt_row gt_left">CBA %</td>
+<td headers="R1" class="gt_row gt_right">33.3%</td>
+<td headers="R2" class="gt_row gt_right">59.1%</td>
+<td headers="R3" class="gt_row gt_right">37.5%</td>
+<td headers="R4" class="gt_row gt_right">36.0%</td>
+<td headers="R5" class="gt_row gt_right">37.5%</td>
+<td headers="R6" class="gt_row gt_right">33.3%</td>
+<td headers="R7" class="gt_row gt_right">50.0%</td>
+<td headers="R8" class="gt_row gt_right">50.0%</td>
+<td headers="R9" class="gt_row gt_right">75.0%</td>
+<td headers="R10" class="gt_row gt_right">20.0%</td></tr>
+  </tbody>
+  
+  
+</table>
+</div>
+<p>There are several other premium FWDs in a similar position to
+Goldsworthy, including <strong>Chloe Molloy</strong>, <strong>Paxy
+Paxman</strong> &amp; <strong>Keeley Skepper</strong>. We will only find
+out once the game opens which one is their main position.</p>
+<div id="ebcvirztok" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>@import url("https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+#ebcvirztok table {
+  font-family: Inter, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#ebcvirztok thead, #ebcvirztok tbody, #ebcvirztok tfoot, #ebcvirztok tr, #ebcvirztok td, #ebcvirztok th {
+  border-style: none;
+}
+
+#ebcvirztok p {
+  margin: 0;
+  padding: 0;
+}
+
+#ebcvirztok .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#ebcvirztok .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#ebcvirztok .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#ebcvirztok .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#ebcvirztok .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#ebcvirztok .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ebcvirztok .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#ebcvirztok .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#ebcvirztok .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#ebcvirztok .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#ebcvirztok .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#ebcvirztok .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#ebcvirztok .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#ebcvirztok .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#ebcvirztok .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#ebcvirztok .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#ebcvirztok .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#ebcvirztok .gt_row {
+  padding-top: 0px;
+  padding-bottom: 0px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#ebcvirztok .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ebcvirztok .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#ebcvirztok .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#ebcvirztok .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#ebcvirztok .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ebcvirztok .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#ebcvirztok .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#ebcvirztok .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ebcvirztok .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ebcvirztok .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#ebcvirztok .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ebcvirztok .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#ebcvirztok .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ebcvirztok .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#ebcvirztok .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ebcvirztok .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#ebcvirztok .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ebcvirztok .gt_left {
+  text-align: left;
+}
+
+#ebcvirztok .gt_center {
+  text-align: center;
+}
+
+#ebcvirztok .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#ebcvirztok .gt_font_normal {
+  font-weight: normal;
+}
+
+#ebcvirztok .gt_font_bold {
+  font-weight: bold;
+}
+
+#ebcvirztok .gt_font_italic {
+  font-style: italic;
+}
+
+#ebcvirztok .gt_super {
+  font-size: 65%;
+}
+
+#ebcvirztok .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#ebcvirztok .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#ebcvirztok .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#ebcvirztok .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#ebcvirztok .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#ebcvirztok .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#ebcvirztok .gt_indent_5 {
+  text-indent: 25px;
+}
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id=""></th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id=""></th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Games">Games</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Average">Average</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="2023">2023</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Expected Pos">Expected Pos</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1010690.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Bonnie Toogood</td>
+<td headers="Games" class="gt_row gt_right">11</td>
+<td headers="Average" class="gt_row gt_right">102.2</td>
+<td headers="2023" class="gt_row gt_left">FWD</td>
+<td headers="Expected Pos" class="gt_row gt_left">FWD</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1022358.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Zarlie Goldsworthy</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">90.7</td>
+<td headers="2023" class="gt_row gt_left">FWD</td>
+<td headers="Expected Pos" class="gt_row gt_left">MID/FWD</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009980.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Kate Hore</td>
+<td headers="Games" class="gt_row gt_right">12</td>
+<td headers="Average" class="gt_row gt_right">84.5</td>
+<td headers="2023" class="gt_row gt_left">FWD</td>
+<td headers="Expected Pos" class="gt_row gt_left">FWD</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1010263.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Chloe Molloy</td>
+<td headers="Games" class="gt_row gt_right">12</td>
+<td headers="Average" class="gt_row gt_right">80.0</td>
+<td headers="2023" class="gt_row gt_left">FWD</td>
+<td headers="Expected Pos" class="gt_row gt_left">MID/FWD</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1007141.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Gemma Houghton</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">77.5</td>
+<td headers="2023" class="gt_row gt_left">FWD</td>
+<td headers="Expected Pos" class="gt_row gt_left">FWD</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1012637.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Mikala Cann</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">74.0</td>
+<td headers="2023" class="gt_row gt_left">MID</td>
+<td headers="Expected Pos" class="gt_row gt_left">MID/FWD</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1012692.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Kate Dempsey</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">73.9</td>
+<td headers="2023" class="gt_row gt_left">MID</td>
+<td headers="Expected Pos" class="gt_row gt_left">MID/FWD</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1013937.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Angelique Stannett</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">73.9</td>
+<td headers="2023" class="gt_row gt_left">DEF</td>
+<td headers="Expected Pos" class="gt_row gt_left">FWD</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/998149.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Paxy Paxman</td>
+<td headers="Games" class="gt_row gt_right">8</td>
+<td headers="Average" class="gt_row gt_right">71.6</td>
+<td headers="2023" class="gt_row gt_left">FWD</td>
+<td headers="Expected Pos" class="gt_row gt_left">MID/FWD</td></tr>
+    <tr><td headers="playerId" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/998157.png" style="height:40px;"></td>
+<td headers="Player" class="gt_row gt_left">Katie Brennan</td>
+<td headers="Games" class="gt_row gt_right">10</td>
+<td headers="Average" class="gt_row gt_right">71.6</td>
+<td headers="2023" class="gt_row gt_left">FWD</td>
+<td headers="Expected Pos" class="gt_row gt_left">FWD</td></tr>
+  </tbody>
+  
+  
+</table>
+</div>
+</div>
+<div
+id="all-expected-changes-from-last-season-not-adjusted-for-list-changes-yet"
+class="section level1">
+<h1>All expected changes from last season (not adjusted for list changes
+yet)</h1>
+<div id="giyzzyhmuq" class=".gt_table" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>@import url("https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+#giyzzyhmuq table {
+  font-family: Inter, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#giyzzyhmuq thead, #giyzzyhmuq tbody, #giyzzyhmuq tfoot, #giyzzyhmuq tr, #giyzzyhmuq td, #giyzzyhmuq th {
+  border-style: none;
+}
+
+#giyzzyhmuq p {
+  margin: 0;
+  padding: 0;
+}
+
+#giyzzyhmuq .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#giyzzyhmuq .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#giyzzyhmuq .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#giyzzyhmuq .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#giyzzyhmuq .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#giyzzyhmuq .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#giyzzyhmuq .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#giyzzyhmuq .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#giyzzyhmuq .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#giyzzyhmuq .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#giyzzyhmuq .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#giyzzyhmuq .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#giyzzyhmuq .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#giyzzyhmuq .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#giyzzyhmuq .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#giyzzyhmuq .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#giyzzyhmuq .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#giyzzyhmuq .gt_row {
+  padding-top: 0px;
+  padding-bottom: 0px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#giyzzyhmuq .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#giyzzyhmuq .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#giyzzyhmuq .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#giyzzyhmuq .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#giyzzyhmuq .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#giyzzyhmuq .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#giyzzyhmuq .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#giyzzyhmuq .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#giyzzyhmuq .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#giyzzyhmuq .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#giyzzyhmuq .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#giyzzyhmuq .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#giyzzyhmuq .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#giyzzyhmuq .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#giyzzyhmuq .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#giyzzyhmuq .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#giyzzyhmuq .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#giyzzyhmuq .gt_left {
+  text-align: left;
+}
+
+#giyzzyhmuq .gt_center {
+  text-align: center;
+}
+
+#giyzzyhmuq .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#giyzzyhmuq .gt_font_normal {
+  font-weight: normal;
+}
+
+#giyzzyhmuq .gt_font_bold {
+  font-weight: bold;
+}
+
+#giyzzyhmuq .gt_font_italic {
+  font-style: italic;
+}
+
+#giyzzyhmuq .gt_super {
+  font-size: 65%;
+}
+
+#giyzzyhmuq .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#giyzzyhmuq .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#giyzzyhmuq .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#giyzzyhmuq .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#giyzzyhmuq .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#giyzzyhmuq .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#giyzzyhmuq .gt_indent_5 {
+  text-indent: 25px;
+}
+</style>
+<div id="giyzzyhmuq" class="reactable html-widget" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="giyzzyhmuq">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":["https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1014359.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009863.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1022823.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1003019.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1021456.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1013706.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1013937.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/998156.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1005452.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1018874.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1019034.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009801.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1013026.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009882.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1001686.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/997728.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1011095.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009860.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1005661.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1007129.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1014556.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009828.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009977.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1010279.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1029625.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1012558.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1014599.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1021528.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009868.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1021410.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1015021.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1007011.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009813.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1012647.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1007027.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1012549.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/296137.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1019828.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1021530.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1019503.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1015091.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009805.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1012719.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1021441.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1018875.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1014663.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1019887.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1029616.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1016865.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1012259.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1011069.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1016868.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1033165.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1007006.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1007025.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1026222.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1022738.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1014736.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/997678.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009857.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1019788.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1012994.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1015175.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1015029.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1024296.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1019061.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1021405.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1022726.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1029617.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1029614.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1010236.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1033158.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1016864.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1014962.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1026016.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1030006.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1021464.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1005865.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1015193.png","https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009797.png"],"Player":["Laura Gardiner","Nina Morrison","Ella Roberts","Sabrina Frederick","Lucy Single","Sarah Rowe","Angelique Stannett","Dana Hooker","Nicola Barr","Niamh Kelly","Orla O'Dwyer","Haneen Zreika","Elisabeth Georgostathis","Gabrielle Newton","Emma King","Deanna Berry","Madison Newman","Rebecca Webster","Breanna Koenen","Erin Phillips","Hannah Priest","Jade Ellenger","Kerryn Peterson","Elizabeth Keaney","Blaithin Mackin","Brooke Walker","Caitlin Gould","Amy Smith","Maddy Brancatisano","Dana East","Aurora Smith","Sarah Lampard","Brenna Tarrant","Tamara Luke","Ruby Schleicher","Chloe Dalton","Jessica Dal Pos","Keely Coyne","Shanae Davison","Hannah Ewings","Sarah Hartwig","Maggie Gorham","Meg Macdonald","Charlotte Mullins","Grace Kelly","Zoe Prowse","Amelia Velardo","Lauren Szigeti","Poppy Kelly","Jaide Britton","Hannah Munyard","Hannah Stuart","Niamh McLaughlin","Jasmine Grierson","Natalie Plane","Jae Flynn","Ruby Sargent-Wilson","Elizabeth Snell","Madeline Keryk","Georgia Clarke","Brooke Plummer","Bella R. Smith","Tess Craven","Maeve Chaplin","Rachel Kearns","Jade Pregelj","Sarah Wielstra","Teagan Germech","Cambridge McCormick","Eleanor Hartill","Gabrielle Colvin","Dayna Finn","Deanna Jolliffe","Ella Friend","Montana Beruldsen","Grace Hill","Beth Pinchin","Jess Hosking","Gabbi Featherston","Janet Baird"],"Games":[12,13,10,10,10,10,10,10,10,13,13,9,10,10,13,5,13,10,13,10,10,12,4,11,12,11,13,13,11,10,8,7,12,7,2,10,7,7,9,8,10,7,7,13,10,12,10,6,9,7,8,2,11,4,7,7,5,4,7,11,1,11,12,9,11,1,7,7,8,8,2,5,3,9,6,6,5,3,4,0],"Average":[114.9,84.5,83.5,78.8,75.1,74.5,73.9,71.5,71,70.8,68.8,68.8,68.4,66.5,64.9,64.2,64.2,63.2,62.6,62.1,62,59.3,58.3,57.2,56.3,54.3,53.2,53.1,52.5,52,51.1,48.3,47.8,47.6,47.5,46.6,46.4,45.3,45.2,45,44.1,43,42.9,42.8,42.8,42.7,42,40.7,40.6,39.3,39,38,37.9,37.3,35.9,35.7,34.8,34.8,34.6,34.6,34,33.7,32.5,32.3,31.7,29,27.6,27.6,26.6,26,25.5,25,24.7,24,23.8,23,19.2,17.7,16,0],"2023":["FWD","FWD","FWD","FWD","FWD","FWD","DEF","FWD","FWD","FWD","FWD","FWD","MID","FWD","FWD","FWD","MID","MID","DEF","FWD","DEF","MID","MID","DEF","FWD","DEF","RUC","DEF","FWD","FWD","MID","DEF","DEF","FWD","MID","MID","FWD","FWD","FWD","MID","DEF","MID","FWD","MID","FWD","FWD","FWD","MID","FWD","MID","FWD","MID","DEF","DEF","FWD","MID","DEF","FWD","DEF","FWD","FWD","DEF","FWD","DEF","FWD","MID","RUC","DEF","FWD","DEF","FWD","MID","DEF","DEF","MID","FWD","DEF","FWD","FWD","MID"],"Expected Pos":["MID","MID","MID","RUC","MID","MID","FWD","MID","MID","MID","MID","MID","DEF","DEF","RUC","MID","DEF","DEF","FWD","MID","MID","DEF","DEF","MID","MID","FWD","FWD","FWD","MID","MID","DEF","MID","FWD","RUC","DEF","DEF","MID","DEF","MID","FWD","FWD","DEF","MID","FWD","DEF","DEF","DEF","DEF","RUC","DEF","MID","FWD","FWD","FWD","DEF","DEF","FWD","DEF","FWD","DEF","DEF","FWD","DEF","MID","DEF","DEF","FWD","RUC","RUC","RUC","DEF","DEF","MID","FWD","FWD","DEF","FWD","DEF","MID","DEF"]},"columns":[{"id":"playerId","name":"","type":"character","style":"function(rowInfo, colInfo) {\nconst rowIndex = rowInfo.index + 1\n}","cell":["<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1014359.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009863.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1022823.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1003019.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1021456.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1013706.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1013937.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/998156.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1005452.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1018874.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1019034.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009801.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1013026.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009882.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1001686.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/997728.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1011095.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009860.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1005661.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1007129.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1014556.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009828.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009977.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1010279.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1029625.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1012558.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1014599.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1021528.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009868.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1021410.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1015021.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1007011.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009813.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1012647.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1007027.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1012549.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/296137.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1019828.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1021530.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1019503.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1015091.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009805.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1012719.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1021441.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1018875.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1014663.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1019887.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1029616.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1016865.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1012259.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1011069.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1016868.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1033165.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1007006.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1007025.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1026222.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1022738.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1014736.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/997678.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009857.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1019788.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1012994.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1015175.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1015029.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1024296.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1019061.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1021405.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1022726.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1029617.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1029614.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1010236.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1033158.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1016864.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1014962.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1026016.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1030006.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1021464.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1005865.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1015193.png\" style=\"height:40px;\">","<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFLW/2023264/1009797.png\" style=\"height:40px;\">"],"html":true,"align":"left","headerStyle":{"font-weight":"normal"}},{"id":"Player","name":"","type":"character","style":"function(rowInfo, colInfo) {\nconst rowIndex = rowInfo.index + 1\n}","cell":["Laura Gardiner","Nina Morrison","Ella Roberts","Sabrina Frederick","Lucy Single","Sarah Rowe","Angelique Stannett","Dana Hooker","Nicola Barr","Niamh Kelly","Orla O'Dwyer","Haneen Zreika","Elisabeth Georgostathis","Gabrielle Newton","Emma King","Deanna Berry","Madison Newman","Rebecca Webster","Breanna Koenen","Erin Phillips","Hannah Priest","Jade Ellenger","Kerryn Peterson","Elizabeth Keaney","Blaithin Mackin","Brooke Walker","Caitlin Gould","Amy Smith","Maddy Brancatisano","Dana East","Aurora Smith","Sarah Lampard","Brenna Tarrant","Tamara Luke","Ruby Schleicher","Chloe Dalton","Jessica Dal Pos","Keely Coyne","Shanae Davison","Hannah Ewings","Sarah Hartwig","Maggie Gorham","Meg Macdonald","Charlotte Mullins","Grace Kelly","Zoe Prowse","Amelia Velardo","Lauren Szigeti","Poppy Kelly","Jaide Britton","Hannah Munyard","Hannah Stuart","Niamh McLaughlin","Jasmine Grierson","Natalie Plane","Jae Flynn","Ruby Sargent-Wilson","Elizabeth Snell","Madeline Keryk","Georgia Clarke","Brooke Plummer","Bella R. Smith","Tess Craven","Maeve Chaplin","Rachel Kearns","Jade Pregelj","Sarah Wielstra","Teagan Germech","Cambridge McCormick","Eleanor Hartill","Gabrielle Colvin","Dayna Finn","Deanna Jolliffe","Ella Friend","Montana Beruldsen","Grace Hill","Beth Pinchin","Jess Hosking","Gabbi Featherston","Janet Baird"],"html":true,"align":"left","headerStyle":{"font-weight":"normal"}},{"id":"Games","name":"Games","type":"numeric","style":"function(rowInfo, colInfo) {\nconst rowIndex = rowInfo.index + 1\n}","cell":["12","13","10","10","10","10","10","10","10","13","13","9","10","10","13","5","13","10","13","10","10","12","4","11","12","11","13","13","11","10","8","7","12","7","2","10","7","7","9","8","10","7","7","13","10","12","10","6","9","7","8","2","11","4","7","7","5","4","7","11","1","11","12","9","11","1","7","7","8","8","2","5","3","9","6","6","5","3","4","0"],"html":true,"align":"right","headerStyle":{"font-weight":"normal"}},{"id":"Average","name":"Average","type":"numeric","style":"function(rowInfo, colInfo) {\nconst rowIndex = rowInfo.index + 1\n}","cell":["114.9","84.5","83.5","78.8","75.1","74.5","73.9","71.5","71.0","70.8","68.8","68.8","68.4","66.5","64.9","64.2","64.2","63.2","62.6","62.1","62.0","59.3","58.3","57.2","56.3","54.3","53.2","53.1","52.5","52.0","51.1","48.3","47.8","47.6","47.5","46.6","46.4","45.3","45.2","45.0","44.1","43.0","42.9","42.8","42.8","42.7","42.0","40.7","40.6","39.3","39.0","38.0","37.9","37.3","35.9","35.7","34.8","34.8","34.6","34.6","34.0","33.7","32.5","32.3","31.7","29.0","27.6","27.6","26.6","26.0","25.5","25.0","24.7","24.0","23.8","23.0","19.2","17.7","16.0","0.0"],"html":true,"align":"right","headerStyle":{"font-weight":"normal"}},{"id":"2023","name":"2023","type":"character","style":"function(rowInfo, colInfo) {\nconst rowIndex = rowInfo.index + 1\n}","cell":["FWD","FWD","FWD","FWD","FWD","FWD","DEF","FWD","FWD","FWD","FWD","FWD","MID","FWD","FWD","FWD","MID","MID","DEF","FWD","DEF","MID","MID","DEF","FWD","DEF","RUC","DEF","FWD","FWD","MID","DEF","DEF","FWD","MID","MID","FWD","FWD","FWD","MID","DEF","MID","FWD","MID","FWD","FWD","FWD","MID","FWD","MID","FWD","MID","DEF","DEF","FWD","MID","DEF","FWD","DEF","FWD","FWD","DEF","FWD","DEF","FWD","MID","RUC","DEF","FWD","DEF","FWD","MID","DEF","DEF","MID","FWD","DEF","FWD","FWD","MID"],"html":true,"align":"left","headerStyle":{"font-weight":"normal"}},{"id":"Expected Pos","name":"Expected Pos","type":"character","style":"function(rowInfo, colInfo) {\nconst rowIndex = rowInfo.index + 1\n}","cell":["MID","MID","MID","RUC","MID","MID","FWD","MID","MID","MID","MID","MID","DEF","DEF","RUC","MID","DEF","DEF","FWD","MID","MID","DEF","DEF","MID","MID","FWD","FWD","FWD","MID","MID","DEF","MID","FWD","RUC","DEF","DEF","MID","DEF","MID","FWD","FWD","DEF","MID","FWD","DEF","DEF","DEF","DEF","RUC","DEF","MID","FWD","FWD","FWD","DEF","DEF","FWD","DEF","FWD","DEF","DEF","FWD","DEF","MID","DEF","DEF","FWD","RUC","RUC","RUC","DEF","DEF","MID","FWD","FWD","DEF","FWD","DEF","MID","DEF"],"html":true,"align":"left","headerStyle":{"font-weight":"normal"}}],"sortable":false,"defaultPageSize":10,"showPageSizeOptions":false,"pageSizeOptions":[10,25,50,100],"paginationType":"numbers","showPagination":true,"showPageInfo":true,"minRows":1,"showSortable":true,"height":"auto","theme":{"color":"#333333","backgroundColor":"#FFFFFF","stripedColor":"rgba(128,128,128,0.05)","style":{"fontFamily":"Inter, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"},"headerStyle":{"borderTopStyle":"solid","borderTopWidth":"2px","borderTopColor":"#D3D3D3","borderBottomStyle":"solid","borderBottomWidth":"2px","borderBottomColor":"#D3D3D3"}},"elementId":"giyzzyhmuq","dataKey":"ae07dcfc88364f8f05615d41ea87e007"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.0.style","tag.attribs.columns.1.style","tag.attribs.columns.2.style","tag.attribs.columns.3.style","tag.attribs.columns.4.style","tag.attribs.columns.5.style"],"jsHooks":[]}</script>
+</div>
+</div>
+
+<hr>
+
+
+<p style="text-align: center;"> Stats By Jaiden </p>
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
