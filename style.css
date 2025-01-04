@@ -1,20 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap');
 
+body, h3, p, input, button, h1, h2, a {
+  font-family: "Inter", sans-serif;
+}
+h1, h2, h3 {
+  font-weight: bold;
+}
 /* Whole document: */
 body{
-  font-family: "Inter", sans-serif;
   font-size: 14pt;
   font-style: Regular;
 }
 /* Headers */
 h1{
   font-size: 24pt;
-  font-weight: bold;
-  font-family: "Inter", sans-serif;
-}
-h3{
-  font-weight: bold;
-  font-family: "Inter", sans-serif;
 }
 
 a{
@@ -98,4 +97,80 @@ a:active{
 }
 .boldedrow {
   font-weight: bold;
+}
+
+body {
+  transition: filter 0.3s ease;  /* Smooth transition for blur effect */
+}
+
+/* Container for the login modal */
+#login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);  /* Semi-transparent background */
+  z-index: 1000;  /* Ensure it's on top of the blurred content */
+  padding: 10px;
+}
+
+/* Style for the iframe inside the modal */
+#login-container iframe {
+  width: 80%;
+  max-width: 600px;
+  height: 400px;
+  border: none;
+  border-radius: 8px;
+}
+
+/* Style for the premium content that appears after login */
+#premium-content {
+  display: none;
+  padding: 20px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+#login-container h3 {
+  font-weight: bold;
+  font-family: "Inter", sans-serif;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+#login-container input,
+#login-container button {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  font-family: "Inter", sans-serif;
+  font-size: 16px;
+  border-radius: 4px;
+}
+
+#login-container button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+}
+
+#login-container button:hover {
+  background-color: #45a049;
+}
+
+/* Blurring effect when the login prompt is active */
+#login-container.active {
+  background-color: rgba(0, 0, 0, 0.5);  /* Semi-transparent dark overlay */
+}
+
+/* Adding the blur effect when the login modal is visible */
+#login-container.active + body {
+  filter: blur(5px);  /* Adjust the blur radius as needed */
+  pointer-events: none;  /* Prevent interaction with blurred content */
 }

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="firebase.js"></script>
+</head>
+<body>
+  <div class="login-modal">
+    <h3>Login to Access Premium Content</h3>
+    <form id="login-form">
+      <input type="email" id="email" placeholder="Email" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+    <p>Don't have an account? <a href="#" id="signup-link">Sign up here</a></p>
+  </div>
+
+  <script>
+    // Login function
+    document.getElementById('login-form').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      firebase.auth().signInWithEmailAndPassword(email, password)
+        .then(() => {
+          alert('Login successful!');
+          window.location.reload(); // Refresh to apply state changes
+        })
+        .catch(error => {
+          alert(`Login failed: ${error.message}`);
+        });
+    });
+
+    // Redirect to a signup form (optional)
+    document.getElementById('signup-link').addEventListener('click', function(event) {
+      event.preventDefault();
+      alert('Redirecting to signup page... (implement as needed)');
+      // You could load a signup iframe here or redirect to a signup page
+    });
+  </script>
+</body>
+</html>
