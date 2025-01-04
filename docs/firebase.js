@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword  } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut  } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js';
 
 // Your Firebase configuration
@@ -18,4 +18,4 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Initialize Firebase Auth and Firestore (if needed)
-export { auth, signInWithEmailAndPassword, db };
+export { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, db };
