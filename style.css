@@ -100,42 +100,28 @@ a:active{
 }
 
 #login-container {
-  position: fixed; /* Fixed to the top of the page */
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black overlay */
-  display: none; /* Initially hidden */
-  justify-content: center; /* Center horizontally */
-  align-items: center; /* Center vertically */
-  z-index: 1000; /* Ensure it's above all other content */
-  overflow: hidden; /* Disable scrolling */
-}
-
-/* Wrapper for centering the login modal */
-.login-wrapper {
-  display: fixed;
+  display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh; /* Full viewport height */
-  position: fixed; /* Fixed position to cover the entire screen */
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  z-index: 1000;
+  overflow: hidden;
 }
 
-/* Container for the login modal */
+/* Login Modal */
 .login-modal {
   background-color: white;
   padding: 20px 30px;
   border-radius: 10px; /* Rounded corners */
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-  width: 100%;
   max-width: 400px; /* Limit the size */
   box-sizing: border-box;
   text-align: center;
+  margin: auto;
 }
 
 /* Login heading */
@@ -168,7 +154,7 @@ a:active{
 }
 
 .login-modal button:hover {
-  background-color: #45a049; /* Darker green on hover */
+  background-color: #45a049;
 }
 
 /* Signup link style */
@@ -185,3 +171,125 @@ a:active{
   text-decoration: underline;
 }
 
+input.error {
+  border: 2px solid red;
+}
+
+/* Optional: Style the error message */
+#error-message {
+  color: red;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.signup-container {
+  display: flex;
+  width: 100%;
+}
+
+.features {
+  flex: 1;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-right: 1px solid #ddd;
+}
+
+.features h2 {
+  margin-bottom: 10px;
+}
+
+.features ul {
+  list-style-type: disc;
+  margin-left: 20px;
+}
+
+.signup-form {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: #ffffff;
+}
+
+.signup-form h2 {
+  margin-bottom: 20px;
+}
+
+.signup-form input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+#card-element {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 15px;
+}
+
+button {
+  padding: 10px 15px;
+  background-color: #4CAF50;
+  color: white;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+.contact-box {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 40px;
+  background-color: #f9f9f9;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.contact-box h3 {
+  margin-bottom: 15px;
+  font-size: 1.5em;
+  color: #333;
+}
+
+.contact-box p {
+  margin-bottom: 20px;
+  font-size: 1em;
+  color: #666;
+}
+
+.contact-links {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.contact-link {
+  text-decoration: none;
+  font-size: 1em;
+  color: #007BFF;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.contact-link img {
+  width: 20px;
+  height: 20px;
+}
+
+.contact-link:hover {
+  color: #0056b3;
+  transform: scale(1.05);
+}
