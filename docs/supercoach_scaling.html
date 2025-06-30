@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+<meta name="date" content="2025-01-07" />
+
+<title>The secrets of SuperCoach scaling</title>
+
+<script src="site_libs/header-attrs-2.26/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-6.4.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet" />
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Stats By Jaiden</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index">Home</a>
+</li>
+<li>
+  <a href="blog">Blog</a>
+</li>
+<li>
+  <a href="fantasy">Fantasy</a>
+</li>
+<li>
+  <a href="supercoach">SuperCoach</a>
+</li>
+<li>
+  <a href="aflw">AFLW</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://ko-fi.com/statsbyjaiden">
+    <span class="fa fa-solid fa-mug-hot"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://twitter.com/jaiden_popowski">
+    <span class="fa fa-brands fa-twitter"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://instagram.com/statsbyjaiden">
+    <span class="fa fa-brands fa-instagram"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="about">About</a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">The secrets of SuperCoach scaling</h1>
+<h4 class="date">01/07/2025</h4>
+
+</div>
+
+
+<p>The scoring system for SuperCoach is incredibly complex. It uses
+Champion Data’s <strong>Ranking Points</strong>, a combination of secret
+formulas and weightings with a lack of information about how it works.
+The community takes this competition very seriously, so each weekend we
+see many complaints about player scores and the reasons behind the
+numbers. The true information would be really nice to have, and I made a
+good start last year.</p>
+<p>In <a href="https://statsbyjaiden.com.au/supercoach_stat_values">my
+2024 article researching SuperCoach scoring</a>, I used a model to find
+the most “average” value players get rewarded for each action (kick,
+goal, spoil…). While it was a breakthrough in the community, especially
+for the data I was able to unlock, it was missing one key element - the
+state of game multiplier. This capped my accuracy at 96.8% in which I
+was off by 4.23 points on average.</p>
+<p>In this article, I will be attempting to solve the <strong>in-match
+scaling system</strong> that is used for SuperCoach.</p>
+<div id="what-do-we-know-about-this-state-of-game-multiplier"
+class="section level2">
+<h2>What do we know about this “state of game” multiplier?</h2>
+<p>SuperCoach scores are weighted based on how close the game is - more
+reward comes from a match-winning goal than a junktime goal.
+Unfortunately, there isn’t much on Twitter/X about how this
+state-of-game multipler works. So I’ve had to dig into the archives -
+finding a
+<a href="https://www.bigfooty.com/forum/threads/round-3-trades.1127789/page-63#post-43735554">Big
+Footy thread with contributions by the Champion_Data account</a>. When
+questioned on whether the in-match scaling system is purely made-up to
+suit their own players, they responded:</p>
+<blockquote>
+<em>The same formula is applied to every stat across the entire game,
+not just the final stages. The weight applied to stats is dependent on
+margin at the time the stat is called and how long there is left… It is
+a formula that is calculated live. The inputs to the formula are the
+time left in the game and the current margin.</em>
+<footer>
+Champion_Data on bigfooty.com (06/04/2016)
+</footer>
+</blockquote>
+<p>Sounds like what we have come to know about the system. And it’s also
+great to know that the formula works for all parts of the game, so we
+are solving for one equation. This lines up with what accounts like
+<a href="https://x.com/FantasyFreako"><span
+class="citation">@FantasyFreako</span></a> have described, and also
+matches what we’ve heard on the
+<a href = "https://www.youtube.com/watch?v=yuXQgSi_sqc">Official
+Supercoach AFL Podcast</a>. However, the Big Footy thread has a much
+better description than we’ve ever had before…</p>
+<blockquote>
+<em>The exact formula for the weights is considered commercial IP, but
+it is along the lines of: (1+PDF(Current Margin)/C)/2 where C is a
+constant and PDF is the normal PDF with a mean of zero and a standard
+deviation proportional to the percentage of game time left at the time
+the stat happened.</em>
+<footer>
+Champion_Data on bigfooty.com (07/04/2016)
+</footer>
+</blockquote>
+<p>This is great information for us - it unlocks the form of the
+mathematical equation we are searching for. Let’s use the
+<a href="https://en.wikipedia.org/wiki/Normal_distribution">formula for
+a normal distribution</a>, use a mean <span
+class="math inline">\(\mu\)</span> of zero, and add in the coefficients
+outlined in the quote (including an unknown constant <span
+class="math inline">\(C\)</span>). Champion Data also say that the
+standard deviation <span class="math inline">\(\sigma\)</span> is
+proportional to the percentage of game time left, meaning that the
+margin must be the independent variable.</p>
+<p><span class="math inline">\(f(\text{margin},\sigma) =
+\frac{1}{2}\left(1 + \frac{1}{C\sqrt{2\pi\sigma^2}} \exp\left(
+-\frac{\text{margin}^2}{2\sigma^2} \right)\right)\)</span></p>
+</div>
+<div id="time-for-the-maths" class="section level1">
+<h1>Time for the maths…</h1>
+<p>Let’s assume Champion Data defined the standard deviation based on
+how much variance (<span class="math inline">\(\sigma =
+\sqrt{Variance}\)</span>) in margin is expected after <span
+class="math inline">\(t\%\)</span> of the match has elapsed. This gives
+us a <span class="math inline">\(\sqrt{1-t}\)</span> form which has nice
+limits of starting at 1 and decreasing towards 0. Let’s add another
+coefficient <span class="math inline">\(a\)</span> to re-scale the
+output, otherwise the variability in margin never exceeds 1 point - but
+we know large comebacks can happen!</p>
+<p><span class="math inline">\(\sigma = a\sqrt{1-t}\\\implies
+f(\text{margin},t) = \frac{1}{2}\left(1 + \frac{1}{aC\sqrt{2\pi(1-t)}}
+\exp\left( -\frac{\text{margin}^2}{2a^2(1-t)}
+\right)\right)\)</span></p>
+<p>We now have two unknown constants <span
+class="math inline">\(a\)</span> and <span
+class="math inline">\(C\)</span> which isn’t ideal. I really want to
+eliminate one, and we can do so using a known value. If this
+distribution is centred around 1, it would mean that at the very start
+of the game (<span class="math inline">\(\text{margin}=0, t=0\)</span>),
+the output multiplier would be 1.</p>
+<p><span class="math inline">\(f(0,0) = 1\\\implies \frac{1}{2}\left(1 +
+\frac{1}{aC\sqrt{2\pi(1-0)}} {\exp\left(
+-\frac{0^2}{2a^2(1-0)}\right)}\right) = 1\\\implies 1 +
+\frac{1}{aC\sqrt{2\pi}} = 2\\\implies a =
+\frac{1}{C\sqrt{2\pi}}\)</span></p>
+<p>This helps out a lot, but we are still stuck with our constant <span
+class="math inline">\(C\)</span>. At this point I was going to brute
+force it to try and figure it out, but luckily Champion_Data on Big
+Footy had one more piece of info to share:</p>
+<blockquote>
+<em>C is a constant, which means it’s a set number that re-scales the
+result. It is a number close to 0.01.</em>
+<footer>
+Champion_Data on bigfooty.com (07/04/2016)
+</footer>
+</blockquote>
+<p>Very handy info! This minimises the range I’ll use to calibrate using
+real SuperCoach scores later. This also means that <span
+class="math inline">\(a\)</span> is somewhere between 32 and 53 points.
+Sounds about right for the biggest comebacks. For now, let’s use <span
+class="math inline">\(C=0.01\)</span> to learn more about the
+formula.</p>
+</div>
+<div id="managing-extreme-scaling" class="section level1">
+<h1>Managing extreme scaling</h1>
+<div
+style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1em;">
+<div style="flex: 1; min-width: 250px;">
+<p>
+<p>As margin<span class="math inline">\(\rightarrow\infty\)</span>, the
+exponential approaches 0 meaning we end with a lower bound of <span
+class="math inline">\(0.5\)</span>. This means all actions in SuperCoach
+get at least half their base value even in blowouts.</p>
+<p>According to
+<a href="https://www.researchgate.net/publication/328629194_ASSESSING_PLAYER_PERFORMANCE_IN_AUSTRALIAN_FOOTBALL_USING_SPATIAL_DATA">Karl
+Jackson’s thesis</a> on creating the AFL Player Ratings system, the
+state of game multiplier “<em>can result in plays that change the
+outcome of a match in the dying seconds potentially having four times as
+much value as events towards the end of a match where the result is
+beyond doubt</em>”.</p>
+<p>This means that we are looking at a state of game multiplier that
+ranges between 0.5 and 2.0. Half and double - quite nice when you think
+about it.</p>
+However, when we plot a graph of a game where teams are always separated
+by 1 goal (margin<span class="math inline">\(=6\)</span>), we reveal we
+aren’t keeping inside those boundaries.
+</p>
+</div>
+<div style="flex: 1; min-width: 250px;">
+<p><img src="supercoach_scaling_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+</div>
+</div>
+<div
+style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1em;">
+<div style="flex: 1; min-width: 250px;">
+<p>
+The easiest thing to do here would be to use a hard cap such that all
+values above 2 are reduced to 2. But even that wouldn’t be enough as
+according to Champion Data on Twitter, as two match winning goals by
+<a href="https://www.afl.com.au/video/175805/danger-steps-up-to-slot-the-match-winner?videoId=175805&modal=true&type=video&publishFrom=1495713905001">Dangerfield</a>
+&amp;
+<a href="https://www.afl.com.au/video/142583/roughead-thumps-the-match-winning-goal?videoId=142583&modal=true&type=video&publishFrom=1495802855001">Roughead</a>
+in Round 10 2017 didn’t even get a state-of-game multiplier of 2.
+</p>
+</div>
+<div style="flex: 1; min-width: 250px;">
+<blockquote class="twitter-tweet">
+<p lang="en" dir="ltr">
+Multipliers for state of game (margin &amp; time left):<br>Dangerfield:
+1.95<br>Roughead: 1.96<br><br>3300 Point multiplier:<br>Danger:
+0.62<br>Rough: 0.60
+</p>
+— Champion Data AFL (<span class="citation">@ChampionDataAFL</span>)
+<a href="https://twitter.com/ChampionDataAFL/status/868642585325125632?ref_src=twsrc%5Etfw">May
+28, 2017</a>
+</blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+</div>
+</div>
+<div
+style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1em;">
+<div style="flex: 1; min-width: 250px;">
+<p>
+<p>So instead of a hard cap, let’s try an exponential decay to softly
+approach the 2.0x multiplier. We can create a piecewise function where
+it uses the original formula for <span
+class="math inline">\(1\pm0.5\)</span>, and only introduce the
+exponential slowly approaching 2.</p>
+<p><span class="math inline">\(f_{adj} =\begin{cases}2 - \frac{1}{2}
+\cdot \exp(1.5 - f), &amp; \text{if } f &gt; 1.5 \\f, &amp; \text{if } f
+\leq 1.5\end{cases}\)</span></p>
+</p>
+</div>
+<div style="flex: 1; min-width: 250px;">
+<p><img src="supercoach_scaling_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+</div>
+</div>
+</div>
+<div id="solving-the-equation" class="section level1">
+<h1>Solving the equation</h1>
+<p>Okay, time to simulate! Let’s use our best guesses from what we
+learnt last time, and add in the in-match scaling formula with potential
+<span class="math inline">\(C\)</span> values.</p>
+<p><img src="supercoach_scaling_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>And there we have it! The optimal value is <span
+class="math inline">\(C = 0.0125\)</span>. This rounds nicely to <span
+class="math inline">\(C=\frac{1}{80}\)</span>, and also means that <span
+class="math inline">\(a = 32\)</span>. Let’s put the equation back into
+the form that the Champion_Data account provided on Big Footy.</p>
+<p><span class="math display">\[
+\textstyle f(\text{margin},t) = \frac{1}{2}\left(1 +
+\frac{80}{32\sqrt{2\pi(1-t)}} \exp\left(
+-\frac{1}{2}\left(\frac{\text{margin}}{32\sqrt{1-t}}\right)^2\right)\right)
+\]</span></p>
+<p><span class="math display">\[
+\textstyle f_{adj} =
+\begin{cases}
+2 - \frac{1}{2} \cdot \exp(1.5 - f), &amp; \text{if } f &gt; 1.5 \\
+f, &amp; \text{if } f \leq 1.5
+\end{cases}
+\]</span></p>
+</div>
+<div id="putting-it-to-the-test" class="section level1">
+<h1>Putting it to the test</h1>
+<div
+style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1em;">
+<div style="flex: 1; min-width: 250px;">
+<p>
+<p>Brisbane’s finals series to win the 2024 premiership had both
+blowouts and thrillers that went down to the wire. How were actions
+weighted here?</p>
+<ul>
+<li><p>It was 60-0 halfway through the second quarter against Carlton.
+The Blues kicked 5 unanswered goals, but a dry end to the third quarter
+put the state-of-game back down to 0.5 as time ran out.</p></li>
+<li><p>The Lions were down by 46pts against the Giants halfway through
+Q3. Crucial Q4 goals to Zorko &amp; Fletcher doubled the scaling factor
+from 0.8 to 1.6. Daniher finished the game with a 31pt play: contested
+mark (10.1), kick (6.8) and match-winning goal (13.6).</p></li>
+<li><p>The prelim was tight all game. The scaling was more
+time-dependent, moving from 1.2 to 1.6 during the goalless 18 minutes
+surrounding 3QT. Rayner’s iconic goal put the margin to 11pts sent the
+multiplier from 1.8 down to 0.8 in one kick.</p></li>
+<li><p>The Grand Final started tight, but the Lions heaped on 11 goals
+to 1, putting the result beyond doubt early. The entire last quarter had
+a 0.5 state-of-game multiplier, so the 3300 rule had to prop up the
+first quarter contributions. Q2 goals to Lohmann and Daniher were a
+match high 10pts each and started off the huge flurry of goals.</p></li>
+</ul>
+</p>
+</div>
+<div style="flex: 1; min-width: 250px;">
+<p><img src="supercoach_scaling_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+</div>
+</div>
+<p>You can test this formula out below to get a feel for the values it
+outputs at different margins &amp; time left.</p>
+<div>
+<p><label for="margin">Current Margin:</label>
+<input type="range" id="margin" min="0" max="100" value="0" step="1">
+<span id="marginVal">0</span></p>
+</div>
+<div>
+<p><label for="t">Game time:</label>
+<input type="range" id="t" min="0" max="4799" value="0" step="1"> <span
+id="tVal">Q1 20:00</span></p>
+</div>
+<p id="output">
+</p>
+<script>
+  const marginSlider = document.getElementById("margin");
+  const tSlider = document.getElementById("t");
+  const marginVal = document.getElementById("marginVal");
+  const tVal = document.getElementById("tVal");
+  const output = document.getElementById("output");
+  
+  function formatGameTime(t) {
+    const quarterDuration = 1200;
+    const quarters = ["Q1", "Q2", "Q3", "Q4"];
+    const qIndex = Math.floor(t / quarterDuration);
+    const qTime = t % quarterDuration;
+    const remaining = quarterDuration - qTime;
+    const mins = Math.floor(remaining / 60).toString().padStart(1, '0');
+    const secs = Math.floor(remaining % 60).toString().padStart(2, '0');
+    const label = quarters[Math.min(qIndex, 3)] + ` ${mins}:${secs}`;
+    return label;
+  }
+
+  function update() {
+    const margin = parseFloat(marginSlider.value);
+    const t = parseFloat(tSlider.value);
+    const C = 0.0125;
+    marginVal.textContent = margin;
+    tVal.textContent = formatGameTime(t);
+    const sigma = 32 * Math.sqrt(1 - t/4800);
+    const raw = 0.5 * (1 + (1 / (C * Math.sqrt(2 * Math.PI * sigma * sigma))) * Math.exp(- (margin * margin) / (2 * sigma * sigma)));
+    let fx = raw;
+    if (raw > 1.5) {
+      fx = 2 - 0.5 * Math.exp(1.5 - raw);
+    }
+    output.innerHTML = `State of game multiplier = <strong>${fx.toFixed(2)}</strong>`;
+  }
+
+  marginSlider.oninput = update;
+  tSlider.oninput = update;
+
+  update();
+</script>
+<p>What a great success. After some stat cleaning, my model now has
+accuracy of <span class="math inline">\(R^2 = 0.9920\)</span> and has an
+average error of <span class="math inline">\(2.049\)</span>. This new
+development has better-than-halved my error! The rest of the error comes
+from a variety of areas I will try to address: data cleaning errors,
+zone multipliers, and the fact I don’t have sources for time-coded 50m
+penalties or behind assists.</p>
+<p>Stay tuned for Part 3 of this series, where I will create a full
+breakdown using this new formula. We’ll discuss how strong the 3300 rule
+is, which players benefit the most from this state-of-game multiplier,
+and how we can apply it to our SuperCoach teams.
+<a href="https://x.com/jaiden_popowski">Make sure you’re following me on
+Twitter</a> as it will come out very soon!</p>
+<iframe id="kofiframe" src="https://ko-fi.com/statsbyjaiden/?hidefeed=true&amp;widget=true&amp;embed=true&amp;preview=true" style="border:none;width:90%;padding:4px;background:#f9f9f9;" height="712" title="statsbyjaiden">
+</iframe>
+</div>
+
+<hr>
+
+
+<p style="text-align: center;"> Stats By Jaiden </p>
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
