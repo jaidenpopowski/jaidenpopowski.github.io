@@ -310,11 +310,11 @@ good start last year.</p>
 2024 article researching SuperCoach scoring</a>, I used a model to find
 the most “average” value players get rewarded for each action (kick,
 goal, spoil…). While it was a breakthrough in the community, especially
-for the data I was able to unlock, it was missing one key element - the
+for the data I was able to unlock, it was missing a key element - the
 state of game multiplier. This capped my accuracy at 96.8% in which I
 was off by 4.23 points on average.</p>
 <p>In this article, I will be attempting to solve the <strong>in-match
-scaling system</strong> that is used for SuperCoach.</p>
+scaling system</strong> that is used to weight SuperCoach scores.</p>
 <div id="what-do-we-know-about-this-state-of-game-multiplier"
 class="section level2">
 <h2>What do we know about this “state of game” multiplier?</h2>
@@ -545,6 +545,570 @@ match high 10pts each and started off the huge flurry of goals.</p></li>
 </div>
 <div style="flex: 1; min-width: 250px;">
 <p><img src="supercoach_scaling_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+</div>
+</div>
+</div>
+<div id="most-clutch-players" class="section level1">
+<h1>Most clutch players</h1>
+<div
+style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1em;">
+<div style="flex: 1; min-width: 250px;">
+<p>
+<p>Which players have the biggest differentials with and without the
+state-of-game multipler? We would expect clutch players to gain points
+from the bonus.</p>
+<ul>
+<li><p>Joe Daniher’s 2024 finals series is severly boosting him here. He
+averaged +10.5 points more purely from the state-of-game multiplier
+across these 4 games. This includes a +21.0 boost in the semi-final
+against GWS where he kicked the two winning goals.</p></li>
+<li><p>Not much reward for the bottom 4 teams, who play in blowouts more
+than anyone else. Former defenders Alex Witherden and Jaidyn Stephenson
+tried to play control but the game was already over.</p></li>
+<li><p>McCluggage is +3.7 in 2025 and is being rewarded in Coaches
+Votes, and potentially a top 10 finish in the Brownlow. Maybe this is
+the year he finally breaks into the All-Australian team?</p></li>
+</ul>
+</p>
+</div>
+<div style="flex: 1; min-width: 350px;">
+<div id="authlbsenb" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#authlbsenb table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#authlbsenb thead, #authlbsenb tbody, #authlbsenb tfoot, #authlbsenb tr, #authlbsenb td, #authlbsenb th {
+  border-style: none;
+}
+
+#authlbsenb p {
+  margin: 0;
+  padding: 0;
+}
+
+#authlbsenb .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#authlbsenb .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#authlbsenb .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#authlbsenb .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#authlbsenb .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#authlbsenb .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#authlbsenb .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#authlbsenb .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: bold;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#authlbsenb .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: bold;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#authlbsenb .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#authlbsenb .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#authlbsenb .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#authlbsenb .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#authlbsenb .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#authlbsenb .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#authlbsenb .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#authlbsenb .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#authlbsenb .gt_row {
+  padding-top: 0px;
+  padding-bottom: 0px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#authlbsenb .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#authlbsenb .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#authlbsenb .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#authlbsenb .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#authlbsenb .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#authlbsenb .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#authlbsenb .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#authlbsenb .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#authlbsenb .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#authlbsenb .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#authlbsenb .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#authlbsenb .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#authlbsenb .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#authlbsenb .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#authlbsenb .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#authlbsenb .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#authlbsenb .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#authlbsenb .gt_left {
+  text-align: left;
+}
+
+#authlbsenb .gt_center {
+  text-align: center;
+}
+
+#authlbsenb .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#authlbsenb .gt_font_normal {
+  font-weight: normal;
+}
+
+#authlbsenb .gt_font_bold {
+  font-weight: bold;
+}
+
+#authlbsenb .gt_font_italic {
+  font-style: italic;
+}
+
+#authlbsenb .gt_super {
+  font-size: 65%;
+}
+
+#authlbsenb .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#authlbsenb .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#authlbsenb .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#authlbsenb .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#authlbsenb .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#authlbsenb .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#authlbsenb .gt_indent_5 {
+  text-indent: 25px;
+}
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    <tr class="gt_heading">
+      <td colspan="8" class="gt_heading gt_title gt_font_normal" style><strong>Clutch players in SuperCoach</strong></td>
+    </tr>
+    <tr class="gt_heading">
+      <td colspan="8" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style>Points gained/lost from the state-of-game multiplier, 2023-2025</td>
+    </tr>
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id=""></th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id=""></th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="SC">SC</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="+/-">+/-</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id=""></th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id=""></th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="SC">SC</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="+/-">+/-</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td headers="playerId...1" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2025014/1000978.png" style="height:30px;"></td>
+<td headers="player...2" class="gt_row gt_left">Hugh McCluggage</td>
+<td headers="actual...3" class="gt_row gt_right">104.2</td>
+<td headers="diff...4" class="gt_row gt_right" style="background-color: #94EF93; color: #000000;">+2.7</td>
+<td headers="playerId...5" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2025014/295467.png" style="height:30px;"></td>
+<td headers="player...6" class="gt_row gt_left">Jack Macrae</td>
+<td headers="actual...7" class="gt_row gt_right">91.7</td>
+<td headers="diff...8" class="gt_row gt_right" style="background-color: #FFA58D; color: #000000;">−1.7</td></tr>
+    <tr><td headers="playerId...1" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2024014/294518.png" style="height:30px;"></td>
+<td headers="player...2" class="gt_row gt_left">Joe Daniher</td>
+<td headers="actual...3" class="gt_row gt_right">84.1</td>
+<td headers="diff...4" class="gt_row gt_right" style="background-color: #A4F1A1; color: #000000;">+2.4</td>
+<td headers="playerId...5" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2025014/993820.png" style="height:30px;"></td>
+<td headers="player...6" class="gt_row gt_left">Tom Cole</td>
+<td headers="actual...7" class="gt_row gt_right">66.6</td>
+<td headers="diff...8" class="gt_row gt_right" style="background-color: #FF9F86; color: #000000;">−1.8</td></tr>
+    <tr><td headers="playerId...1" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2025014/998145.png" style="height:30px;"></td>
+<td headers="player...2" class="gt_row gt_left">Sean Darcy</td>
+<td headers="actual...3" class="gt_row gt_right">95.4</td>
+<td headers="diff...4" class="gt_row gt_right" style="background-color: #A5F1A3; color: #000000;">+2.3</td>
+<td headers="playerId...5" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2025014/1004385.png" style="height:30px;"></td>
+<td headers="player...6" class="gt_row gt_left">Oscar Allen</td>
+<td headers="actual...7" class="gt_row gt_right">63.8</td>
+<td headers="diff...8" class="gt_row gt_right" style="background-color: #FF9E85; color: #000000;">−1.8</td></tr>
+    <tr><td headers="playerId...1" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2025014/1011803.png" style="height:30px;"></td>
+<td headers="player...2" class="gt_row gt_left">Cody Weightman</td>
+<td headers="actual...3" class="gt_row gt_right">65.3</td>
+<td headers="diff...4" class="gt_row gt_right" style="background-color: #AAF2A8; color: #000000;">+2.2</td>
+<td headers="playerId...5" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2025014/280744.png" style="height:30px;"></td>
+<td headers="player...6" class="gt_row gt_left">Luke Breust</td>
+<td headers="actual...7" class="gt_row gt_right">48.8</td>
+<td headers="diff...8" class="gt_row gt_right" style="background-color: #FF977D; color: #000000;">−1.9</td></tr>
+    <tr><td headers="playerId...1" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2025014/1028019.png" style="height:30px;"></td>
+<td headers="player...2" class="gt_row gt_left">Logan Morris</td>
+<td headers="actual...3" class="gt_row gt_right">59.0</td>
+<td headers="diff...4" class="gt_row gt_right" style="background-color: #ABF2A9; color: #000000;">+2.2</td>
+<td headers="playerId...5" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2025014/1009421.png" style="height:30px;"></td>
+<td headers="player...6" class="gt_row gt_left">Finn Maginness</td>
+<td headers="actual...7" class="gt_row gt_right">45.5</td>
+<td headers="diff...8" class="gt_row gt_right" style="background-color: #FF866B; color: #000000;">−2.2</td></tr>
+    <tr><td headers="playerId...1" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2025014/280965.png" style="height:30px;"></td>
+<td headers="player...2" class="gt_row gt_left">Steele Sidebottom</td>
+<td headers="actual...3" class="gt_row gt_right">85.7</td>
+<td headers="diff...4" class="gt_row gt_right" style="background-color: #AFF3AC; color: #000000;">+2.1</td>
+<td headers="playerId...5" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2025014/1006114.png" style="height:30px;"></td>
+<td headers="player...6" class="gt_row gt_left">Bailey J. Williams</td>
+<td headers="actual...7" class="gt_row gt_right">69.1</td>
+<td headers="diff...8" class="gt_row gt_right" style="background-color: #FF866B; color: #000000;">−2.2</td></tr>
+    <tr><td headers="playerId...1" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2025014/1014026.png" style="height:30px;"></td>
+<td headers="player...2" class="gt_row gt_left">Kai Lohmann</td>
+<td headers="actual...3" class="gt_row gt_right">58.0</td>
+<td headers="diff...4" class="gt_row gt_right" style="background-color: #B2F4AF; color: #000000;">+2.0</td>
+<td headers="playerId...5" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2025014/1009015.png" style="height:30px;"></td>
+<td headers="player...6" class="gt_row gt_left">Lachlan McNeil</td>
+<td headers="actual...7" class="gt_row gt_right">45.1</td>
+<td headers="diff...8" class="gt_row gt_right" style="background-color: #FF8266; color: #000000;">−2.3</td></tr>
+    <tr><td headers="playerId...1" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2025014/294859.png" style="height:30px;"></td>
+<td headers="player...2" class="gt_row gt_left">Jeremy McGovern</td>
+<td headers="actual...3" class="gt_row gt_right">99.9</td>
+<td headers="diff...4" class="gt_row gt_right" style="background-color: #B5F4B2; color: #000000;">+1.9</td>
+<td headers="playerId...5" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2024014/998128.png" style="height:30px;"></td>
+<td headers="player...6" class="gt_row gt_left">Alex Witherden</td>
+<td headers="actual...7" class="gt_row gt_right">77.4</td>
+<td headers="diff...8" class="gt_row gt_right" style="background-color: #FF6F53; color: #FFFFFF;">−2.6</td></tr>
+    <tr><td headers="playerId...1" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2025014/291313.png" style="height:30px;"></td>
+<td headers="player...2" class="gt_row gt_left">Jeremy Howe</td>
+<td headers="actual...3" class="gt_row gt_right">80.6</td>
+<td headers="diff...4" class="gt_row gt_right" style="background-color: #B7F4B4; color: #000000;">+1.9</td>
+<td headers="playerId...5" class="gt_row gt_left"><img src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2024014/1002240.png" style="height:30px;"></td>
+<td headers="player...6" class="gt_row gt_left">Jaidyn Stephenson</td>
+<td headers="actual...7" class="gt_row gt_right">50.7</td>
+<td headers="diff...8" class="gt_row gt_right" style="background-color: #FF694D; color: #FFFFFF;">−2.7</td></tr>
+  </tbody>
+  
+  
+</table>
+</div>
 </div>
 </div>
 <p>You can test this formula out below to get a feel for the values it
