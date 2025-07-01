@@ -10,7 +10,7 @@
 
 
 
-<meta name="date" content="2025-01-07" />
+<meta name="date" content="2025-02-07" />
 
 <title>The secrets of SuperCoach scaling</title>
 
@@ -294,7 +294,7 @@ $(document).ready(function () {
 
 
 <h1 class="title toc-ignore">The secrets of SuperCoach scaling</h1>
-<h4 class="date">01/07/2025</h4>
+<h4 class="date">02/07/2025</h4>
 
 </div>
 
@@ -319,9 +319,9 @@ scaling system</strong> that is used to weight SuperCoach scores.</p>
 class="section level2">
 <h2>What do we know about this “state of game” multiplier?</h2>
 <p>SuperCoach scores are weighted based on how close the game is - more
-reward comes from a match-winning goal than a junktime goal.
+reward comes from a match-winning goal than a junk-time goal.
 Unfortunately, there isn’t much on Twitter/X about how this
-state-of-game multipler works. So I’ve had to dig into the archives -
+state-of-game multiplier works. So I’ve had to dig into the archives -
 finding a
 <a href="https://www.bigfooty.com/forum/threads/round-3-trades.1127789/page-63#post-43735554">Big
 Footy thread with contributions by the Champion_Data account</a>. When
@@ -344,7 +344,7 @@ are solving for one equation. This lines up with what accounts like
 class="citation">@FantasyFreako</span></a> have described, and also
 matches what we’ve heard on the
 <a href = "https://www.youtube.com/watch?v=yuXQgSi_sqc">Official
-Supercoach AFL Podcast</a>. However, the Big Footy thread has a much
+SuperCoach AFL Podcast</a>. However, the Big Footy thread has a much
 better description than we’ve ever had before…</p>
 <blockquote>
 <em>The exact formula for the weights is considered commercial IP, but
@@ -389,7 +389,7 @@ f(\text{margin},t) = \frac{1}{2}\left(1 + \frac{1}{aC\sqrt{2\pi(1-t)}}
 class="math inline">\(a\)</span> and <span
 class="math inline">\(C\)</span> which isn’t ideal. I really want to
 eliminate one, and we can do so using a known value. If this
-distribution is centred around 1, it would mean that at the very start
+distribution is centered around 1, it would mean that at the very start
 of the game (<span class="math inline">\(\text{margin}=0, t=0\)</span>),
 the output multiplier would be 1.</p>
 <p><span class="math inline">\(f(0,0) = 1\\\implies \frac{1}{2}\left(1 +
@@ -476,7 +476,7 @@ style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1em;
 <div style="flex: 1; min-width: 250px;">
 <p>
 <p>So instead of a hard cap, let’s try an exponential decay to softly
-approach the 2.0x multiplier. We can create a piecewise function where
+approach the 2.0x multiplier. We can create a piece-wise function where
 it uses the original formula for <span
 class="math inline">\(1\pm0.5\)</span>, and only introduce the
 exponential slowly approaching 2.</p>
@@ -497,10 +497,10 @@ learnt last time, and add in the in-match scaling formula with potential
 <span class="math inline">\(C\)</span> values.</p>
 <p><img src="supercoach_scaling_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
 <p>And there we have it! The optimal value is <span
-class="math inline">\(C = 0.0125\)</span>. This rounds nicely to <span
+class="math inline">\(C = 0.0125\)</span>. This is a nice number <span
 class="math inline">\(C=\frac{1}{80}\)</span>, and also means that <span
-class="math inline">\(a = 32\)</span>. Let’s put the equation back into
-the form that the Champion_Data account provided on Big Footy.</p>
+class="math inline">\(a = 32\)</span>. The entire equation is described
+below:</p>
 <p><span class="math display">\[
 \textstyle f(\text{margin},t) = \frac{1}{2}\left(1 +
 \frac{80}{32\sqrt{2\pi(1-t)}} \exp\left(
@@ -555,11 +555,11 @@ style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1em;
 <div style="flex: 1; min-width: 250px;">
 <p>
 <p>Which players have the biggest differentials with and without the
-state-of-game multipler? We would expect clutch players to gain points
+state-of-game multiplier? We would expect clutch players to gain points
 from the bonus.</p>
 <ul>
-<li><p>Joe Daniher’s 2024 finals series is severly boosting him here. He
-averaged +10.5 points more purely from the state-of-game multiplier
+<li><p>Joe Daniher’s 2024 finals series is severely boosting him here.
+He averaged +10.5 points more purely from the state-of-game multiplier
 across these 4 games. This includes a +21.0 boost in the semi-final
 against GWS where he kicked the two winning goals.</p></li>
 <li><p>Not much reward for the bottom 4 teams, who play in blowouts more
@@ -573,23 +573,23 @@ the year he finally breaks into the All-Australian team?</p></li>
 </p>
 </div>
 <div style="flex: 1; min-width: 350px;">
-<div id="ftobeylrxd" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#ftobeylrxd table {
+<div id="dakjwynala" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#dakjwynala table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#ftobeylrxd thead, #ftobeylrxd tbody, #ftobeylrxd tfoot, #ftobeylrxd tr, #ftobeylrxd td, #ftobeylrxd th {
+#dakjwynala thead, #dakjwynala tbody, #dakjwynala tfoot, #dakjwynala tr, #dakjwynala td, #dakjwynala th {
   border-style: none;
 }
 
-#ftobeylrxd p {
+#dakjwynala p {
   margin: 0;
   padding: 0;
 }
 
-#ftobeylrxd .gt_table {
+#dakjwynala .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -615,12 +615,12 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-left-color: #D3D3D3;
 }
 
-#ftobeylrxd .gt_caption {
+#dakjwynala .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#ftobeylrxd .gt_title {
+#dakjwynala .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -632,7 +632,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-bottom-width: 0;
 }
 
-#ftobeylrxd .gt_subtitle {
+#dakjwynala .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -644,7 +644,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-top-width: 0;
 }
 
-#ftobeylrxd .gt_heading {
+#dakjwynala .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -656,13 +656,13 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-right-color: #D3D3D3;
 }
 
-#ftobeylrxd .gt_bottom_border {
+#dakjwynala .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#ftobeylrxd .gt_col_headings {
+#dakjwynala .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -677,7 +677,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-right-color: #D3D3D3;
 }
 
-#ftobeylrxd .gt_col_heading {
+#dakjwynala .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -697,7 +697,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   overflow-x: hidden;
 }
 
-#ftobeylrxd .gt_column_spanner_outer {
+#dakjwynala .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -709,15 +709,15 @@ the year he finally breaks into the All-Australian team?</p></li>
   padding-right: 4px;
 }
 
-#ftobeylrxd .gt_column_spanner_outer:first-child {
+#dakjwynala .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#ftobeylrxd .gt_column_spanner_outer:last-child {
+#dakjwynala .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#ftobeylrxd .gt_column_spanner {
+#dakjwynala .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -729,11 +729,11 @@ the year he finally breaks into the All-Australian team?</p></li>
   width: 100%;
 }
 
-#ftobeylrxd .gt_spanner_row {
+#dakjwynala .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#ftobeylrxd .gt_group_heading {
+#dakjwynala .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -759,7 +759,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   text-align: left;
 }
 
-#ftobeylrxd .gt_empty_group_heading {
+#dakjwynala .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -774,15 +774,15 @@ the year he finally breaks into the All-Australian team?</p></li>
   vertical-align: middle;
 }
 
-#ftobeylrxd .gt_from_md > :first-child {
+#dakjwynala .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#ftobeylrxd .gt_from_md > :last-child {
+#dakjwynala .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#ftobeylrxd .gt_row {
+#dakjwynala .gt_row {
   padding-top: 0px;
   padding-bottom: 0px;
   padding-left: 5px;
@@ -801,7 +801,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   overflow-x: hidden;
 }
 
-#ftobeylrxd .gt_stub {
+#dakjwynala .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -814,7 +814,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   padding-right: 5px;
 }
 
-#ftobeylrxd .gt_stub_row_group {
+#dakjwynala .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -828,15 +828,15 @@ the year he finally breaks into the All-Australian team?</p></li>
   vertical-align: top;
 }
 
-#ftobeylrxd .gt_row_group_first td {
+#dakjwynala .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#ftobeylrxd .gt_row_group_first th {
+#dakjwynala .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#ftobeylrxd .gt_summary_row {
+#dakjwynala .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -846,16 +846,16 @@ the year he finally breaks into the All-Australian team?</p></li>
   padding-right: 5px;
 }
 
-#ftobeylrxd .gt_first_summary_row {
+#dakjwynala .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#ftobeylrxd .gt_first_summary_row.thick {
+#dakjwynala .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#ftobeylrxd .gt_last_summary_row {
+#dakjwynala .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -865,7 +865,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-bottom-color: #D3D3D3;
 }
 
-#ftobeylrxd .gt_grand_summary_row {
+#dakjwynala .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -875,7 +875,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   padding-right: 5px;
 }
 
-#ftobeylrxd .gt_first_grand_summary_row {
+#dakjwynala .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -885,7 +885,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-top-color: #D3D3D3;
 }
 
-#ftobeylrxd .gt_last_grand_summary_row_top {
+#dakjwynala .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -895,11 +895,11 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-bottom-color: #D3D3D3;
 }
 
-#ftobeylrxd .gt_striped {
+#dakjwynala .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#ftobeylrxd .gt_table_body {
+#dakjwynala .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -908,7 +908,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-bottom-color: #D3D3D3;
 }
 
-#ftobeylrxd .gt_footnotes {
+#dakjwynala .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -922,7 +922,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-right-color: #D3D3D3;
 }
 
-#ftobeylrxd .gt_footnote {
+#dakjwynala .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -931,7 +931,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   padding-right: 5px;
 }
 
-#ftobeylrxd .gt_sourcenotes {
+#dakjwynala .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -945,7 +945,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-right-color: #D3D3D3;
 }
 
-#ftobeylrxd .gt_sourcenote {
+#dakjwynala .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -953,63 +953,63 @@ the year he finally breaks into the All-Australian team?</p></li>
   padding-right: 5px;
 }
 
-#ftobeylrxd .gt_left {
+#dakjwynala .gt_left {
   text-align: left;
 }
 
-#ftobeylrxd .gt_center {
+#dakjwynala .gt_center {
   text-align: center;
 }
 
-#ftobeylrxd .gt_right {
+#dakjwynala .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#ftobeylrxd .gt_font_normal {
+#dakjwynala .gt_font_normal {
   font-weight: normal;
 }
 
-#ftobeylrxd .gt_font_bold {
+#dakjwynala .gt_font_bold {
   font-weight: bold;
 }
 
-#ftobeylrxd .gt_font_italic {
+#dakjwynala .gt_font_italic {
   font-style: italic;
 }
 
-#ftobeylrxd .gt_super {
+#dakjwynala .gt_super {
   font-size: 65%;
 }
 
-#ftobeylrxd .gt_footnote_marks {
+#dakjwynala .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#ftobeylrxd .gt_asterisk {
+#dakjwynala .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#ftobeylrxd .gt_indent_1 {
+#dakjwynala .gt_indent_1 {
   text-indent: 5px;
 }
 
-#ftobeylrxd .gt_indent_2 {
+#dakjwynala .gt_indent_2 {
   text-indent: 10px;
 }
 
-#ftobeylrxd .gt_indent_3 {
+#dakjwynala .gt_indent_3 {
   text-indent: 15px;
 }
 
-#ftobeylrxd .gt_indent_4 {
+#dakjwynala .gt_indent_4 {
   text-indent: 20px;
 }
 
-#ftobeylrxd .gt_indent_5 {
+#dakjwynala .gt_indent_5 {
   text-indent: 25px;
 }
 </style>
@@ -1112,7 +1112,7 @@ the year he finally breaks into the All-Australian team?</p></li>
 </div>
 </div>
 </div>
-<p>You can test this formula out below to get a feel for the values it
+<p>You can try this formula out below to get a feel for the values it
 outputs at different margins &amp; time left.</p>
 <div>
 <p><label for="margin">Current Margin:</label>
@@ -1168,16 +1168,14 @@ id="tVal">Q1 20:00</span></p>
 <p>What a great success. After some stat cleaning, my model now has
 accuracy of <span class="math inline">\(R^2 = 0.9920\)</span> and has an
 average error of <span class="math inline">\(2.049\)</span>. This new
-development has better-than-halved my error! The rest of the error comes
-from a variety of areas I will try to address: data cleaning errors,
-zone multipliers, and the fact I don’t have sources for time-coded 50m
-penalties or behind assists.</p>
+development has better-than-halved my error! The rest of the error is
+probably related data cleaning errors, some unknown points values, and
+the lack of time-coded 50m penalties or behind assists.</p>
 <p>Stay tuned for Part 3 of this series, where I will create a full
 breakdown using this new formula. We’ll discuss how strong the 3300 rule
-is, which players benefit the most from this state-of-game multiplier,
-and how we can apply it to our SuperCoach teams.
-<a href="https://x.com/jaiden_popowski">Make sure you’re following me on
-Twitter</a> as it will come out very soon!</p>
+is, how zone multipliers work, and how we can apply it to our SuperCoach
+teams. <a href="https://x.com/jaiden_popowski">Make sure you’re
+following me on Twitter</a> as it will come out very soon!</p>
 <iframe id="kofiframe" src="https://ko-fi.com/statsbyjaiden/?hidefeed=true&amp;widget=true&amp;embed=true&amp;preview=true" style="border:none;width:90%;padding:4px;background:#f9f9f9;" height="712" title="statsbyjaiden">
 </iframe>
 </div>
