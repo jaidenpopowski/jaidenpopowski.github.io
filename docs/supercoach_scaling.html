@@ -10,7 +10,7 @@
 
 
 
-<meta name="date" content="2025-02-07" />
+<meta name="date" content="2025-08-07" />
 
 <title>The secrets of SuperCoach scaling</title>
 
@@ -294,12 +294,12 @@ $(document).ready(function () {
 
 
 <h1 class="title toc-ignore">The secrets of SuperCoach scaling</h1>
-<h4 class="date">02/07/2025</h4>
+<h4 class="date">08/07/2025</h4>
 
 </div>
 
 
-<p>The scoring system for SuperCoach is incredibly complex. It uses
+<p>The scoring system for SuperCoach AFL is incredibly complex. It uses
 Champion Data’s <strong>Ranking Points</strong>, a combination of secret
 formulas and weightings with a lack of information about how it works.
 The community takes this competition very seriously, so each weekend we
@@ -324,9 +324,9 @@ Unfortunately, there isn’t much on Twitter/X about how this
 state-of-game multiplier works. So I’ve had to dig into the archives -
 finding a
 <a href="https://www.bigfooty.com/forum/threads/round-3-trades.1127789/page-63#post-43735554">Big
-Footy thread with contributions by the Champion_Data account</a>. When
-questioned on whether the in-match scaling system is purely made-up to
-suit their own players, they responded:</p>
+Footy thread</a> from 2016 with contributions by the Champion_Data
+account. When questioned on whether the in-match scaling system is
+purely made-up to suit their own players, they responded:</p>
 <blockquote>
 <em>The same formula is applied to every stat across the entire game,
 not just the final stages. The weight applied to stats is dependent on
@@ -338,9 +338,9 @@ Champion_Data on bigfooty.com (06/04/2016)
 </footer>
 </blockquote>
 <p>Sounds like what we have come to know about the system. And it’s also
-great to know that the formula works for all parts of the game, so we
-are solving for one equation. This lines up with what accounts like
-<a href="https://x.com/FantasyFreako"><span
+great to know that the formula works for <em>all</em> parts of the game,
+so we are solving for one equation. This lines up with what accounts
+like <a href="https://x.com/FantasyFreako"><span
 class="citation">@FantasyFreako</span></a> have described, and also
 matches what we’ve heard on the
 <a href = "https://www.youtube.com/watch?v=yuXQgSi_sqc">Official
@@ -366,21 +366,26 @@ class="math inline">\(C\)</span>). Champion Data also say that the
 standard deviation <span class="math inline">\(\sigma\)</span> is
 proportional to the percentage of game time left, meaning that the
 margin must be the independent variable.</p>
-<p><span class="math inline">\(f(\text{margin},\sigma) =
-\frac{1}{2}\left(1 + \frac{1}{C\sqrt{2\pi\sigma^2}} \exp\left(
--\frac{\text{margin}^2}{2\sigma^2} \right)\right)\)</span></p>
+<p><span class="math display">\[
+\textstyle f(\text{margin},\sigma) = \frac{1}{2}\left(1 +
+\frac{1}{C\sqrt{2\pi\sigma^2}} \exp\left(
+-\frac{\text{margin}^2}{2\sigma^2} \right)\right)
+\]</span></p>
 </div>
 <div id="time-for-the-maths" class="section level1">
 <h1>Time for the maths…</h1>
-<p>Let’s assume Champion Data defined the standard deviation based on
-how much variance (<span class="math inline">\(\sigma =
-\sqrt{Variance}\)</span>) in margin is expected after <span
-class="math inline">\(t\%\)</span> of the match has elapsed. This gives
-us a <span class="math inline">\(\sqrt{1-t}\)</span> form which has nice
-limits of starting at 1 and decreasing towards 0. Let’s add another
-coefficient <span class="math inline">\(a\)</span> to re-scale the
-output, otherwise the variability in margin never exceeds 1 point - but
-we know large comebacks can happen!</p>
+<p>Let’s assume Champion Data defined the standard deviation <span
+class="math inline">\(\sigma\)</span> based on how much variance (<span
+class="math inline">\(\sigma = \sqrt{Variance}\)</span>) in margin is
+expected after <span class="math inline">\(t\%\)</span> of the match has
+elapsed. This gives us a <span class="math inline">\(\sqrt{1-t}\)</span>
+form which has nice limits of starting at 1 and decreasing towards 0.
+There’s a small issue here though - a maximum of 1 is much too small for
+match margins. This would mean that variability in margin never exceeds
+1 point - but we know large comebacks can happen! Unfortunately, we’ll
+have to add another constant (let’s use <span
+class="math inline">\(a\)</span>) to re-scale this standard deviation to
+create more variation.</p>
 <p><span class="math inline">\(\sigma = a\sqrt{1-t}\\\implies
 f(\text{margin},t) = \frac{1}{2}\left(1 + \frac{1}{aC\sqrt{2\pi(1-t)}}
 \exp\left( -\frac{\text{margin}^2}{2a^2(1-t)}
@@ -408,12 +413,11 @@ result. It is a number close to 0.01.</em>
 Champion_Data on bigfooty.com (07/04/2016)
 </footer>
 </blockquote>
-<p>Very handy info! This minimises the range I’ll use to calibrate using
-real SuperCoach scores later. This also means that <span
-class="math inline">\(a\)</span> is somewhere between 32 and 53 points.
-Sounds about right for the biggest comebacks. For now, let’s use <span
-class="math inline">\(C=0.01\)</span> to learn more about the
-formula.</p>
+<p>Very handy info! We now have a decent approximation for the entire
+formula which we can use for testing. Also, if we use <span
+class="math inline">\(C = 0.01\)</span>, this means that <span
+class="math inline">\(a\)</span> would be around 40pts. Sounds about
+right for the biggest comebacks. But we aren’t quite done yet…</p>
 </div>
 <div id="managing-extreme-scaling" class="section level1">
 <h1>Managing extreme scaling</h1>
@@ -441,7 +445,7 @@ aren’t keeping inside those boundaries.
 </p>
 </div>
 <div style="flex: 1; min-width: 250px;">
-<p><img src="supercoach_scaling_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<p><img src="supercoach_scaling_files/figure-html/extremeScaling-1.png" width="672" /></p>
 </div>
 </div>
 <div
@@ -475,18 +479,29 @@ Multipliers for state of game (margin &amp; time left):<br>Dangerfield:
 style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1em;">
 <div style="flex: 1; min-width: 250px;">
 <p>
-<p>So instead of a hard cap, let’s try an exponential decay to softly
-approach the 2.0x multiplier. We can create a piece-wise function where
-it uses the original formula for <span
-class="math inline">\(1\pm0.5\)</span>, and only introduce the
-exponential slowly approaching 2.</p>
-<p><span class="math inline">\(f_{adj} =\begin{cases}2 - \frac{1}{2}
-\cdot \exp(1.5 - f), &amp; \text{if } f &gt; 1.5 \\f, &amp; \text{if } f
-\leq 1.5\end{cases}\)</span></p>
+<p>If we can’t use a hard cap, we’ll have to try softly approaching 2.0x
+multiplier. We can do this using an exponential decay formula, which
+comes into play after a particular threshold <span
+class="math inline">\(T\)</span>. I like this approach the most as it is
+easy to tune, and connects as a piece-wise function at <span
+class="math inline">\(T\)</span>. We just have to figure out where the
+tapering off starts, and luckily we can use <span
+class="math inline">\(C=0.01\)</span> to fulfill the regular formula
+<span class="math inline">\(f\)</span>.</p>
+<p><span class="math inline">\(f_{adj} =\begin{cases}T + (2-T) \cdot (1
+- e^{-(T-f)}), &amp; \text{if } f &gt; T \\f, &amp; \text{if } f \leq
+T\end{cases}\)</span></p>
+<p>After running some tests on my SuperCoach scores dataset, the best
+value for <span class="math inline">\(T\)</span> is roughly <span
+class="math inline">\(1.45\)</span>. Let’s go ahead with that so we can
+finally attempt to solve the full equation. I also tried other types of
+soft caps but the small range of scaling multipliers meant that logistic
+was too soft, and hyperbolic was even worse. With an exponential decay,
+we have crossed the border of 99% accuracy!</p>
 </p>
 </div>
 <div style="flex: 1; min-width: 250px;">
-<p><img src="supercoach_scaling_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p><img src="supercoach_scaling_files/figure-html/softcap-1.png" width="672" /></p>
 </div>
 </div>
 </div>
@@ -495,21 +510,31 @@ exponential slowly approaching 2.</p>
 <p>Okay, time to simulate! Let’s use our best guesses from what we
 learnt last time, and add in the in-match scaling formula with potential
 <span class="math inline">\(C\)</span> values.</p>
-<p><img src="supercoach_scaling_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
-<p>And there we have it! The optimal value is <span
-class="math inline">\(C = 0.0125\)</span>. This is a nice number <span
+<p><img src="supercoach_scaling_files/figure-html/fittingC-1.png" width="672" /></p>
+<p>The optimal value is <span class="math inline">\(C = 0.0125\)</span>.
+This is a nice number <span
 class="math inline">\(C=\frac{1}{80}\)</span>, and also means that <span
-class="math inline">\(a = 32\)</span>. The entire equation is described
-below:</p>
+class="math inline">\(a = 32\)</span>. I went back and used <span
+class="math inline">\(C = 0.0125\)</span> in our softcap tuning function
+from earlier and the results changed a bit. The best threshold <span
+class="math inline">\(T\)</span> came out to be <span
+class="math inline">\(1.48\)</span>. This value is a bit specific, so
+I’m inclined to guess that the regular formula is used for at least
+<span class="math inline">\(1\pm0.5\)</span>, meaning that we start
+tapering off after threshold <span
+class="math inline">\(T\geq1.5\)</span>. This is the most logical choice
+for symmetry, so I personally think this would’ve been how Champion Data
+have set it up to function.</p>
+<p>The entire equation for SuperCoach scaling is described below:</p>
 <p><span class="math display">\[
 \textstyle f(\text{margin},t) = \frac{1}{2}\left(1 +
-\frac{80}{32\sqrt{2\pi(1-t)}} \exp\left(
+\frac{5}{2\sqrt{2\pi(1-t)}} \exp\left(
 -\frac{1}{2}\left(\frac{\text{margin}}{32\sqrt{1-t}}\right)^2\right)\right)
 \]</span></p>
 <p><span class="math display">\[
 \textstyle f_{adj} =
 \begin{cases}
-2 - \frac{1}{2} \cdot \exp(1.5 - f), &amp; \text{if } f &gt; 1.5 \\
+2 - 0.5 \cdot \exp(1.5 - f), &amp; \text{if } f &gt; 1.5 \\
 f, &amp; \text{if } f \leq 1.5
 \end{cases}
 \]</span></p>
@@ -531,10 +556,11 @@ put the state-of-game back down to 0.5 as time ran out.</p></li>
 Q3. Crucial Q4 goals to Zorko &amp; Fletcher doubled the scaling factor
 from 0.8 to 1.6. Daniher finished the game with a 31pt play: contested
 mark (10.1), kick (6.8) and match-winning goal (13.6).</p></li>
-<li><p>The prelim was tight all game. The scaling was more
-time-dependent, moving from 1.2 to 1.6 during the goalless 18 minutes
-surrounding 3QT. Rayner’s iconic goal put the margin to 11pts sent the
-multiplier from 1.8 down to 0.8 in one kick.</p></li>
+<li><p>The prelim was tight all game. With little fluctuation in margin,
+the time component of scaling was on full display, moving it from 1.2 to
+1.6 during the goalless 18 minutes surrounding 3QT. Rayner’s iconic goal
+put the margin to 11pts sent the multiplier from 1.8 down to 0.8 in one
+kick.</p></li>
 <li><p>The Grand Final started tight, but the Lions heaped on 11 goals
 to 1, putting the result beyond doubt early. The entire last quarter had
 a 0.5 state-of-game multiplier, so the 3300 rule had to prop up the
@@ -544,7 +570,7 @@ match high 10pts each and started off the huge flurry of goals.</p></li>
 </p>
 </div>
 <div style="flex: 1; min-width: 250px;">
-<p><img src="supercoach_scaling_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p><img src="supercoach_scaling_files/figure-html/brisbaneFinals-1.png" width="672" /></p>
 </div>
 </div>
 </div>
@@ -573,23 +599,23 @@ the year he finally breaks into the All-Australian team?</p></li>
 </p>
 </div>
 <div style="flex: 1; min-width: 350px;">
-<div id="dakjwynala" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#dakjwynala table {
+<div id="zmnehkopyb" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#zmnehkopyb table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#dakjwynala thead, #dakjwynala tbody, #dakjwynala tfoot, #dakjwynala tr, #dakjwynala td, #dakjwynala th {
+#zmnehkopyb thead, #zmnehkopyb tbody, #zmnehkopyb tfoot, #zmnehkopyb tr, #zmnehkopyb td, #zmnehkopyb th {
   border-style: none;
 }
 
-#dakjwynala p {
+#zmnehkopyb p {
   margin: 0;
   padding: 0;
 }
 
-#dakjwynala .gt_table {
+#zmnehkopyb .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -615,12 +641,12 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-left-color: #D3D3D3;
 }
 
-#dakjwynala .gt_caption {
+#zmnehkopyb .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#dakjwynala .gt_title {
+#zmnehkopyb .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -632,7 +658,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-bottom-width: 0;
 }
 
-#dakjwynala .gt_subtitle {
+#zmnehkopyb .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -644,7 +670,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-top-width: 0;
 }
 
-#dakjwynala .gt_heading {
+#zmnehkopyb .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -656,13 +682,13 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-right-color: #D3D3D3;
 }
 
-#dakjwynala .gt_bottom_border {
+#zmnehkopyb .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#dakjwynala .gt_col_headings {
+#zmnehkopyb .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -677,7 +703,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-right-color: #D3D3D3;
 }
 
-#dakjwynala .gt_col_heading {
+#zmnehkopyb .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -697,7 +723,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   overflow-x: hidden;
 }
 
-#dakjwynala .gt_column_spanner_outer {
+#zmnehkopyb .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -709,15 +735,15 @@ the year he finally breaks into the All-Australian team?</p></li>
   padding-right: 4px;
 }
 
-#dakjwynala .gt_column_spanner_outer:first-child {
+#zmnehkopyb .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#dakjwynala .gt_column_spanner_outer:last-child {
+#zmnehkopyb .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#dakjwynala .gt_column_spanner {
+#zmnehkopyb .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -729,11 +755,11 @@ the year he finally breaks into the All-Australian team?</p></li>
   width: 100%;
 }
 
-#dakjwynala .gt_spanner_row {
+#zmnehkopyb .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#dakjwynala .gt_group_heading {
+#zmnehkopyb .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -759,7 +785,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   text-align: left;
 }
 
-#dakjwynala .gt_empty_group_heading {
+#zmnehkopyb .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -774,15 +800,15 @@ the year he finally breaks into the All-Australian team?</p></li>
   vertical-align: middle;
 }
 
-#dakjwynala .gt_from_md > :first-child {
+#zmnehkopyb .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#dakjwynala .gt_from_md > :last-child {
+#zmnehkopyb .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#dakjwynala .gt_row {
+#zmnehkopyb .gt_row {
   padding-top: 0px;
   padding-bottom: 0px;
   padding-left: 5px;
@@ -801,7 +827,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   overflow-x: hidden;
 }
 
-#dakjwynala .gt_stub {
+#zmnehkopyb .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -814,7 +840,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   padding-right: 5px;
 }
 
-#dakjwynala .gt_stub_row_group {
+#zmnehkopyb .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -828,15 +854,15 @@ the year he finally breaks into the All-Australian team?</p></li>
   vertical-align: top;
 }
 
-#dakjwynala .gt_row_group_first td {
+#zmnehkopyb .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#dakjwynala .gt_row_group_first th {
+#zmnehkopyb .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#dakjwynala .gt_summary_row {
+#zmnehkopyb .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -846,16 +872,16 @@ the year he finally breaks into the All-Australian team?</p></li>
   padding-right: 5px;
 }
 
-#dakjwynala .gt_first_summary_row {
+#zmnehkopyb .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#dakjwynala .gt_first_summary_row.thick {
+#zmnehkopyb .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#dakjwynala .gt_last_summary_row {
+#zmnehkopyb .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -865,7 +891,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-bottom-color: #D3D3D3;
 }
 
-#dakjwynala .gt_grand_summary_row {
+#zmnehkopyb .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -875,7 +901,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   padding-right: 5px;
 }
 
-#dakjwynala .gt_first_grand_summary_row {
+#zmnehkopyb .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -885,7 +911,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-top-color: #D3D3D3;
 }
 
-#dakjwynala .gt_last_grand_summary_row_top {
+#zmnehkopyb .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -895,11 +921,11 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-bottom-color: #D3D3D3;
 }
 
-#dakjwynala .gt_striped {
+#zmnehkopyb .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#dakjwynala .gt_table_body {
+#zmnehkopyb .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -908,7 +934,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-bottom-color: #D3D3D3;
 }
 
-#dakjwynala .gt_footnotes {
+#zmnehkopyb .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -922,7 +948,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-right-color: #D3D3D3;
 }
 
-#dakjwynala .gt_footnote {
+#zmnehkopyb .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -931,7 +957,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   padding-right: 5px;
 }
 
-#dakjwynala .gt_sourcenotes {
+#zmnehkopyb .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -945,7 +971,7 @@ the year he finally breaks into the All-Australian team?</p></li>
   border-right-color: #D3D3D3;
 }
 
-#dakjwynala .gt_sourcenote {
+#zmnehkopyb .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -953,63 +979,63 @@ the year he finally breaks into the All-Australian team?</p></li>
   padding-right: 5px;
 }
 
-#dakjwynala .gt_left {
+#zmnehkopyb .gt_left {
   text-align: left;
 }
 
-#dakjwynala .gt_center {
+#zmnehkopyb .gt_center {
   text-align: center;
 }
 
-#dakjwynala .gt_right {
+#zmnehkopyb .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#dakjwynala .gt_font_normal {
+#zmnehkopyb .gt_font_normal {
   font-weight: normal;
 }
 
-#dakjwynala .gt_font_bold {
+#zmnehkopyb .gt_font_bold {
   font-weight: bold;
 }
 
-#dakjwynala .gt_font_italic {
+#zmnehkopyb .gt_font_italic {
   font-style: italic;
 }
 
-#dakjwynala .gt_super {
+#zmnehkopyb .gt_super {
   font-size: 65%;
 }
 
-#dakjwynala .gt_footnote_marks {
+#zmnehkopyb .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#dakjwynala .gt_asterisk {
+#zmnehkopyb .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#dakjwynala .gt_indent_1 {
+#zmnehkopyb .gt_indent_1 {
   text-indent: 5px;
 }
 
-#dakjwynala .gt_indent_2 {
+#zmnehkopyb .gt_indent_2 {
   text-indent: 10px;
 }
 
-#dakjwynala .gt_indent_3 {
+#zmnehkopyb .gt_indent_3 {
   text-indent: 15px;
 }
 
-#dakjwynala .gt_indent_4 {
+#zmnehkopyb .gt_indent_4 {
   text-indent: 20px;
 }
 
-#dakjwynala .gt_indent_5 {
+#zmnehkopyb .gt_indent_5 {
   text-indent: 25px;
 }
 </style>
@@ -1173,9 +1199,10 @@ probably related data cleaning errors, some unknown points values, and
 the lack of time-coded 50m penalties or behind assists.</p>
 <p>Stay tuned for Part 3 of this series, where I will create a full
 breakdown using this new formula. We’ll discuss how strong the 3300 rule
-is, how zone multipliers work, and how we can apply it to our SuperCoach
-teams. <a href="https://x.com/jaiden_popowski">Make sure you’re
-following me on Twitter</a> as it will come out very soon!</p>
+is, how zone multipliers work, and compile a full list of points values
+for every action in SuperCoach.
+<a href="https://x.com/jaiden_popowski">Make sure you’re following me on
+Twitter</a> as it will come out very soon!</p>
 <iframe id="kofiframe" src="https://ko-fi.com/statsbyjaiden/?hidefeed=true&amp;widget=true&amp;embed=true&amp;preview=true" style="border:none;width:90%;padding:4px;background:#f9f9f9;" height="712" title="statsbyjaiden">
 </iframe>
 </div>
@@ -1184,6 +1211,16 @@ following me on Twitter</a> as it will come out very soon!</p>
 
 
 <p style="text-align: center;"> Stats By Jaiden </p>
+
+<script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
+<script>
+  kofiWidgetOverlay.draw('statsbyjaiden', {
+    'type': 'floating-chat',
+    'floating-chat.donateButton.text': 'Support Me',
+    'floating-chat.donateButton.background-color': '#323842',
+    'floating-chat.donateButton.text-color': '#fff'
+  });
+</script>
 
 
 
