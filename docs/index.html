@@ -34,6 +34,15 @@
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <link href="site_libs/font-awesome-6.5.2/css/all.min.css" rel="stylesheet" />
 <link href="site_libs/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet" />
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1GD8EVS054"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-1GD8EVS054');
+</script>
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -297,41 +306,128 @@ $(document).ready(function () {
 </div>
 
 
-<p>Most popular pages:</p>
 
-  <div style='display: flex; align-items: center;'>
-    <a href='fantasy_projections' style='margin-right: 10px;'>AFL Fantasy Projections</a>
-    <div style='background-color: #28a745; padding: 5px 10px; border-radius: 5px; display: flex; align-items: center;'>
-      <i class='fas fa-check-circle' style='color: white; margin-right: 5px;'></i>
-      <span style='color: white;'>Round 10</span>
-    </div>
+<style>
+  .landing-wrap {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+  }
+
+  /* LHS: page list — 50% width */
+  .page-list-wrap {
+    flex: 1 1 50%;
+    min-width: 0;
+  }
+  .page-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .page-list li {
+    border-bottom: 1px solid #e9ecef;
+  }
+  .page-list li:last-child {
+    border-bottom: none;
+  }
+  .page-list a.page-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.1rem 0.5rem;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s;
+    border-radius: 4px;
+  }
+  .page-list a.page-row:hover {
+    background: #f8f9fa;
+    padding-left: 0.9rem;
+  }
+  .page-title {
+    font-size: 1.5rem;
+    color: #0d6efd;
+    line-height: 1.3;
+  }
+  .page-list a.page-row:hover .page-title {
+    text-decoration: underline;
+  }
+  .badge {
+    font-size: 1.25rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: 1rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .badge-green { background: #28a745; color: #fff; }
+  .badge-gold  { background: #e6a817; color: #fff; }
+
+  /* RHS: Ko-fi — 50% width, no height restriction */
+  .kofi-wrap {
+    flex: 1 1 50%;
+    min-width: 0;
+  }
+  .kofi-wrap iframe {
+    width: 100%;
+    height: 712px;
+    border: none;
+    background: #f9f9f9;
+    border-radius: 6px;
+    padding: 4px;
+    display: block;
+  }
+
+  /* Mobile: stack vertically */
+  @media (max-width: 600px) {
+    .landing-wrap {
+      flex-direction: column;
+    }
+    .kofi-wrap {
+      width: 100%;
+    }
+  }
+</style>
+
+<div class='landing-wrap'>
+
+  <div class='page-list-wrap'>
+    <ul class='page-list'>
+      <li>
+        <a class='page-row' href='fantasy_projections'>
+          <span class='page-title'>AFL Fantasy Projections</span>
+          <span class='badge badge-green'>Round 10</span>
+        </a>
+      </li>
+      <li>
+        <a class='page-row' href='premium_score_sources'>
+          <span class='page-title'>Score Sources 2026</span>
+          <span class='badge badge-green'>Updated</span>
+        </a>
+      </li>
+      <li>
+        <a class='page-row' href='supercoach_scaling'>
+          <span class='page-title'>The secrets of SuperCoach scaling</span>
+          <span class='badge badge-gold'>New</span>
+        </a>
+      </li>
+      <li>
+        <a class='page-row' href='supercoach_stat_values'>
+          <span class='page-title'>Explaining the SuperCoach scoring system</span>
+        </a>
+      </li>
+    </ul>
   </div>
 
-
-  <div style='display: flex; align-items: center;'>
-    <a href='premium_score_sources' style='margin-right: 10px;'>Score Sources 2026</a>
-    <div style='background-color: #28a745; padding: 5px 10px; border-radius: 5px; display: flex; align-items: center;'>
-      <i class='fas fa-check-circle' style='color: white; margin-right: 5px;'></i>
-      <span style='color: white;'>UPDATED</span>
-    </div>
+  <div class='kofi-wrap'>
+    <iframe src='https://ko-fi.com/statsbyjaiden/?hidefeed=true&widget=true&embed=true&preview=true'
+      title='statsbyjaiden'></iframe>
   </div>
 
-
-  <div style='display: flex; align-items: center;'>
-    <a href='supercoach_scaling' style='margin-right: 10px;'>The secrets of SuperCoach scaling</a>
-        <div style='background-color: gold; padding: 5px 10px; border-radius: 5px; display: flex; align-items: center;'>
-      <i class='fas fa-check-circle' style='color: white; margin-right: 5px;'></i>
-      <span style='color: white;'>NEW</span>
-    </div>
-  </div>
-
-
-  <div style='display: flex; align-items: center;'>
-    <a href='supercoach_stat_values' style='margin-right: 10px;'>Explaining the SuperCoach scoring system</a>
-  </div>
-
-<iframe id="kofiframe" src="https://ko-fi.com/statsbyjaiden/?hidefeed=true&amp;widget=true&amp;embed=true&amp;preview=true" style="border:none;width:90%;padding:4px;background:#f9f9f9;" height="712" title="statsbyjaiden">
-</iframe>
+</div>
 
 <hr>
 

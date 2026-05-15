@@ -27,3 +27,4 @@ output:
     css: style.css
     include:
       after_body: footer.Rhtml
+      in_header: analytics.html
