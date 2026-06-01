@@ -9,7 +9,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   doc,
-  getDoc
+  getDoc,
+  setDoc,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ─── Shared auth state (importable by other scripts) ────────────────────────
@@ -25,11 +27,23 @@ export const authReady = new Promise((resolve) => {
     currentUser = user;
 
     if (user) {
-      // Check Firestore for paid flag
       try {
-        const snap = await getDoc(doc(db, "users", user.uid));
-        isPaid = snap.exists() && snap.data().paid === true;
+        const userRef = doc(db, "users", user.uid);
+        let snap = await getDoc(userRef);
+
+        // Backfill missing doc for pre-existing Auth users
+        if (!snap.exists()) {
+          await setDoc(userRef, {
+            email: user.email,
+            paid: false,
+            createdAt: serverTimestamp()
+          });
+          snap = await getDoc(userRef);
+        }
+
+        isPaid = snap.data().paid === true;
       } catch (e) {
+        console.error("Firestore user doc error:", e);
         isPaid = false;
       }
     } else {
