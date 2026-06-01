@@ -297,9 +297,6 @@ $(document).ready(function () {
      
   </a>
 </li>
-<li>
-  <a href="about">About</a>
-</li>
       </ul>
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
@@ -314,58 +311,57 @@ $(document).ready(function () {
 </div>
 
 
-<p>Jaiden’s projections are generated using an advanced machine-learning
+<p style="font-size: 12px;">
+Jaiden’s projections are generated using an advanced machine-learning
 model that objectively captures player form, role and matchup dynamics
-to deliver AFL Fantasy projections more accurate than anywhere else.</p>
+to deliver AFL Fantasy projections more accurate than anywhere else.
+</p>
 <style>
-    .filter-bar { margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    .filter-btn { 
-      padding: 4px 12px; border: 1px solid #ccc; border-radius: 4px; 
-      background: #666; cursor: pointer; font-size: 12px; 
+    .filter-bar {
+      margin-bottom: 10px; display: flex; flex-wrap: wrap;
+      gap: 8px; align-items: center;
+    }
+    .filter-btn {
+      padding: 4px 12px; border: 1px solid #ccc; border-radius: 4px;
+      background: #666; cursor: pointer; font-size: 12px;
     }
     .filter-btn.active { background: darkblue; color: white; border-color: #1a73e8; }
     .filter-label { font-size: 12px; font-weight: bold; margin-right: 4px; }
-    #team-select, #player-search { 
-      font-size: 12px; padding: 3px 6px; border-radius: 4px; border: 1px solid #ccc; 
+    #team-select, #player-search {
+      font-size: 12px; padding: 3px 6px; border-radius: 4px; border: 1px solid #ccc;
     }
     #player-search { width: 160px; }
-  .pos-map-tooltip {
-    position: relative; display: inline-block; cursor: help;
-    color: #888; font-size: 11px; margin-left: 4px;
-  }
-  .pos-map-tooltip .tooltip-content {
-    visibility: hidden; opacity: 0;
-    position: absolute; z-index: 9999;
-    top: 0;                              /* anchors to top of icon */
-    right: calc(100% + 8px);
-    transform: none;                     /* remove the -50% vertical centering */
-    background: white; border: 1px solid #ddd; border-radius: 6px;
-    padding: 8px 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    width: 180px;
-    transition: opacity 0.15s ease;
-    pointer-events: none;
-  }
-  .pos-map-tooltip:hover .tooltip-content {
-    visibility: visible; opacity: 1;
-  }
-  .tooltip-item {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 11px; padding: 2px 0;
-  }
-  .tooltip-swatch {
-    width: 26px; height: 14px; border-radius: 2px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 9px; font-weight: bold; color: black;
-  }
-  .rt-thead,
-  .rt-th,
-  .rt-th-inner {
-    overflow: visible !important;
-  }
+    .pos-map-tooltip {
+      position: relative; display: inline-block; cursor: help;
+      color: #888; font-size: 11px; margin-left: 4px;
+    }
+    .pos-map-tooltip .tooltip-content {
+      visibility: hidden; opacity: 0;
+      position: absolute; z-index: 9999;
+      top: 0; right: calc(100% + 8px); transform: none;
+      background: white; border: 1px solid #ddd; border-radius: 6px;
+      padding: 8px 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      width: 180px; transition: opacity 0.15s ease; pointer-events: none;
+    }
+    .pos-map-tooltip:hover .tooltip-content { visibility: visible; opacity: 1; }
+    .tooltip-item { display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 2px 0; }
+    .tooltip-swatch {
+      width: 26px; height: 14px; border-radius: 2px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: bold; color: black;
+    }
+    .rt-thead, .rt-th, .rt-th-inner { overflow: visible !important; }
   </style>
-<div class="filter-bar">
+<div id="free-notice" style="background:#f0f4ff;border-left:4px solid darkblue;border-radius:4px;padding:12px 16px;margin-bottom:16px;font-size:13px;">
+<span style="font-weight:bold;color:darkblue;margin-right:6px;">ℹ</span>
+My AFL Fantasy projections have been picked up by Draftstars players using them to win big with some taking home $30k+ in a single slate. It's made full free access hard to justify, particularly in contrast to the effort of long-time DFS players.<br><br>
+    <b>AFL Fantasy players</b> can still see the most highly owned projections for free.<br>
+    <b><a href='/login.html'>Create an account</a></b> and upgrade to access <b>full</b> weekly projections across the remainder of 2026.
+</div>
+<div id="loading-state" style="text-align:center;padding:40px;color:#888;font-size:13px;">Loading projections...</div>
+<div id="filter-bar" class="filter-bar" style="display:none;">
 <input id="player-search" type="text" placeholder="Search..." oninput="filterPlayer(this.value)"/>
-<span class="filter-label" style="margin-left: 12px;">Team:</span>
+<span class="filter-label" style="margin-left:12px;">Team:</span>
 <select id="team-select" onchange="filterTeam(this.value)">
 <option value="ALL">All Teams</option>
 <option value="ADE">ADE</option>
@@ -374,16 +370,18 @@ to deliver AFL Fantasy projections more accurate than anywhere else.</p>
 <option value="COL">COL</option>
 <option value="ESS">ESS</option>
 <option value="FRE">FRE</option>
-<option value="GCS">GCS</option>
 <option value="GEE">GEE</option>
+<option value="GCS">GCS</option>
+<option value="GWS">GWS</option>
 <option value="HAW">HAW</option>
 <option value="MEL">MEL</option>
 <option value="NTH">NTH</option>
 <option value="PTA">PTA</option>
+<option value="RIC">RIC</option>
 <option value="STK">STK</option>
 <option value="SYD">SYD</option>
-<option value="WBD">WBD</option>
 <option value="WCE">WCE</option>
+<option value="WBD">WBD</option>
 </select>
 <span class="filter-label">Position:</span>
 <button class="filter-btn active" onclick="filterPosition(&#39;ALL&#39;)">ALL</button>
@@ -393,42 +391,88 @@ to deliver AFL Fantasy projections more accurate than anywhere else.</p>
 <button class="filter-btn" onclick="filterPosition(&#39;FWD&#39;)">FWD</button>
 </div>
 <div class="reactable html-widget html-fill-item" id="projections_table" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="projections_table">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"player":[],"Projected":[],"Team":[],"Position":[],"Price":[],"PricedAt":[],"Own":[],"Opponent":[],"KeyDef":[],"GenDef":[],"Distributor":[],"OutsideMid":[],"InsideMid":[],"GenFwd":[],"KeyFwd":[],"Ruck":[],"score":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","show":false},{"id":"player","name":"Player","type":"character","cell":"function(cellInfo) {\n    var img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/' + cellInfo.row['playerId'].replace('CD_I', '') + '.png?im=Resize=(50,50)\" style=\"height:24px;vertical-align:middle;\">';\n    return '<div style=\"vertical-align:bottom;\">' + img + ' ' + cellInfo.value + '<\/div>';\n  }","html":true,"minWidth":160,"sticky":"left"},{"id":"Projected","name":"Proj","type":"numeric","filterMethod":"function(rows, columnId, filterValue) {\n        return rows.filter(function(row) {\n          return row.values[columnId] >= filterValue\n        })\n      }","format":{"cell":{"digits":2},"aggregated":{"digits":2}},"minWidth":65},{"id":"Team","name":"Team","type":"character","minWidth":50},{"id":"Position","name":"Pos","type":"character","filterMethod":"function(rows, columnId, filterValue) {\n          if (!filterValue) return rows;\n          return rows.filter(function(row) {\n            return row.values[columnId].indexOf(filterValue) >= 0;\n          });\n        }","minWidth":75},{"id":"Price","name":"Price","type":"numeric","filterMethod":"function(rows, columnId, filterValue) {\n        return rows.filter(function(row) {\n          return row.values[columnId] >= filterValue\n        })\n      }","cell":"function(cellInfo) {return '$' + cellInfo.value/1000 + 'K'}","minWidth":60},{"id":"PricedAt","name":"Priced At","type":"numeric","filterMethod":"function(rows, columnId, filterValue) {\n        return rows.filter(function(row) {\n          return row.values[columnId] >= filterValue\n        })\n      }","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60},{"id":"Own","name":"Own%","type":"numeric","filterMethod":"function(rows, columnId, filterValue) {\n        return rows.filter(function(row) {\n          return row.values[columnId] >= filterValue\n        })\n      }","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60},{"id":"Opponent","name":"Opponent","type":"character"},{"id":"KeyDef","name":"KeyDef","type":"numeric","show":false},{"id":"GenDef","name":"GenDef","type":"numeric","show":false},{"id":"Distributor","name":"Distributor","type":"numeric","show":false},{"id":"OutsideMid","name":"OutsideMid","type":"numeric","show":false},{"id":"InsideMid","name":"InsideMid","type":"numeric","show":false},{"id":"GenFwd","name":"GenFwd","type":"numeric","show":false},{"id":"KeyFwd","name":"KeyFwd","type":"numeric","show":false},{"id":"Ruck","name":"Ruck","type":"numeric","show":false},{"id":"score","name":"Position Map","type":"numeric","filterable":false,"sortNALast":true,"cell":"function(cellInfo) {\n    var row = cellInfo.row;\n    var segments = [\n      { key: 'KeyDef',     label: 'KD', color: '#5A7DBA' },\n      { key: 'GenDef',     label: 'GD', color: '#87CEEB' },\n      { key: 'Distributor',label: 'DI', color: '#A8E1A2' },\n      { key: 'OutsideMid', label: 'OM', color: '#FFEC8B' },\n      { key: 'InsideMid',  label: 'IM', color: '#FFD08A' },\n      { key: 'GenFwd',     label: 'GF', color: '#F6A9D1' },\n      { key: 'KeyFwd',     label: 'KF', color: '#D1A6E3' },\n      { key: 'Ruck',       label: 'RK', color: '#FFB3B3' }\n    ];\n    var html = '<div style=\"display:flex;height:25px;position:relative;\">';\n    segments.forEach(function(seg) {\n      var pct = row[seg.key] || 0;\n      var label = pct >= 15 ? seg.label : '';\n      html += '<div title=\"' + seg.key + '\" style=\"width:' + pct + '%;background:' + seg.color + ';height:25px;display:flex;align-items:center;justify-content:center;color:black;font-weight:bold;font-size:11px;\">' + label + '<\/div>';\n    });\n    html += '<\/div>';\n    return html;\n  }","header":{"name":"Fragment","attribs":[],"children":[{"name":"span","attribs":{},"children":["Plays Like"]},{"name":"div","attribs":{"className":"pos-map-tooltip"},"children":["ⓘ",{"name":"div","attribs":{"className":"tooltip-content"},"children":[{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#5A7DBA"},"className":"tooltip-swatch"},"children":["KD"]},{"name":"span","attribs":{},"children":["Key Defender"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#87CEEB"},"className":"tooltip-swatch"},"children":["GD"]},{"name":"span","attribs":{},"children":["Gen Defender"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#A8E1A2"},"className":"tooltip-swatch"},"children":["DI"]},{"name":"span","attribs":{},"children":["Distributor"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#FFEC8B"},"className":"tooltip-swatch"},"children":["OM"]},{"name":"span","attribs":{},"children":["Outside Mid"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#FFD08A"},"className":"tooltip-swatch"},"children":["IM"]},{"name":"span","attribs":{},"children":["Inside Mid"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#F6A9D1"},"className":"tooltip-swatch"},"children":["GF"]},{"name":"span","attribs":{},"children":["Gen Forward"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#D1A6E3"},"className":"tooltip-swatch"},"children":["KF"]},{"name":"span","attribs":{},"children":["Key Forward"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#FFB3B3"},"className":"tooltip-swatch"},"children":["RK"]},{"name":"span","attribs":{},"children":["Ruck"]}]}]}]}]},"html":true}],"defaultSortDesc":true,"defaultSorted":[{"id":"Projected","desc":true}],"defaultPageSize":25,"showPageSizeOptions":true,"pageSizeOptions":[25,50,100,200],"striped":true,"showSortIcon":false,"style":{"fontSize":"12px"},"elementId":"projections_table","dataKey":"56ca21a616f100526d744a0b5ec93ba9"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell","tag.attribs.columns.2.filterMethod","tag.attribs.columns.4.filterMethod","tag.attribs.columns.5.filterMethod","tag.attribs.columns.5.cell","tag.attribs.columns.6.filterMethod","tag.attribs.columns.7.filterMethod","tag.attribs.columns.17.cell"],"jsHooks":[]}</script>
+<script type="application/json" data-for="projections_table">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"player":[],"Projected":[],"Team":[],"Position":[],"Price":[],"PricedAt":[],"Own":[],"Opponent":[],"KeyDef":[],"GenDef":[],"Distributor":[],"OutsideMid":[],"InsideMid":[],"GenFwd":[],"KeyFwd":[],"Ruck":[],"score":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","show":false},{"id":"player","name":"Player","type":"character","cell":"function(cellInfo) {\n          var img = '';\n          if (cellInfo.row['playerId']) {\n            img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n              + cellInfo.row['playerId'].replace('CD_I', '')\n              + '.png?im=Resize=(50,50)\" style=\"height:24px;vertical-align:middle;\"'\n              + ' onerror=\"this.style.display=\\'none\\'\">';\n          }\n          var name = cellInfo.value === 'Hidden'\n            ? '<span style=\"color:#aaa;vertical-align:middle;\">🔒 Premium player<\/span>'\n            : cellInfo.value;\n          return '<div style=\"vertical-align:bottom;\">' + img + ' ' + name + '<\/div>';\n        }","html":true,"minWidth":160,"sticky":"left"},{"id":"Projected","name":"Proj","type":"numeric","filterMethod":"function(rows, columnId, filterValue) {\n          return rows.filter(function(row) { return row.values[columnId] >= filterValue; });\n        }","format":{"cell":{"digits":2},"aggregated":{"digits":2}},"minWidth":65},{"id":"Team","name":"Team","type":"character","minWidth":50},{"id":"Position","name":"Pos","type":"character","filterMethod":"function(rows, columnId, filterValue) {\n          if (!filterValue) return rows;\n          return rows.filter(function(row) { return row.values[columnId].indexOf(filterValue) >= 0; });\n        }","cell":"function(cellInfo) {\n          var value = String(cellInfo.value);\n          if (!value.includes('/')) return value;\n          var map = { DEF: 'D', MID: 'M', RUC: 'R', FWD: 'F' };\n          return value.split('/').map(function(x) { return map[x] || x; }).join('/');\n        }","minWidth":55},{"id":"Price","name":"Price","type":"numeric","filterMethod":"function(rows, columnId, filterValue) {\n          return rows.filter(function(row) { return row.values[columnId] >= filterValue; });\n        }","cell":"function(cellInfo) {\n          if (cellInfo.value === null || cellInfo.value === undefined) return '';\n          return '$' + cellInfo.value / 1000 + 'K';\n        }","minWidth":60},{"id":"PricedAt","name":"Priced At","type":"numeric","filterMethod":"function(rows, columnId, filterValue) {\n          return rows.filter(function(row) { return row.values[columnId] >= filterValue; });\n        }","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60},{"id":"Own","name":"Own%","type":"numeric","filterMethod":"function(rows, columnId, filterValue) {\n          return rows.filter(function(row) { return row.values[columnId] >= filterValue; });\n        }","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60},{"id":"Opponent","name":"Opponent","type":"character"},{"id":"KeyDef","name":"KeyDef","type":"numeric","show":false},{"id":"GenDef","name":"GenDef","type":"numeric","show":false},{"id":"Distributor","name":"Distributor","type":"numeric","show":false},{"id":"OutsideMid","name":"OutsideMid","type":"numeric","show":false},{"id":"InsideMid","name":"InsideMid","type":"numeric","show":false},{"id":"GenFwd","name":"GenFwd","type":"numeric","show":false},{"id":"KeyFwd","name":"KeyFwd","type":"numeric","show":false},{"id":"Ruck","name":"Ruck","type":"numeric","show":false},{"id":"score","name":"Position Map","type":"numeric","filterable":false,"sortNALast":true,"cell":"function(cellInfo) {\n          var row = cellInfo.row;\n          var segments = [\n            { key: 'KeyDef',      label: 'KD', color: '#5A7DBA' },\n            { key: 'GenDef',      label: 'GD', color: '#87CEEB' },\n            { key: 'Distributor', label: 'DI', color: '#A8E1A2' },\n            { key: 'OutsideMid',  label: 'OM', color: '#FFEC8B' },\n            { key: 'InsideMid',   label: 'IM', color: '#FFD08A' },\n            { key: 'GenFwd',      label: 'GF', color: '#F6A9D1' },\n            { key: 'KeyFwd',      label: 'KF', color: '#D1A6E3' },\n            { key: 'Ruck',        label: 'RK', color: '#FFB3B3' }\n          ];\n          var html = '<div style=\"display:flex;height:25px;\">';\n          segments.forEach(function(seg) {\n            var pct = row[seg.key] || 0;\n            var label = pct >= 15 ? seg.label : '';\n            html += '<div title=\"' + seg.key + '\" style=\"width:' + pct + '%;background:' + seg.color + ';height:25px;display:flex;align-items:center;justify-content:center;color:black;font-weight:bold;font-size:11px;\">' + label + '<\/div>';\n          });\n          html += '<\/div>';\n          return html;\n        }","header":{"name":"Fragment","attribs":[],"children":[{"name":"span","attribs":{},"children":["Plays Like"]},{"name":"div","attribs":{"className":"pos-map-tooltip"},"children":["ⓘ",{"name":"div","attribs":{"className":"tooltip-content"},"children":[{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#5A7DBA"},"className":"tooltip-swatch"},"children":["KD"]},{"name":"span","attribs":{},"children":["Key Defender"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#87CEEB"},"className":"tooltip-swatch"},"children":["GD"]},{"name":"span","attribs":{},"children":["Gen Defender"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#A8E1A2"},"className":"tooltip-swatch"},"children":["DI"]},{"name":"span","attribs":{},"children":["Distributor"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#FFEC8B"},"className":"tooltip-swatch"},"children":["OM"]},{"name":"span","attribs":{},"children":["Outside Mid"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#FFD08A"},"className":"tooltip-swatch"},"children":["IM"]},{"name":"span","attribs":{},"children":["Inside Mid"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#F6A9D1"},"className":"tooltip-swatch"},"children":["GF"]},{"name":"span","attribs":{},"children":["Gen Forward"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#D1A6E3"},"className":"tooltip-swatch"},"children":["KF"]},{"name":"span","attribs":{},"children":["Key Forward"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#FFB3B3"},"className":"tooltip-swatch"},"children":["RK"]},{"name":"span","attribs":{},"children":["Ruck"]}]}]}]}]},"html":true}],"defaultSortDesc":true,"defaultSorted":[{"id":"Projected","desc":true}],"defaultPageSize":25,"showPageSizeOptions":true,"pageSizeOptions":[25,50,100,200],"striped":true,"showSortIcon":false,"style":{"fontSize":"12px"},"elementId":"projections_table","dataKey":"0714f9dc0de9bf0bb42700b4fe76daa9"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell","tag.attribs.columns.2.filterMethod","tag.attribs.columns.4.filterMethod","tag.attribs.columns.4.cell","tag.attribs.columns.5.filterMethod","tag.attribs.columns.5.cell","tag.attribs.columns.6.filterMethod","tag.attribs.columns.7.filterMethod","tag.attribs.columns.17.cell"],"jsHooks":[]}</script>
 <script>
     var activePosition = 'ALL';
-    var activeTeam = 'ALL';
+    var activeTeam     = 'ALL';
+    var activePlayer   = '';
 
     function applyFilters() {
       var instance = Reactable.getInstance('projections_table');
       instance.setFilter('Position', activePosition === 'ALL' ? undefined : activePosition);
-      instance.setFilter('Team', activeTeam === 'ALL' ? undefined : activeTeam);
-      instance.setFilter('player',   activePlayer || undefined);
+      instance.setFilter('Team',     activeTeam     === 'ALL' ? undefined : activeTeam);
+      instance.setFilter('player',   activePlayer   || undefined);
     }
 
     function filterPosition(pos) {
       activePosition = pos;
       document.querySelectorAll('.filter-btn').forEach(function(btn) {
-        btn.classList.toggle('active', btn.textContent === pos);
+        btn.classList.toggle('active', btn.textContent.trim() === pos);
       });
       applyFilters();
     }
 
-    function filterTeam(team) {
-      activeTeam = team;
-      applyFilters();
-    }
-    
-    function filterPlayer(val) {
-      activePlayer = val.toLowerCase();
-      applyFilters();
-    }
-    
-    fetch('projections.json')
-  .then(res => res.json())
-  .then(function(data) {
-    Reactable.setData('projections_table', data);
-  });
+    function filterTeam(team)     { activeTeam   = team;              applyFilters(); }
+    function filterPlayer(val)    { activePlayer = val.toLowerCase(); applyFilters(); }
   </script>
+<script type="module">
+  import { authReady, getAuthToken } from "./auth.js";
+
+  (async function() {
+    const { user, paid } = await authReady;
+
+    // Choose data source
+    let url, headers = {};
+    if (paid) {
+      const token = await getAuthToken();
+      url     = "https://firebasestorage.googleapis.com/v0/b/statsbyjaiden.firebasestorage.app/o/projections_full.json?alt=media";
+      headers = { Authorization: "Bearer " + token };
+    } else {
+      url = "projections_free.json";
+    }
+
+    // Fetch and populate table
+    try {
+      const res  = await fetch(url, { headers });
+      const data = await res.json();
+      Reactable.setData('projections_table', data);
+    } catch (e) {
+      document.getElementById("loading-state").textContent = "Failed to load projections — please refresh.";
+      return;
+    }
+
+    // Reveal UI
+    document.getElementById("loading-state").style.display = "none";
+    document.getElementById("filter-bar").style.display    = "flex";
+    document.getElementById("projections_table").style.display = "block";
+
+    // Paid-only UI
+    if (paid) {
+      // Hide free notice
+      const notice = document.getElementById("free-notice");
+      if (notice) notice.style.display = "none";
+
+      // Add CSV download button to filter bar
+      const btn = document.createElement("button");
+      btn.textContent      = "Download CSV";
+      btn.className        = "filter-btn";
+      btn.style.marginLeft = "auto";
+      btn.onclick = function() {
+        const rows = Reactable.getState('projections_table').sortedData;
+        const cols = ['player','Projected','Team','Position','Price','PricedAt','Own','Opponent'];
+        const csv  = [
+          cols.join(','),
+          ...rows.map(r => cols.map(c => JSON.stringify(r[c] ?? '')).join(','))
+        ].join('\n');
+        const a    = document.createElement('a');
+        a.href     = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+        a.download = 'projections.csv';
+        a.click();
+      };
+      document.querySelector('.filter-bar').appendChild(btn);
+    }
+  })();
+</script>
 
 <hr>
 

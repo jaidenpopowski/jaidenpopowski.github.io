@@ -5,3 +5,5 @@
 *.Rmd
 *.R
 *.xlsx
+functions/.env.local
+statsbyjaiden-firebase-adminsdk-*.json

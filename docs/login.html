@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Log In – Stats By Jaiden</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="/index.html">Stats By Jaiden</a>
+      </div>
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="/index.html">Home</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div style="padding-top: 70px;">
+    <div class="auth-page-wrap">
+
+      <div class="auth-card">
+        <h2 id="card-title">Log in</h2>
+        <p class="auth-subtitle">Access your Stats By Jaiden account.</p>
+        <p class="auth-subtitle">
+          My AFL Fantasy projections have been picked up by Draftstars players using them to win big with some taking home $30k+ in a single slate. It's made full free access hard to justify, particularly in contrast to the effort of long-time DFS players.<br>
+          <b>AFL Fantasy players</b> can still see the most highly owned projections for free.<br>
+          <b>Create an account</b> and upgrade to access full weekly projections across the remainder of 2026.
+        </p>
+
+        <div class="auth-tabs">
+          <div class="auth-tab active" id="tab-login" onclick="switchTab('login')">Log In</div>
+          <div class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Sign Up</div>
+        </div>
+
+        <div id="auth-alert" class="auth-alert error"></div>
+
+        <!-- LOGIN -->
+        <div id="pane-login" class="tab-pane active">
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" class="form-control" placeholder="you@example.com" />
+          </div>
+          <div class="form-group">
+            <label for="login-password">
+              Password
+              <a href="#" class="forgot-link" id="forgot-link">Forgot password?</a>
+            </label>
+            <input type="password" id="login-password" class="form-control" placeholder="••••••••" />
+          </div>
+          <button class="btn-auth" id="login-btn" onclick="handleLogin()">Log In</button>
+          <p class="auth-switch">No account? <a href="#" onclick="switchTab('signup'); return false;">Sign up free</a></p>
+        </div>
+
+        <!-- SIGNUP -->
+        <div id="pane-signup" class="tab-pane">
+          <div class="form-group">
+            <label for="signup-email">Email</label>
+            <input type="email" id="signup-email" class="form-control" placeholder="you@example.com" />
+          </div>
+          <div class="form-group">
+            <label for="signup-password">Password</label>
+            <input type="password" id="signup-password" class="form-control" placeholder="At least 6 characters" />
+          </div>
+          <div class="form-group">
+            <label for="signup-confirm">Confirm Password</label>
+            <input type="password" id="signup-confirm" class="form-control" placeholder="••••••••" />
+          </div>
+          <button class="btn-auth" id="signup-btn" onclick="handleSignup()">Create Free Account</button>
+          <p class="auth-switch" style="margin-top:12px;font-size:12px;color:#888;">
+            Free account. <a href="/upgrade.html">Upgrade for Full Access</a> anytime.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth, db } from "./firebase.js";
+    import {
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      sendPasswordResetEmail,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // Already logged in — redirect
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const params = new URLSearchParams(window.location.search);
+        window.location.href = params.get("redirect") || "/index.html";
+      }
+    });
+
+    window.handleLogin = async function () {
+      const email = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value;
+      const btn = document.getElementById("login-btn");
+      clearAlert();
+      btn.disabled = true;
+      btn.textContent = "Logging in…";
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        const params = new URLSearchParams(window.location.search);
+        window.location.href = params.get("redirect") || "/index.html";
+      } catch (e) {
+        showAlert(friendlyError(e.code));
+        btn.disabled = false;
+        btn.textContent = "Log In";
+      }
+    };
+
+    window.handleSignup = async function () {
+      const email = document.getElementById("signup-email").value.trim();
+      const password = document.getElementById("signup-password").value;
+      const confirm = document.getElementById("signup-confirm").value;
+      const btn = document.getElementById("signup-btn");
+      clearAlert();
+      if (password !== confirm) { showAlert("Passwords don't match."); return; }
+      if (password.length < 6) { showAlert("Password must be at least 6 characters."); return; }
+      btn.disabled = true;
+      btn.textContent = "Creating account…";
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        await setDoc(doc(db, "users", cred.user.uid), {
+          email,
+          paid: false,
+          createdAt: serverTimestamp()
+        });
+        const params = new URLSearchParams(window.location.search);
+        window.location.href = params.get("redirect") || "/index.html";
+      } catch (e) {
+        showAlert(friendlyError(e.code));
+        btn.disabled = false;
+        btn.textContent = "Create Free Account";
+      }
+    };
+
+    window.switchTab = function (tab) {
+      document.getElementById("pane-login").classList.toggle("active", tab === "login");
+      document.getElementById("pane-signup").classList.toggle("active", tab === "signup");
+      document.getElementById("tab-login").classList.toggle("active", tab === "login");
+      document.getElementById("tab-signup").classList.toggle("active", tab === "signup");
+      document.getElementById("card-title").textContent = tab === "login" ? "Log in" : "Create account";
+      clearAlert();
+    };
+
+    document.getElementById("forgot-link").addEventListener("click", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("login-email").value.trim();
+      if (!email) { showAlert("Enter your email above first."); return; }
+      try {
+        await sendPasswordResetEmail(auth, email);
+        showAlert("Reset email sent — check your inbox.", "success");
+      } catch (e) {
+        showAlert(friendlyError(e.code));
+      }
+    });
+
+    function showAlert(msg, type = "error") {
+      const el = document.getElementById("auth-alert");
+      el.textContent = msg;
+      el.className = `auth-alert ${type}`;
+      el.style.display = "block";
+    }
+
+    function clearAlert() {
+      document.getElementById("auth-alert").style.display = "none";
+    }
+
+    function friendlyError(code) {
+      const map = {
+        "auth/user-not-found":        "No account found with that email.",
+        "auth/wrong-password":         "Incorrect password.",
+        "auth/invalid-email":          "Please enter a valid email address.",
+        "auth/email-already-in-use":   "An account with this email already exists.",
+        "auth/too-many-requests":      "Too many attempts. Try again later.",
+        "auth/invalid-credential":     "Incorrect email or password.",
+      };
+      return map[code] || "Something went wrong. Please try again.";
+    }
+  </script>
+
+</body>
+</html>

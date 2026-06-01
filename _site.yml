@@ -20,8 +20,6 @@ navbar:
       href: https://twitter.com/jaiden_popowski
     - icon: fa-brands fa-instagram
       href: https://instagram.com/statsbyjaiden
-    - text: "About"
-      href: about
 output:
   html_document:
     css: style.css
