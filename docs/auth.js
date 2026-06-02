@@ -50,57 +50,9 @@ export const authReady = new Promise((resolve) => {
       isPaid = false;
     }
 
-    updateNavUI(user, isPaid);
     resolve({ user, paid: isPaid });
   });
 });
-
-// ─── Nav UI ──────────────────────────────────────────────────────────────────
-
-function updateNavUI(user, paid) {
-  // Inject the auth nav item into the R Markdown navbar
-  // R Markdown renders a Bootstrap navbar — we hook into it at runtime.
-  const navbar = document.querySelector(".navbar-nav.navbar-right, .navbar-right");
-  if (!navbar) return;
-
-  // Remove any existing auth item we may have injected previously
-  const existing = document.getElementById("sbj-auth-nav");
-  if (existing) existing.remove();
-
-  const li = document.createElement("li");
-  li.id = "sbj-auth-nav";
-
-  if (user) {
-    // Logged in — show account + logout
-    li.innerHTML = `
-      <li class="dropdown" id="sbj-auth-nav">
-        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">
-          <span style="margin-right:4px;"></span>${paid ? "Premium" : "Free"} <span class="caret"></span>
-        </a>
-        <ul class="dropdown-menu">
-          <li><a href="/account.html">My Account</a></li>
-          ${!paid ? '<li><a href="/upgrade.html" style="font-weight:600;color:#e05c00;">Upgrade to Premium</a></li>' : ""}
-          <li role="separator" class="divider"></li>
-          <li><a href="#" id="sbj-logout">Log Out</a></li>
-        </ul>
-      </li>`;
-  } else {
-    // Logged out — show login link
-    li.innerHTML = `<a href="/login.html">Log In</a>`;
-  }
-
-  navbar.appendChild(li);
-
-  // Wire logout
-  const logoutBtn = document.getElementById("sbj-logout");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      await signOut(auth);
-      window.location.href = "/index.html";
-    });
-  }
-}
 
 // ─── Helpers for page scripts ────────────────────────────────────────────────
 
@@ -113,12 +65,12 @@ export async function requireAuth(requirePaid = false) {
   const { user, paid } = await authReady;
 
   if (!user) {
-    window.location.href = `/login.html?redirect=${encodeURIComponent(window.location.pathname)}`;
+    window.location.href = `/account.html?redirect=${encodeURIComponent(window.location.pathname)}`;
     return false;
   }
 
   if (requirePaid && !paid) {
-    window.location.href = `/upgrade.html?redirect=${encodeURIComponent(window.location.pathname)}`;
+    window.location.href = `/account.html?redirect=${encodeURIComponent(window.location.pathname)}`;
     return false;
   }
 

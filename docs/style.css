@@ -213,9 +213,11 @@ a:active {
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
+
   display: block;
   text-align: center;
   line-height: 38px;
+
   text-decoration: none;
 }
 

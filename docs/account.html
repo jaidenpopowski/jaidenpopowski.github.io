@@ -11,7 +11,7 @@
 
 
 
-<title>Stats By Jaiden</title>
+<title>Account</title>
 
 <script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
@@ -301,133 +301,243 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Stats By Jaiden</h1>
+<h1 class="title toc-ignore">Account</h1>
 
 </div>
-
 
 
 <style>
-  .landing-wrap {
-    display: flex;
-    gap: 2rem;
-    align-items: flex-start;
+.account-page {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 32px;
+  align-items: start;
+  padding-top: 30px;
+}
+
+.account-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 24px 22px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  position: sticky;
+  top: 90px;
+}
+
+.account-card h2 {
+  font-size: 20px;
+  margin: 0 0 18px;
+}
+
+.account-card p {
+  font-size: 14px;
+  color: #444;
+  margin-bottom: 18px;
+}
+
+.account-card .account-value {
+  color: #111;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.account-card .btn-auth {
+  margin-top: 10px;
+}
+
+.account-card .account-muted {
+  font-size: 12px;
+  color: #888;
+  margin-top: 14px;
+  margin-bottom: 0;
+}
+
+.account-main .upgrade-wrap {
+  max-width: 700px;
+  margin: 0 0 80px;
+  padding: 0;
+}
+
+.account-main .pricing-card {
+  margin-left: 0;
+}
+
+@media (max-width: 768px) {
+  .account-page {
+    grid-template-columns: 1fr;
+    gap: 24px;
   }
 
-  /* LHS: page list — 50% width */
-  .page-list-wrap {
-    flex: 1 1 50%;
-    min-width: 0;
+  .account-card {
+    position: static;
   }
-  .page-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  .page-list li {
-    border-bottom: 1px solid #e9ecef;
-  }
-  .page-list li:last-child {
-    border-bottom: none;
-  }
-  .page-list a.page-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1.1rem 0.5rem;
-    text-decoration: none;
-    color: inherit;
-    transition: background 0.15s;
-    border-radius: 4px;
-  }
-  .page-list a.page-row:hover {
-    background: #f8f9fa;
-    padding-left: 0.9rem;
-  }
-  .page-title {
-    font-size: 1.5rem;
-    color: #0d6efd;
-    line-height: 1.3;
-  }
-  .page-list a.page-row:hover .page-title {
-    text-decoration: underline;
-  }
-  .badge {
-    font-size: 1.25rem;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 4px;
-    white-space: nowrap;
-    flex-shrink: 0;
-    margin-left: 1rem;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-  }
-  .badge-green { background: #28a745; color: #fff; }
-  .badge-gold  { background: #e6a817; color: #fff; }
-
-  /* RHS: Ko-fi — 50% width, no height restriction */
-  .kofi-wrap {
-    flex: 1 1 50%;
-    min-width: 0;
-  }
-  .kofi-wrap iframe {
-    width: 100%;
-    height: 712px;
-    border: none;
-    background: #f9f9f9;
-    border-radius: 6px;
-    padding: 4px;
-    display: block;
-  }
-
-  /* Mobile: stack vertically */
-  @media (max-width: 600px) {
-    .landing-wrap {
-      flex-direction: column;
-    }
-    .kofi-wrap {
-      width: 100%;
-    }
-  }
+}
 </style>
 
-<div class='landing-wrap'>
+<div class="account-page">
 
-  <div class='page-list-wrap'>
-    <ul class='page-list'>
-      <li>
-        <a class='page-row' href='fantasy_projections'>
-          <span class='page-title'>AFL Fantasy Projections</span>
-          <span class='badge badge-green'>Round 13</span>
-        </a>
-      </li>
-      <li>
-        <a class='page-row' href='premium_score_sources'>
-          <span class='page-title'>Score Sources 2026</span>
-          <span class='badge badge-green'>Updated</span>
-        </a>
-      </li>
-      <li>
-        <a class='page-row' href='supercoach_scaling'>
-          <span class='page-title'>The secrets of SuperCoach scaling</span>
-          <span class='badge badge-gold'>New</span>
-        </a>
-      </li>
-      <li>
-        <a class='page-row' href='supercoach_stat_values'>
-          <span class='page-title'>Explaining the SuperCoach scoring system</span>
-        </a>
-      </li>
-    </ul>
-  </div>
+  <!-- LEFT: ACCOUNT DETAILS -->
+  <aside class="account-card">
+    <h2>Account</h2>
 
-  <div class='kofi-wrap'>
-    <iframe src='https://ko-fi.com/statsbyjaiden/?hidefeed=true&widget=true&embed=true&preview=true'
-      title='statsbyjaiden'></iframe>
-  </div>
+    <p>
+      <strong>Email</strong><br>
+      <span id="account-email" class="account-value">Checking...</span>
+    </p>
+
+    <p>
+      <strong>Status</strong><br>
+      <span id="account-status" class="account-value">Checking...</span>
+    </p>
+
+    <a id="login-account-btn"
+       href="/login.html?redirect=/account.html"
+       class="btn-auth"
+       style="display:none;">
+      Log In
+    </a>
+
+    <button id="logout-account-btn"
+            class="btn-auth"
+            style="display:none;">
+      Log Out
+    </button>
+
+    <a href="mailto:jaidenstats@gmail.com"
+       class="btn-auth">
+      Contact Me
+    </a>
+
+    <p class="account-muted">
+      Need help with access or payment? Email me.
+    </p>
+  </aside>
+
+  <!-- RIGHT: UPGRADE CONTENT -->
+  <main class="account-main">
+    <div class="upgrade-wrap">
+
+      <h1>Full Projections Access</h1>
+
+      <p class="upgrade-sub">
+        My AFL Fantasy projections have been picked up by Draftstars players using them to win big with some taking home $30k+ in a single slate. That's made full free access hard to justify, particularly in contrast to the effort of long-time DFS players.<br>
+        <b>AFL Fantasy players</b> can still see the most highly owned projections for free.<br>
+        <b>Draftstars players</b> can grab full access for the remainder of 2026.
+      </p>
+
+      <div class="pricing-card">
+        <div class="price-line"><sup>$</sup><span id="price-display">49</span></div>
+        <div class="price-period">2026 AFL Season + Finals</div>
+
+        <ul class="feature-list">
+          <li>Full AFL Fantasy Projections (all players)</li>
+        </ul>
+
+        <!-- Not logged in -->
+        <div id="state-logged-out" style="display:none;">
+          <a href="/login.html?redirect=/account.html" class="btn-auth">
+            Log in to Subscribe
+          </a>
+          <p class="auth-switch">
+            No account? <a href="/login.html?redirect=/account.html">Sign up free</a> first.
+          </p>
+        </div>
+
+        <!-- Logged in, not paid -->
+        <div id="state-logged-in" style="display:none;">
+          <a href="https://buy.stripe.com/eVq4gy8m37ZAgfrbNYak001"
+             id="stripe-btn"
+             class="btn-auth">
+            Subscribe Now
+          </a>
+          <p style="font-size:12px;color:#888;text-align:center;margin-top:10px;">
+            Secure payment via Stripe
+          </p>
+        </div>
+
+        <!-- Already paid -->
+        <div id="state-paid" class="already-paid-msg" style="display:none;">
+          ✓ You already have Premium access. <a href="/fantasy_projections.html">Back to Projections</a>
+        </div>
+      </div>
+
+    </div>
+  </main>
 
 </div>
+
+<script type="module">
+  import { auth, db } from "./firebase.js";
+  import {
+    onAuthStateChanged,
+    signOut
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import {
+    doc,
+    getDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const accountEmail = document.getElementById("account-email");
+  const accountStatus = document.getElementById("account-status");
+
+  const loginAccountBtn = document.getElementById("login-account-btn");
+  const logoutAccountBtn = document.getElementById("logout-account-btn");
+
+  const stateLoggedOut = document.getElementById("state-logged-out");
+  const stateLoggedIn = document.getElementById("state-logged-in");
+  const statePaid = document.getElementById("state-paid");
+
+  const stripeBtn = document.getElementById("stripe-btn");
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      accountEmail.textContent = "Not logged in";
+      accountStatus.textContent = "Free";
+
+      loginAccountBtn.style.display = "block";
+      logoutAccountBtn.style.display = "none";
+
+      stateLoggedOut.style.display = "block";
+      stateLoggedIn.style.display = "none";
+      statePaid.style.display = "none";
+
+      return;
+    }
+
+    accountEmail.textContent = user.email || "Logged in";
+
+    let paid = false;
+
+    try {
+      const snap = await getDoc(doc(db, "users", user.uid));
+      paid = snap.exists() && snap.data().paid === true;
+    } catch (e) {
+      console.error("Could not fetch paid status:", e);
+    }
+
+    accountStatus.textContent = paid ? "Premium" : "Free";
+
+    loginAccountBtn.style.display = "none";
+    logoutAccountBtn.style.display = "block";
+
+    stateLoggedOut.style.display = "none";
+    stateLoggedIn.style.display = paid ? "none" : "block";
+    statePaid.style.display = paid ? "block" : "none";
+
+    if (!paid && stripeBtn) {
+      const base = stripeBtn.href.split("?")[0];
+      stripeBtn.href =
+        `${base}?prefilled_email=${encodeURIComponent(user.email || "")}` +
+        `&client_reference_id=${encodeURIComponent(user.uid)}`;
+    }
+  });
+
+  logoutAccountBtn.addEventListener("click", async () => {
+    await signOut(auth);
+    window.location.href = "/index.html";
+  });
+</script>
 
 <hr>
 
