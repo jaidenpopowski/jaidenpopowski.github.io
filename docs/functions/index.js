@@ -33,7 +33,7 @@ exports.stripeWebhook = onRequest(
         await admin.firestore()
           .collection("users")
           .doc(uid)
-          .update({ paid: true });
+          .set({ paid: true }, { merge: true });
         console.log("Marked paid for UID:", uid);
       } else {
         console.warn("No client_reference_id on session:", session.id);
