@@ -359,7 +359,7 @@ to deliver AFL Fantasy projections more accurate than anywhere else.
 <span style="font-weight:bold;color:darkblue;margin-right:6px;">ℹ</span>
 
     <b>AFL Fantasy players</b> can still see the most highly owned projections for free.<br>
-    <b><a href='/login.html'>Create an account</a></b> and upgrade to access <b>full</b> weekly projections across the remainder of 2026.
+    <b><a href='/account'>Create an account</a></b> and upgrade to access <b>full</b> weekly projections across the remainder of 2026.
 </div>
 <div id="loading-state" style="text-align:center;padding:40px;color:#888;font-size:13px;">Loading projections...</div>
 <div id="filter-bar" class="filter-bar" style="display:none;">
@@ -431,7 +431,7 @@ to deliver AFL Fantasy projections more accurate than anywhere else.
       url     = "https://firebasestorage.googleapis.com/v0/b/statsbyjaiden.firebasestorage.app/o/projections_full.json?alt=media";
       headers = { Authorization: "Bearer " + token };
     } else {
-      url = "projections_free.json";
+      url = "https://firebasestorage.googleapis.com/v0/b/statsbyjaiden.firebasestorage.app/o/projections_free.json?alt=media";
     }
 
     // Fetch and populate table
