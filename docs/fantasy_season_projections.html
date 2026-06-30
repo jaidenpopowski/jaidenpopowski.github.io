@@ -405,7 +405,7 @@ week projections available here</a></p>
       const colId = "R" + i;
       if (!roundCols.has(colId)) emptyRounds.push(colId);
     }
-    Reactable.setHiddenColumns('season_projections_table', emptyRounds);
+    Reactable.setHiddenColumns('season_projections_table', ['playerId', ...emptyRounds]);
 
     document.getElementById("loading-state").style.display = "none";
     document.getElementById("filter-bar").style.display    = "flex";
