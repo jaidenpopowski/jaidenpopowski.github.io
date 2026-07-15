@@ -343,12 +343,12 @@ to deliver AFL Fantasy projections more accurate than anywhere else.
     .team-dropdown-panel {
       position: absolute; z-index: 999; top: 100%; left: 0; margin-top: 2px;
       background: white; border: 1px solid #ccc; border-radius: 4px;
-      padding: 6px 10px; display: grid; grid-template-columns: repeat(3, 1fr);
+      padding: 6px 10px; display: grid; grid-template-columns: repeat(3, max-content);
       gap: 2px 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); 
       width: 220px; max-width: calc(100vw - 32px);
     }
     @media (max-width: 480px) {
-      .team-dropdown-panel { grid-template-columns: repeat(2, 1fr); }
+      .team-dropdown-panel { grid-template-columns: repeat(2, max-content); }
     }
     .team-option {
       font-size: 12px; display: flex; align-items: center; gap: 4px;
