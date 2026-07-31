@@ -34,6 +34,18 @@
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <link href="site_libs/font-awesome-6.5.2/css/all.min.css" rel="stylesheet" />
 <link href="site_libs/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet" />
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1GD8EVS054"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-1GD8EVS054');
+</script>
+<!-- header.html — included on every page via _site.yml in_header -->
+<script type="module" src="firebase.js"></script>
+<script type="module" src="auth.js"></script>
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -281,7 +293,7 @@ $(document).ready(function () {
   </a>
 </li>
 <li>
-  <a href="about">About</a>
+  <a href="account">Account</a>
 </li>
       </ul>
     </div><!--/.nav-collapse -->

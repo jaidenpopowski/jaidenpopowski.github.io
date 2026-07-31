@@ -32,14 +32,6 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
-<script src="site_libs/core-js-2.5.3/shim.min.js"></script>
-<script src="site_libs/react-18.2.0/react.min.js"></script>
-<script src="site_libs/react-18.2.0/react-dom.min.js"></script>
-<script src="site_libs/reactwidget-2.0.0/react-tools.js"></script>
-<link href="site_libs/htmltools-fill-0.5.9/fill.css" rel="stylesheet" />
-<script src="site_libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
-<link href="site_libs/reactable-0.4.5/reactable.css" rel="stylesheet" />
-<script src="site_libs/reactable-binding-0.4.5/reactable.js"></script>
 <link href="site_libs/font-awesome-6.5.2/css/all.min.css" rel="stylesheet" />
 <link href="site_libs/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet" />
 <!-- Google tag (gtag.js) -->
@@ -51,6 +43,9 @@
 
   gtag('config', 'G-1GD8EVS054');
 </script>
+<!-- header.html — included on every page via _site.yml in_header -->
+<script type="module" src="firebase.js"></script>
+<script type="module" src="auth.js"></script>
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -314,544 +309,47 @@ $(document).ready(function () {
 </div>
 
 
-
-  <div style='display: flex; align-items: center;'>
-    <a href='fantasy_projections' style='margin-right: 10px;'>AFL Fantasy Projections</a>
-    <div style='background-color: #28a745; padding: 5px 10px; border-radius: 5px; display: flex; align-items: center;'>
-      <i class='fas fa-check-circle' style='color: white; margin-right: 5px;'></i>
-      <span style='color: white;'>Round 21</span>
-    </div>
-  </div>
-
-
-  <div style='display: flex; align-items: center;'>
-    <a href='fantasy_season_projections' style='margin-right: 10px;'>Season-Long Projections</a>
-    <div style='background-color: #28a745; padding: 5px 10px; border-radius: 5px; display: flex; align-items: center;'>
-      <i class='fas fa-check-circle' style='color: white; margin-right: 5px;'></i>
-      <span style='color: white;'>NEW</span>
-    </div>
-  </div>
-
-
-  <div style='display: flex; align-items: center;'>
-    <a href='premium_score_sources' style='margin-right: 10px;'>Score Sources 2026</a>
-    <div style='background-color: #28a745; padding: 5px 10px; border-radius: 5px; display: flex; align-items: center;'>
-      <i class='fas fa-check-circle' style='color: white; margin-right: 5px;'></i>
-      <span style='color: white;'>2026</span>
-    </div>
-  </div>
-
-<style>
-    .fantasy-leaders .reactable { display: none; }
-    .fantasy-leaders .leader-loading { min-height: 180px; }
-  </style>
-<div id="fantasy-leaders-error" style="display:none; color:#b00020; margin: 12px 0; font-size: 13px;"></div>
-<div class="row fantasy-leaders">
-<div class="sc-leader">
-<h3>Stoppage Points (MID)</h3>
-<div id="leaders-stoppages-MID-loading" class="skeleton-table leader-loading">
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-</div>
-<div class="reactable html-widget html-fill-item" id="leaders-stoppages-MID" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="leaders-stoppages-MID">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"Player":[],"G":[],"AF":[],"Stoppages":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":"function(cellInfo) {\n  var img = '';\n  if (cellInfo.row['playerId']) {\n    img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n      + String(cellInfo.row['playerId']).replace('CD_I', '')\n      + '.png?im=Resize=(50,50)\" alt=\"\" style=\"height:24px;vertical-align:middle;\"'\n      + ' onerror=\"this.style.display=\\'none\\'\">';\n  }\n  return '<div style=\"vertical-align:bottom;\">' + img + ' ' + (cellInfo.value || '') + '<\/div>';\n}","html":true,"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Stoppages","name":"Stoppages","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"elementId":"leaders-stoppages-MID","dataKey":"36bdb344b5a84ebe56e665fc3698afb2"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell"],"jsHooks":[]}</script>
-</div>
-<div class="sc-leader">
-<h3>Transition Points (MID)</h3>
-<div id="leaders-transition-MID-loading" class="skeleton-table leader-loading">
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-</div>
-<div class="reactable html-widget html-fill-item" id="leaders-transition-MID" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="leaders-transition-MID">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"Player":[],"G":[],"AF":[],"Transition":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":"function(cellInfo) {\n  var img = '';\n  if (cellInfo.row['playerId']) {\n    img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n      + String(cellInfo.row['playerId']).replace('CD_I', '')\n      + '.png?im=Resize=(50,50)\" alt=\"\" style=\"height:24px;vertical-align:middle;\"'\n      + ' onerror=\"this.style.display=\\'none\\'\">';\n  }\n  return '<div style=\"vertical-align:bottom;\">' + img + ' ' + (cellInfo.value || '') + '<\/div>';\n}","html":true,"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Transition","name":"Transition","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"elementId":"leaders-transition-MID","dataKey":"9861dc47bce29fd47d67c949e5b81889"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell"],"jsHooks":[]}</script>
-</div>
-<div class="sc-leader">
-<h3>Stoppage Points (DEF)</h3>
-<div id="leaders-stoppages-DEF-loading" class="skeleton-table leader-loading">
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-</div>
-<div class="reactable html-widget html-fill-item" id="leaders-stoppages-DEF" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="leaders-stoppages-DEF">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"Player":[],"G":[],"AF":[],"Stoppages":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":"function(cellInfo) {\n  var img = '';\n  if (cellInfo.row['playerId']) {\n    img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n      + String(cellInfo.row['playerId']).replace('CD_I', '')\n      + '.png?im=Resize=(50,50)\" alt=\"\" style=\"height:24px;vertical-align:middle;\"'\n      + ' onerror=\"this.style.display=\\'none\\'\">';\n  }\n  return '<div style=\"vertical-align:bottom;\">' + img + ' ' + (cellInfo.value || '') + '<\/div>';\n}","html":true,"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Stoppages","name":"Stoppages","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"elementId":"leaders-stoppages-DEF","dataKey":"36bdb344b5a84ebe56e665fc3698afb2"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell"],"jsHooks":[]}</script>
-</div>
-<div class="sc-leader">
-<h3>Transition Points (DEF)</h3>
-<div id="leaders-transition-DEF-loading" class="skeleton-table leader-loading">
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-</div>
-<div class="reactable html-widget html-fill-item" id="leaders-transition-DEF" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="leaders-transition-DEF">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"Player":[],"G":[],"AF":[],"Transition":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":"function(cellInfo) {\n  var img = '';\n  if (cellInfo.row['playerId']) {\n    img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n      + String(cellInfo.row['playerId']).replace('CD_I', '')\n      + '.png?im=Resize=(50,50)\" alt=\"\" style=\"height:24px;vertical-align:middle;\"'\n      + ' onerror=\"this.style.display=\\'none\\'\">';\n  }\n  return '<div style=\"vertical-align:bottom;\">' + img + ' ' + (cellInfo.value || '') + '<\/div>';\n}","html":true,"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Transition","name":"Transition","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"elementId":"leaders-transition-DEF","dataKey":"9861dc47bce29fd47d67c949e5b81889"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell"],"jsHooks":[]}</script>
-</div>
-<div class="sc-leader">
-<h3>Stoppage Points (FWD)</h3>
-<div id="leaders-stoppages-FWD-loading" class="skeleton-table leader-loading">
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-</div>
-<div class="reactable html-widget html-fill-item" id="leaders-stoppages-FWD" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="leaders-stoppages-FWD">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"Player":[],"G":[],"AF":[],"Stoppages":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":"function(cellInfo) {\n  var img = '';\n  if (cellInfo.row['playerId']) {\n    img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n      + String(cellInfo.row['playerId']).replace('CD_I', '')\n      + '.png?im=Resize=(50,50)\" alt=\"\" style=\"height:24px;vertical-align:middle;\"'\n      + ' onerror=\"this.style.display=\\'none\\'\">';\n  }\n  return '<div style=\"vertical-align:bottom;\">' + img + ' ' + (cellInfo.value || '') + '<\/div>';\n}","html":true,"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Stoppages","name":"Stoppages","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"elementId":"leaders-stoppages-FWD","dataKey":"36bdb344b5a84ebe56e665fc3698afb2"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell"],"jsHooks":[]}</script>
-</div>
-<div class="sc-leader">
-<h3>Transition Points (FWD)</h3>
-<div id="leaders-transition-FWD-loading" class="skeleton-table leader-loading">
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-</div>
-<div class="reactable html-widget html-fill-item" id="leaders-transition-FWD" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="leaders-transition-FWD">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"Player":[],"G":[],"AF":[],"Transition":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":"function(cellInfo) {\n  var img = '';\n  if (cellInfo.row['playerId']) {\n    img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n      + String(cellInfo.row['playerId']).replace('CD_I', '')\n      + '.png?im=Resize=(50,50)\" alt=\"\" style=\"height:24px;vertical-align:middle;\"'\n      + ' onerror=\"this.style.display=\\'none\\'\">';\n  }\n  return '<div style=\"vertical-align:bottom;\">' + img + ' ' + (cellInfo.value || '') + '<\/div>';\n}","html":true,"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Transition","name":"Transition","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"elementId":"leaders-transition-FWD","dataKey":"9861dc47bce29fd47d67c949e5b81889"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell"],"jsHooks":[]}</script>
-</div>
-<div class="sc-leader">
-<h3>Stoppage Points (RUC)</h3>
-<div id="leaders-stoppages-RUC-loading" class="skeleton-table leader-loading">
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-</div>
-<div class="reactable html-widget html-fill-item" id="leaders-stoppages-RUC" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="leaders-stoppages-RUC">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"Player":[],"G":[],"AF":[],"Stoppages":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":"function(cellInfo) {\n  var img = '';\n  if (cellInfo.row['playerId']) {\n    img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n      + String(cellInfo.row['playerId']).replace('CD_I', '')\n      + '.png?im=Resize=(50,50)\" alt=\"\" style=\"height:24px;vertical-align:middle;\"'\n      + ' onerror=\"this.style.display=\\'none\\'\">';\n  }\n  return '<div style=\"vertical-align:bottom;\">' + img + ' ' + (cellInfo.value || '') + '<\/div>';\n}","html":true,"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Stoppages","name":"Stoppages","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"elementId":"leaders-stoppages-RUC","dataKey":"36bdb344b5a84ebe56e665fc3698afb2"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell"],"jsHooks":[]}</script>
-</div>
-<div class="sc-leader">
-<h3>Transition Points (RUC)</h3>
-<div id="leaders-transition-RUC-loading" class="skeleton-table leader-loading">
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-<div class="skeleton-row">
-<div class="skeleton-cell" style="flex:160 0 0;"></div>
-<div class="skeleton-cell" style="flex:35 0 0;"></div>
-<div class="skeleton-cell" style="flex:50 0 0;"></div>
-<div class="skeleton-cell" style="flex:60 0 0;"></div>
-</div>
-</div>
-<div class="reactable html-widget html-fill-item" id="leaders-transition-RUC" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="leaders-transition-RUC">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"Player":[],"G":[],"AF":[],"Transition":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":"function(cellInfo) {\n  var img = '';\n  if (cellInfo.row['playerId']) {\n    img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n      + String(cellInfo.row['playerId']).replace('CD_I', '')\n      + '.png?im=Resize=(50,50)\" alt=\"\" style=\"height:24px;vertical-align:middle;\"'\n      + ' onerror=\"this.style.display=\\'none\\'\">';\n  }\n  return '<div style=\"vertical-align:bottom;\">' + img + ' ' + (cellInfo.value || '') + '<\/div>';\n}","html":true,"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Transition","name":"Transition","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"elementId":"leaders-transition-RUC","dataKey":"9861dc47bce29fd47d67c949e5b81889"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell"],"jsHooks":[]}</script>
-</div>
-</div>
 <script type="module">
-  const URL =
-    "https://firebasestorage.googleapis.com/v0/b/statsbyjaiden.firebasestorage.app/o/score_sources.json?alt=media";
+  import { mountSectionNav } from "./site_nav.js";
+  mountSectionNav("fantasy");
+</script>
 
-  const leaders = [
-    { id: "leaders-stoppages-MID",  pos: "MID", stat: "Stoppages"  },
-    { id: "leaders-transition-MID", pos: "MID", stat: "Transition" },
-    { id: "leaders-stoppages-DEF",  pos: "DEF", stat: "Stoppages"  },
-    { id: "leaders-transition-DEF", pos: "DEF", stat: "Transition" },
-    { id: "leaders-stoppages-FWD",  pos: "FWD", stat: "Stoppages"  },
-    { id: "leaders-transition-FWD", pos: "FWD", stat: "Transition" },
-    { id: "leaders-stoppages-RUC",  pos: "RUC", stat: "Stoppages"  },
-    { id: "leaders-transition-RUC", pos: "RUC", stat: "Transition" }
-  ];
+<div class="hub-grid">
 
-  function top10(rows, pos, stat) {
-    const filtered = rows.filter(function (r) {
-      return String(r.Position || "").indexOf(pos) >= 0;
-    });
-    const maxG = filtered.reduce(function (m, r) {
-      return Math.max(m, r.Games || 0);
-    }, 0);
-    return filtered
-      .filter(function (r) { return (r.Games || 0) >= maxG / 2; })
-      .map(function (r) {
-        var row = {
-          playerId: r.playerId,
-          Player: r.Player,
-          G: r.Games,
-          AF: r.Fantasy
-        };
-        row[stat] = r[stat];
-        return row;
-      })
-      .sort(function (a, b) {
-        return Math.abs(b[stat] || 0) - Math.abs(a[stat] || 0);
-      })
-      .slice(0, 10);
-  }
+  <div class="hub-col">
+    <h3 class="hub-col-title">Featured</h3>
+    <ul class="page-list hub-featured" id="hub-featured">
+      <li><span class="page-title" style="color:#666;font-size:1rem;">Loading…</span></li>
+    </ul>
+  </div>
+
+  <div class="hub-col">
+    <h3 class="hub-col-title"><a href="fantasy_projections">Projections</a></h3>
+    <div class="hub-panel" id="hub-projections">Loading…</div>
+  </div>
+
+  <div class="hub-col">
+    <h3 class="hub-col-title"><a href="fantasy_season_projections">Season</a></h3>
+    <div class="hub-panel" id="hub-season">Loading…</div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { renderFeaturedNav } from "./site_nav.js";
+  import { loadHub, renderHubPanel } from "./hubs.js";
+
+  renderFeaturedNav("hub-featured", "fantasy");
 
   try {
-    const res = await fetch(URL);
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
-    const season = data.season || [];
-
-    leaders.forEach(function (L) {
-      Reactable.setData(L.id, top10(season, L.pos, L.stat));
-      const loading = document.getElementById(L.id + "-loading");
-      if (loading) loading.style.display = "none";
-      const table = document.getElementById(L.id);
-      if (table) table.style.display = "block";
-    });
+    const data = await loadHub("fantasy");
+    renderHubPanel("hub-projections", data.projections, { kind: "projections" });
+    renderHubPanel("hub-season", data.season, { kind: "season" });
   } catch (e) {
     console.error(e);
-    leaders.forEach(function (L) {
-      const loading = document.getElementById(L.id + "-loading");
-      if (loading) loading.style.display = "none";
-    });
-    const err = document.getElementById("fantasy-leaders-error");
-    if (err) {
-      err.style.display = "block";
-      err.textContent = "Failed to load leaderboards — please refresh.";
-    }
+    const msg = "Failed to load hub data — please refresh.";
+    document.getElementById("hub-projections").textContent = msg;
+    document.getElementById("hub-season").textContent = msg;
   }
 </script>
 

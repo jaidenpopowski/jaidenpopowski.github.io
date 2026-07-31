@@ -13,7 +13,7 @@
 
 <title>AFLW Statistics</title>
 
-<script src="site_libs/header-attrs-2.26/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
@@ -32,8 +32,20 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
-<link href="site_libs/font-awesome-6.4.2/css/all.min.css" rel="stylesheet" />
-<link href="site_libs/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.5.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet" />
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1GD8EVS054"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-1GD8EVS054');
+</script>
+<!-- header.html — included on every page via _site.yml in_header -->
+<script type="module" src="firebase.js"></script>
+<script type="module" src="auth.js"></script>
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -281,7 +293,7 @@ $(document).ready(function () {
   </a>
 </li>
 <li>
-  <a href="about">About</a>
+  <a href="account">Account</a>
 </li>
       </ul>
     </div><!--/.nav-collapse -->
@@ -297,34 +309,49 @@ $(document).ready(function () {
 </div>
 
 
+<script type="module">
+  import { mountSectionNav } from "./site_nav.js";
+  mountSectionNav("aflw");
+</script>
 
-  <div style='display: flex; align-items: center;'>
-    <a href='aflw_fantasy_breakevens' style='margin-right: 10px;'>Breakevens & Price Projections</a>
-    <div style='background-color: #28a745; padding: 5px 10px; border-radius: 5px; display: flex; align-items: center;'>
-      <i class='fas fa-check-circle' style='color: white; margin-right: 5px;'></i>
-      <span style='color: white;'>NEW</span>
-    </div>
+<div class="hub-grid">
+
+  <div class="hub-col">
+    <h3 class="hub-col-title">Featured</h3>
+    <ul class="page-list hub-featured" id="hub-featured">
+      <li><span class="page-title" style="color:#666;font-size:1rem;">Loading…</span></li>
+    </ul>
   </div>
 
-
-  <div style='display: flex; align-items: center;'>
-    <a href='aflw_fantasy_fixture' style='margin-right: 10px;'>Fixture Difficulty</a>
-    <div style='background-color: #28a745; padding: 5px 10px; border-radius: 5px; display: flex; align-items: center;'>
-      <i class='fas fa-check-circle' style='color: white; margin-right: 5px;'></i>
-      <span style='color: white;'>NEW</span>
-    </div>
+  <div class="hub-col">
+    <h3 class="hub-col-title"><a href="aflw_cbas">CBAs</a></h3>
+    <div class="hub-panel" id="hub-col2">Loading…</div>
   </div>
 
-
-  <div style='display: flex; align-items: center;'>
-    <a href='aflw_fantasy_ownership' style='margin-right: 10px;'>Top Coaches Ownership</a>
-    <div style='background-color: #28a745; padding: 5px 10px; border-radius: 5px; display: flex; align-items: center;'>
-      <i class='fas fa-check-circle' style='color: white; margin-right: 5px;'></i>
-      <span style='color: white;'>TOP 50 ADDED</span>
-    </div>
+  <div class="hub-col">
+    <h3 class="hub-col-title"><a href="aflw_kickins">Kick-Ins</a></h3>
+    <div class="hub-panel" id="hub-col3">Loading…</div>
   </div>
 
-<p><a href='aflw_practice_match_stats'>Practice Match Stats 2025</a></p>
+</div>
+
+<script type="module">
+  import { renderFeaturedNav } from "./site_nav.js";
+  import { loadHub, renderHubPlaceholder } from "./hubs.js";
+
+  renderFeaturedNav("hub-featured", "aflw");
+
+  try {
+    const data = await loadHub("aflw");
+    const p = (data.placeholders) || {};
+    renderHubPlaceholder("hub-col2", p.col2 || "Coming soon");
+    renderHubPlaceholder("hub-col3", p.col3 || "Coming soon");
+  } catch (e) {
+    console.error(e);
+    renderHubPlaceholder("hub-col2", "Coming soon");
+    renderHubPlaceholder("hub-col3", "Coming soon");
+  }
+</script>
 
 <hr>
 
