@@ -708,11 +708,12 @@ button:hover { background-color: darkblue; }
 
 /* ─── Section secondary nav (Fantasy / SuperCoach / AFLW) ─────────────────── */
 .section-nav {
+  justify-content: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem 0.15rem;
+  gap: 0.35rem 0.25rem;
   align-items: center;
-  padding: 0.55rem 1rem;
+  padding: 0.7rem 1rem;
   margin: 0 0 1.25rem;
   background: #f4f6f8;
   border-bottom: 1px solid #dde2e8;
@@ -721,9 +722,9 @@ button:hover { background-color: darkblue; }
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.4rem 0.75rem;
+  padding: 0.5rem 0.95rem;
   border-radius: 4px;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 500;
   color: #334;
   text-decoration: none;
@@ -742,26 +743,17 @@ button:hover { background-color: darkblue; }
   background: #001a66;
   color: #fff;
 }
-.section-nav-badge {
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #fff;
-  padding: 2px 6px;
-  border-radius: 3px;
-  line-height: 1.2;
-}
-.section-nav-link.active .section-nav-badge {
+.section-nav-link.active {
   box-shadow: 0 0 0 1px rgba(255,255,255,0.35);
 }
 
 @media (max-width: 600px) {
   .section-nav {
-    padding: 0.45rem 0.5rem;
+    padding: 0.55rem 0.5rem;
     overflow-x: auto;
     flex-wrap: nowrap;
     -webkit-overflow-scrolling: touch;
+    justify-content: flex-start;
   }
 }
 
@@ -777,10 +769,10 @@ button:hover { background-color: darkblue; }
   min-width: 0;
 }
 .hub-col-title {
-  font-size: 1.05rem;
+  font-size: 1.3rem;
   font-weight: 700;
-  margin: 0 0 0.65rem;
-  padding-bottom: 0.35rem;
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.4rem;
   border-bottom: 2px solid #dde2e8;
 }
 .hub-col-title a {
@@ -792,15 +784,15 @@ button:hover { background-color: darkblue; }
   text-decoration: underline;
 }
 .hub-featured.page-list .page-title {
-  font-size: 1rem;
-  line-height: 1.25;
+  font-size: 1.25rem;
+  line-height: 1.3;
 }
 .hub-featured.page-list a.page-row {
-  padding: 0.65rem 0.25rem;
+  padding: 0.75rem 0.35rem;
 }
 .hub-featured .badge {
-  font-size: 0.75rem;
-  padding: 2px 7px;
+  font-size: 0.9rem;
+  padding: 3px 8px;
   margin-left: 0.5rem;
 }
 .hub-panel {
@@ -809,21 +801,20 @@ button:hover { background-color: darkblue; }
 .hub-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
+  color: #222;
 }
 .hub-table th,
 .hub-table td {
-  padding: 0.35rem 0.3rem;
+  padding: 0.55rem 0.45rem;
   text-align: left;
   border-bottom: 1px solid #eee;
   vertical-align: middle;
 }
 .hub-table th {
   font-weight: 600;
-  color: #555;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  color: #333;
+  font-size: 0.95rem;
 }
 .hub-table .hub-player-col {
   min-width: 0;
@@ -831,7 +822,7 @@ button:hover { background-color: darkblue; }
 .hub-table td.hub-player-col {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
 }
 .hub-table td.hub-player-col span {
   overflow: hidden;
@@ -839,15 +830,16 @@ button:hover { background-color: darkblue; }
   white-space: nowrap;
 }
 .hub-headshot {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  object-fit: cover;
+  width: auto;
+  height: 24px;
+  border-radius: 0;
+  object-fit: contain;
   flex-shrink: 0;
+  vertical-align: middle;
 }
 .hub-empty {
   margin: 0.5rem 0 0;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #767676;
 }
 .hub-col-kofi .kofi-wrap {

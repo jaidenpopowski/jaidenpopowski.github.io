@@ -86,15 +86,8 @@ function sectionItemHtml(item, slug) {
   const label = escapeHtml(item.navTitle || item.title);
   const url = escapeHtml(item.url || "#");
   const active = isActiveItem(item, slug) ? " active" : "";
-  const tile = item.tile != null && String(item.tile).trim() !== ""
-    ? String(item.tile)
-    : null;
-  const colour = item.tileColour || "#28a745";
-  const badge = tile
-    ? `<span class="section-nav-badge" style="background:${escapeHtml(colour)};">${escapeHtml(tile)}</span>`
-    : "";
 
-  return `<a class="section-nav-link${active}" href="${url}">${label}${badge}</a>`;
+  return `<a class="section-nav-link${active}" href="${url}">${label}</a>`;
 }
 
 /**
