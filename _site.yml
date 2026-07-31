@@ -1,5 +1,6 @@
 name: "statsbyjaiden"
 output_dir: "docs"
+exclude: ["functions", "functions/**"]
 navbar:
   title: "Stats By Jaiden"
   left:
