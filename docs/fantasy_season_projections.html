@@ -323,13 +323,104 @@ week projections available here</a></p>
     .filter-btn.active { background: darkblue; color: white; border-color: #1a73e8; }
     .filter-label { font-size: 12px; font-weight: bold; margin-right: 4px; }
     #player-search { font-size: 12px; padding: 3px 6px; border-radius: 4px; border: 1px solid #ccc; width: 160px; }
+    /* Skeleton loading, sticky filter bar, row-fade transition, and empty-state
+       styling now live in style.css (shared across all projection-table pages). */
   </style>
 <div id="free-notice" style="background:#f0f4ff;border-left:4px solid darkblue;border-radius:4px;padding:12px 16px;margin-bottom:16px;font-size:13px;">
 <span style="font-weight:bold;color:darkblue;margin-right:6px;">ℹ</span>
 <b>AFL Fantasy players</b> can still see the most highly owned projections for free.<br>
     <b><a href='/account'>Create an account</a></b> and upgrade to access <b>full</b> season projections across the remainder of 2026.
 </div>
-<div id="loading-state" style="text-align:center;padding:40px;color:#888;font-size:13px;">Loading projections...</div>
+<div id="loading-state" class="skeleton-table">
+<div class="skeleton-row">
+<div class="skeleton-cell" style="width:160px;"></div>
+<div class="skeleton-cell" style="width:40px;"></div>
+<div class="skeleton-cell" style="width:55px;"></div>
+<div class="skeleton-cell" style="width:50px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="width:160px;"></div>
+<div class="skeleton-cell" style="width:40px;"></div>
+<div class="skeleton-cell" style="width:55px;"></div>
+<div class="skeleton-cell" style="width:50px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="width:160px;"></div>
+<div class="skeleton-cell" style="width:40px;"></div>
+<div class="skeleton-cell" style="width:55px;"></div>
+<div class="skeleton-cell" style="width:50px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="width:160px;"></div>
+<div class="skeleton-cell" style="width:40px;"></div>
+<div class="skeleton-cell" style="width:55px;"></div>
+<div class="skeleton-cell" style="width:50px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="width:160px;"></div>
+<div class="skeleton-cell" style="width:40px;"></div>
+<div class="skeleton-cell" style="width:55px;"></div>
+<div class="skeleton-cell" style="width:50px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="width:160px;"></div>
+<div class="skeleton-cell" style="width:40px;"></div>
+<div class="skeleton-cell" style="width:55px;"></div>
+<div class="skeleton-cell" style="width:50px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="width:160px;"></div>
+<div class="skeleton-cell" style="width:40px;"></div>
+<div class="skeleton-cell" style="width:55px;"></div>
+<div class="skeleton-cell" style="width:50px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="width:160px;"></div>
+<div class="skeleton-cell" style="width:40px;"></div>
+<div class="skeleton-cell" style="width:55px;"></div>
+<div class="skeleton-cell" style="width:50px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+<div class="skeleton-cell" style="width:45px;"></div>
+</div>
+</div>
 <div id="filter-bar" class="filter-bar" style="display:none;">
 <input id="player-search" type="text" placeholder="Search..." oninput="filterPlayer(this.value)"/>
 <span class="filter-label" style="margin-left:12px;">Position:</span>
@@ -340,15 +431,26 @@ week projections available here</a></p>
 <button class="filter-btn" onclick="filterPosition(&#39;FWD&#39;)">FWD</button>
 </div>
 <div class="reactable html-widget html-fill-item" id="season_projections_table" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="season_projections_table">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"player":[],"Position":[],"Price":[],"Avg":[],"R1":[],"R2":[],"R3":[],"R4":[],"R5":[],"R6":[],"R7":[],"R8":[],"R9":[],"R10":[],"R11":[],"R12":[],"R13":[],"R14":[],"R15":[],"R16":[],"R17":[],"R18":[],"R19":[],"R20":[],"R21":[],"R22":[],"R23":[],"R24":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":65,"show":false},{"id":"player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"cell":"function(cellInfo) {\n            var img = '';\n            if (cellInfo.row['playerId']) {\n              img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n                + cellInfo.row['playerId'].replace('CD_I', '')\n                + '.png?im=Resize=(50,50)\" style=\"height:24px;vertical-align:middle;\"'\n                + ' onerror=\"this.style.display=\\'none\\'\">';\n            }\n            var name = cellInfo.value === 'Hidden'\n              ? '<span style=\"color:#aaa;vertical-align:middle;\">🔒 Premium player<\/span>'\n              : cellInfo.value;\n            return '<div style=\"vertical-align:bottom;\">' + img + ' ' + name + '<\/div>';\n          }","html":true,"sticky":"left"},{"id":"Position","name":"Pos","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55,"cell":"function(cellInfo) {\n            var value = String(cellInfo.value);\n            if (!value.includes('/')) return value;\n            var map = { DEF: 'D', MID: 'M', RUC: 'R', FWD: 'F' };\n            return value.split('/').map(function(x) { return map[x] || x; }).join('/');\n          }"},{"id":"Price","name":"Price","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"cell":"function(cellInfo) {\n            if (cellInfo.value === null || cellInfo.value === undefined) return '';\n            return '$' + cellInfo.value / 1000 + 'K';\n          }"},{"id":"Avg","name":"Proj","type":"numeric","format":{"cell":{"digits":2},"aggregated":{"digits":2}},"minWidth":65,"style":{"border-left":"2px solid #555","border-right":"2px solid #555"}},{"id":"R1","name":"R1","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R2","name":"R2","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R3","name":"R3","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R4","name":"R4","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R5","name":"R5","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R6","name":"R6","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R7","name":"R7","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R8","name":"R8","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R9","name":"R9","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R10","name":"R10","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R11","name":"R11","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R12","name":"R12","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R13","name":"R13","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R14","name":"R14","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R15","name":"R15","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R16","name":"R16","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R17","name":"R17","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R18","name":"R18","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R19","name":"R19","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R20","name":"R20","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R21","name":"R21","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R22","name":"R22","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R23","name":"R23","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R24","name":"R24","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55}],"defaultSortDesc":true,"defaultSorted":[{"id":"Avg","desc":true}],"defaultPageSize":25,"showPageSizeOptions":true,"pageSizeOptions":[25,50,100,200],"striped":true,"showSortIcon":false,"style":{"fontSize":"12px"},"elementId":"season_projections_table","dataKey":"d6201b5e20bb587a12a8f0dfdc41a97c"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell","tag.attribs.columns.2.cell","tag.attribs.columns.3.cell"],"jsHooks":[]}</script>
+<script type="application/json" data-for="season_projections_table">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"player":[],"Position":[],"Price":[],"Avg":[],"R1":[],"R2":[],"R3":[],"R4":[],"R5":[],"R6":[],"R7":[],"R8":[],"R9":[],"R10":[],"R11":[],"R12":[],"R13":[],"R14":[],"R15":[],"R16":[],"R17":[],"R18":[],"R19":[],"R20":[],"R21":[],"R22":[],"R23":[],"R24":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":65,"show":false},{"id":"player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"cell":"function(cellInfo) {\n            var img = '';\n            if (cellInfo.row['playerId']) {\n              img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n                + cellInfo.row['playerId'].replace('CD_I', '')\n                + '.png?im=Resize=(50,50)\" style=\"height:24px;vertical-align:middle;\"'\n                + ' onerror=\"this.style.display=\\'none\\'\">';\n            }\n            var name = cellInfo.value === 'Hidden'\n              ? '<span style=\"color:#aaa;vertical-align:middle;\">🔒 Premium player<\/span>'\n              : cellInfo.value;\n            return '<div style=\"vertical-align:bottom;\">' + img + ' ' + name + '<\/div>';\n          }","html":true,"sticky":"left"},{"id":"Position","name":"Pos","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55,"cell":"function(cellInfo) {\n            var value = String(cellInfo.value);\n            if (!value.includes('/')) return value;\n            var map = { DEF: 'D', MID: 'M', RUC: 'R', FWD: 'F' };\n            return value.split('/').map(function(x) { return map[x] || x; }).join('/');\n          }"},{"id":"Price","name":"Price","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"cell":"function(cellInfo) {\n            if (cellInfo.value === null || cellInfo.value === undefined) return '';\n            return '$' + cellInfo.value / 1000 + 'K';\n          }"},{"id":"Avg","name":"Proj","type":"numeric","format":{"cell":{"digits":2},"aggregated":{"digits":2}},"minWidth":65,"style":{"border-left":"2px solid #555","border-right":"2px solid #555"}},{"id":"R1","name":"R1","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R2","name":"R2","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R3","name":"R3","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R4","name":"R4","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R5","name":"R5","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R6","name":"R6","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R7","name":"R7","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R8","name":"R8","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R9","name":"R9","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R10","name":"R10","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R11","name":"R11","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R12","name":"R12","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R13","name":"R13","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R14","name":"R14","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R15","name":"R15","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R16","name":"R16","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R17","name":"R17","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R18","name":"R18","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R19","name":"R19","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R20","name":"R20","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R21","name":"R21","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R22","name":"R22","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R23","name":"R23","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55},{"id":"R24","name":"R24","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":55}],"defaultSortDesc":true,"defaultSorted":[{"id":"Avg","desc":true}],"defaultPageSize":25,"showPageSizeOptions":true,"pageSizeOptions":[25,50,100,200],"striped":true,"showSortIcon":false,"style":{"fontSize":"12px"},"language":{"noData":"No players match these filters — try widening your Position selection."},"elementId":"season_projections_table","dataKey":"d6201b5e20bb587a12a8f0dfdc41a97c"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell","tag.attribs.columns.2.cell","tag.attribs.columns.3.cell"],"jsHooks":[]}</script>
 <script>
     var activePosition = 'ALL';
     var activePlayer   = '';
 
     function applyFilters() {
+      var tbody = document.querySelector('#season_projections_table .rt-tbody');
+      if (tbody) tbody.classList.add('rt-fading');
+
       var instance = Reactable.getInstance('season_projections_table');
       instance.setFilter('Position', activePosition === 'ALL' ? undefined : activePosition);
       instance.setFilter('player',   activePlayer   || undefined);
+
+      // Let the new rows paint, then fade back in rather than snapping.
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          var tbody2 = document.querySelector('#season_projections_table .rt-tbody');
+          if (tbody2) tbody2.classList.remove('rt-fading');
+        });
+      });
     }
 
     function filterPosition(pos) {

@@ -17,6 +17,7 @@ body {
 /* Headers */
 h1 {
   font-size: 24pt;
+  margin-top: 0;
 }
 
 a {
@@ -113,6 +114,37 @@ a:active {
 
 .boldedrow {
   font-weight: bold;
+}
+
+/* ─── Projection tables: skeleton loading, sticky filter bar, row fade, empty state ───
+   Applies to any reactable whose elementId ends in "_table" (projections_table,
+   season_projections_table, and any future premium_score_sources_table etc.)
+   so this only needs to be written once. ──────────────────────────────────── */
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton-table { display: flex; flex-direction: column; gap: 10px; padding: 6px 0; }
+.skeleton-row { display: flex; gap: 10px; align-items: center; }
+.skeleton-cell {
+  height: 16px; border-radius: 4px;
+  background: linear-gradient(90deg, #eee 25%, #f5f5f5 37%, #eee 63%);
+  background-size: 400px 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+#filter-bar.filter-bar {
+  position: sticky; top: 0; z-index: 50;
+  background: #fff; padding: 8px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+[id$="_table"] .rt-tbody { transition: opacity 0.15s ease; }
+[id$="_table"] .rt-tbody.rt-fading { opacity: 0.25; }
+
+[id$="_table"] .rt-no-data {
+  padding: 40px 20px; text-align: center; color: #888; font-size: 13px;
 }
 
 /* ─── Auth pages (login.html, upgrade.html) ──────────────────────────────── */
