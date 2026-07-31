@@ -135,7 +135,7 @@ a:active {
 }
 
 #filter-bar.filter-bar {
-  position: sticky; top: 0; z-index: 50;
+  position: sticky; top: 50; z-index: 50;
   background: #fff; padding: 8px 0;
   box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
@@ -624,4 +624,8 @@ button:hover { background-color: darkblue; }
 .contact-link:hover {
   color: #0056b3;
   transform: scale(1.05);
+}
+
+div[id^="kofi-widget-overlay"] {
+  position: fixed !important;
 }
