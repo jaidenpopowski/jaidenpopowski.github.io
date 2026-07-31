@@ -341,54 +341,519 @@ $(document).ready(function () {
     </div>
   </div>
 
-<div class="row">
+<style>
+    .fantasy-leaders .reactable { display: none; }
+    .fantasy-leaders .leader-loading { min-height: 180px; }
+  </style>
+<div id="fantasy-leaders-error" style="display:none; color:#b00020; margin: 12px 0; font-size: 13px;"></div>
+<div class="row fantasy-leaders">
 <div class="sc-leader">
 <h3>Stoppage Points (MID)</h3>
-<div class="reactable html-widget html-fill-item" id="htmlwidget-897b6c1962e5abadd496" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-897b6c1962e5abadd496">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":["CD_I990704","CD_I1008280","CD_I996701","CD_I1009208","CD_I1023518","CD_I1009420","CD_I1006130","CD_I1023517","CD_I293535","CD_I998172"],"Player":["Patrick Cripps","Ed Richards","Clayton Oliver","Matt Rowell","Harry Sheezel","Caleb Serong","Bailey Smith","Will Ashcroft","Lachie Neale","Tim Taranto"],"G":[19,18,19,14,19,16,18,19,19,17],"AF":[92.2631578947368,101.277777777778,99.5263157894737,91.0714285714286,119.578947368421,92.125,117.777777777778,106.421052631579,103.473684210526,91.6470588235294],"Stoppages":[57.2631578947368,57.2222222222222,56.0526315789474,54.5,53.4736842105263,53.125,52.7777777777778,52.0526315789474,51.8421052631579,51.7058823529412]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":[{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/990704.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Patrick Cripps"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1008280.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Ed Richards"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/996701.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Clayton Oliver"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1009208.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Matt Rowell"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1023518.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Harry Sheezel"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1009420.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Caleb Serong"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1006130.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Bailey Smith"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1023517.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Will Ashcroft"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/293535.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Lachie Neale"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/998172.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Tim Taranto"]}]}],"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Stoppages","name":"Stoppages","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"dataKey":"e39f89e4650c3a866f3e93e3724f6da0"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<div id="leaders-stoppages-MID-loading" class="skeleton-table leader-loading">
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+</div>
+<div class="reactable html-widget html-fill-item" id="leaders-stoppages-MID" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="leaders-stoppages-MID">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"Player":[],"G":[],"AF":[],"Stoppages":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":"function(cellInfo) {\n  var img = '';\n  if (cellInfo.row['playerId']) {\n    img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n      + String(cellInfo.row['playerId']).replace('CD_I', '')\n      + '.png?im=Resize=(50,50)\" alt=\"\" style=\"height:24px;vertical-align:middle;\"'\n      + ' onerror=\"this.style.display=\\'none\\'\">';\n  }\n  return '<div style=\"vertical-align:bottom;\">' + img + ' ' + (cellInfo.value || '') + '<\/div>';\n}","html":true,"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Stoppages","name":"Stoppages","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"elementId":"leaders-stoppages-MID","dataKey":"36bdb344b5a84ebe56e665fc3698afb2"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell"],"jsHooks":[]}</script>
 </div>
 <div class="sc-leader">
 <h3>Transition Points (MID)</h3>
-<div class="reactable html-widget html-fill-item" id="htmlwidget-77c8cba6945b65891323" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-77c8cba6945b65891323">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":["CD_I290778","CD_I295584","CD_I1023261","CD_I992242","CD_I1015507","CD_I1023518","CD_I992016","CD_I298264","CD_I1009260","CD_I1006130"],"Player":["Luke Parker","Bradley Hill","Nick Daicos","Jordan Dawson","Nasiah W-Milera","Harry Sheezel","Zach Merrett","Ed Langdon","Sam Flanders","Bailey Smith"],"G":[19,19,18,16,15,19,19,19,12,18],"AF":[93.8947368421053,96.6315789473684,120.166666666667,113.75,112.133333333333,119.578947368421,106.210526315789,79.7894736842105,91.9166666666667,117.777777777778],"Transition":[81.5789473684211,77.5789473684211,71.6666666666667,67.75,67.7333333333333,66.1052631578947,66,65.3157894736842,65.25,65]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":[{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/290778.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Luke Parker"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/295584.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Bradley Hill"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1023261.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Nick Daicos"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/992242.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Jordan Dawson"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1015507.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Nasiah W-Milera"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1023518.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Harry Sheezel"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/992016.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Zach Merrett"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/298264.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Ed Langdon"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1009260.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Sam Flanders"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1006130.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Bailey Smith"]}]}],"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Transition","name":"Transition","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"dataKey":"3d88d3a5227d1ec309586f4996d88c87"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<div id="leaders-transition-MID-loading" class="skeleton-table leader-loading">
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+</div>
+<div class="reactable html-widget html-fill-item" id="leaders-transition-MID" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="leaders-transition-MID">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"Player":[],"G":[],"AF":[],"Transition":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":"function(cellInfo) {\n  var img = '';\n  if (cellInfo.row['playerId']) {\n    img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n      + String(cellInfo.row['playerId']).replace('CD_I', '')\n      + '.png?im=Resize=(50,50)\" alt=\"\" style=\"height:24px;vertical-align:middle;\"'\n      + ' onerror=\"this.style.display=\\'none\\'\">';\n  }\n  return '<div style=\"vertical-align:bottom;\">' + img + ' ' + (cellInfo.value || '') + '<\/div>';\n}","html":true,"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Transition","name":"Transition","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"elementId":"leaders-transition-MID","dataKey":"9861dc47bce29fd47d67c949e5b81889"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell"],"jsHooks":[]}</script>
 </div>
 <div class="sc-leader">
 <h3>Stoppage Points (DEF)</h3>
-<div class="reactable html-widget html-fill-item" id="htmlwidget-3772414d82c3ee19daf5" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-3772414d82c3ee19daf5">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":["CD_I1015507","CD_I1015889","CD_I1028495","CD_I1027821","CD_I1023270","CD_I990740","CD_I1009260","CD_I992351","CD_I1024982","CD_I1012805"],"Player":["Nasiah W-Milera","Max Holmes","Finn O'Sullivan","Caleb Windsor","Marcus Windhager","Rory Lobb","Sam Flanders","Bailey Williams","Oisin Mullin","Tanner Bruhn"],"G":[15,18,15,16,19,16,12,13,19,17],"AF":[112.133333333333,102.388888888889,73.4,59.5,84.2631578947368,64.875,91.9166666666667,81.9230769230769,56.8947368421053,82.2941176470588],"Stoppages":[44.4,37.8333333333333,32,31.3125,27.1578947368421,27.0625,26.6666666666667,23.7692307692308,23.3684210526316,23.2941176470588]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":[{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1015507.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Nasiah W-Milera"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1015889.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Max Holmes"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1028495.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Finn O'Sullivan"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1027821.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Caleb Windsor"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1023270.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Marcus Windhager"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/990740.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Rory Lobb"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1009260.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Sam Flanders"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/992351.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Bailey Williams"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1024982.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Oisin Mullin"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1012805.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Tanner Bruhn"]}]}],"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Stoppages","name":"Stoppages","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"dataKey":"e18fa6744aaff1fc1da8cc9075bbad19"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<div id="leaders-stoppages-DEF-loading" class="skeleton-table leader-loading">
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+</div>
+<div class="reactable html-widget html-fill-item" id="leaders-stoppages-DEF" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="leaders-stoppages-DEF">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"Player":[],"G":[],"AF":[],"Stoppages":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":"function(cellInfo) {\n  var img = '';\n  if (cellInfo.row['playerId']) {\n    img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n      + String(cellInfo.row['playerId']).replace('CD_I', '')\n      + '.png?im=Resize=(50,50)\" alt=\"\" style=\"height:24px;vertical-align:middle;\"'\n      + ' onerror=\"this.style.display=\\'none\\'\">';\n  }\n  return '<div style=\"vertical-align:bottom;\">' + img + ' ' + (cellInfo.value || '') + '<\/div>';\n}","html":true,"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Stoppages","name":"Stoppages","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"elementId":"leaders-stoppages-DEF","dataKey":"36bdb344b5a84ebe56e665fc3698afb2"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell"],"jsHooks":[]}</script>
 </div>
 <div class="sc-leader">
 <h3>Transition Points (DEF)</h3>
-<div class="reactable html-widget html-fill-item" id="htmlwidget-0304241d33813eb17fac" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-0304241d33813eb17fac">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":["CD_I296422","CD_I294305","CD_I1009253","CD_I994389","CD_I290778","CD_I261224","CD_I996708","CD_I990882","CD_I1000072","CD_I1023515"],"Player":["Callum Wilkie","Lachie Whitfield","Lachie Ash","Jack Sinclair","Luke Parker","Dayne Zorko","Bailey Dale","Wayne Milera","John Noble","Archie Roberts"],"G":[19,17,19,15,19,10,17,17,19,17],"AF":[97.1052631578947,98.9411764705882,104.473684210526,99.0666666666667,93.8947368421053,98.1,94.4705882352941,95.1764705882353,96.8947368421053,97.4117647058823],"Transition":[90.6315789473684,86.8235294117647,86.3684210526316,84.0666666666667,81.5789473684211,81.1,81,80.7647058823529,80.7368421052632,80.2352941176471]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":[{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/296422.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Callum Wilkie"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/294305.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Lachie Whitfield"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1009253.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Lachie Ash"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/994389.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Jack Sinclair"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/290778.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Luke Parker"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/261224.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Dayne Zorko"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/996708.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Bailey Dale"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/990882.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Wayne Milera"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1000072.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," John Noble"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1023515.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Archie Roberts"]}]}],"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Transition","name":"Transition","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"dataKey":"b7bb944452d920d3d58dd2180991e273"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<div id="leaders-transition-DEF-loading" class="skeleton-table leader-loading">
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+</div>
+<div class="reactable html-widget html-fill-item" id="leaders-transition-DEF" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="leaders-transition-DEF">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"Player":[],"G":[],"AF":[],"Transition":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":"function(cellInfo) {\n  var img = '';\n  if (cellInfo.row['playerId']) {\n    img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n      + String(cellInfo.row['playerId']).replace('CD_I', '')\n      + '.png?im=Resize=(50,50)\" alt=\"\" style=\"height:24px;vertical-align:middle;\"'\n      + ' onerror=\"this.style.display=\\'none\\'\">';\n  }\n  return '<div style=\"vertical-align:bottom;\">' + img + ' ' + (cellInfo.value || '') + '<\/div>';\n}","html":true,"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Transition","name":"Transition","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"elementId":"leaders-transition-DEF","dataKey":"9861dc47bce29fd47d67c949e5b81889"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell"],"jsHooks":[]}</script>
 </div>
 <div class="sc-leader">
 <h3>Stoppage Points (FWD)</h3>
-<div class="reactable html-widget html-fill-item" id="htmlwidget-93faf85ef67a346ac1da" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-93faf85ef67a346ac1da">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":["CD_I1006114","CD_I1023518","CD_I999391","CD_I1011640","CD_I992468","CD_I1005577","CD_I1020855","CD_I1008541","CD_I1012014","CD_I993993"],"Player":["Bailey J. Williams","Harry Sheezel","Tom Sparrow","Jason H-Francis","Rowan Marshall","Sam Draper","Max Hall","Kysaiah Pickett","Chad Warner","Shai Bolton"],"G":[15,19,19,18,17,18,19,19,19,18],"AF":[83.0666666666667,119.578947368421,92.6842105263158,96,83.7058823529412,62.8333333333333,86.3157894736842,94.6315789473684,90.7368421052632,84.3333333333333],"Stoppages":[59.8666666666667,53.4736842105263,49.6842105263158,47.8888888888889,47,44.3888888888889,44.0526315789474,43.0526315789474,42.6842105263158,42]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":[{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1006114.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Bailey J. Williams"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1023518.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Harry Sheezel"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/999391.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Tom Sparrow"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1011640.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Jason H-Francis"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/992468.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Rowan Marshall"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1005577.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Sam Draper"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1020855.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Max Hall"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1008541.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Kysaiah Pickett"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1012014.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Chad Warner"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/993993.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Shai Bolton"]}]}],"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Stoppages","name":"Stoppages","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"dataKey":"d94c8cda7bff886a0a16eac654f28b72"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<div id="leaders-stoppages-FWD-loading" class="skeleton-table leader-loading">
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+</div>
+<div class="reactable html-widget html-fill-item" id="leaders-stoppages-FWD" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="leaders-stoppages-FWD">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"Player":[],"G":[],"AF":[],"Stoppages":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":"function(cellInfo) {\n  var img = '';\n  if (cellInfo.row['playerId']) {\n    img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n      + String(cellInfo.row['playerId']).replace('CD_I', '')\n      + '.png?im=Resize=(50,50)\" alt=\"\" style=\"height:24px;vertical-align:middle;\"'\n      + ' onerror=\"this.style.display=\\'none\\'\">';\n  }\n  return '<div style=\"vertical-align:bottom;\">' + img + ' ' + (cellInfo.value || '') + '<\/div>';\n}","html":true,"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Stoppages","name":"Stoppages","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"elementId":"leaders-stoppages-FWD","dataKey":"36bdb344b5a84ebe56e665fc3698afb2"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell"],"jsHooks":[]}</script>
 </div>
 <div class="sc-leader">
 <h3>Transition Points (FWD)</h3>
-<div class="reactable html-widget html-fill-item" id="htmlwidget-fc2440da5b9f22328fc8" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-fc2440da5b9f22328fc8">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":["CD_I295584","CD_I1023518","CD_I298264","CD_I1009260","CD_I991930","CD_I1004938","CD_I293845","CD_I1008454","CD_I1012857","CD_I1027875"],"Player":["Bradley Hill","Harry Sheezel","Ed Langdon","Sam Flanders","Darcy B-Jones","Gryan Miers","Jeremy Cameron","Connor Budarick","Jack Ginnivan","Darcy Wilson"],"G":[19,19,19,12,19,11,16,13,19,18],"AF":[96.6315789473684,119.578947368421,79.7894736842105,91.9166666666667,76.6842105263158,84.4545454545455,79,71.8461538461538,83.3157894736842,86.4444444444444],"Transition":[77.5789473684211,66.1052631578947,65.3157894736842,65.25,64.6842105263158,62.2727272727273,60.9375,59.9230769230769,57.5263157894737,55.9444444444444]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":[{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/295584.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Bradley Hill"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1023518.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Harry Sheezel"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/298264.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Ed Langdon"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1009260.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Sam Flanders"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/991930.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Darcy B-Jones"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1004938.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Gryan Miers"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/293845.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Jeremy Cameron"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1008454.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Connor Budarick"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1012857.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Jack Ginnivan"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1027875.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Darcy Wilson"]}]}],"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Transition","name":"Transition","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"dataKey":"b3897e115297c90be530e336c1c38ec8"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<div id="leaders-transition-FWD-loading" class="skeleton-table leader-loading">
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+</div>
+<div class="reactable html-widget html-fill-item" id="leaders-transition-FWD" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="leaders-transition-FWD">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"Player":[],"G":[],"AF":[],"Transition":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":"function(cellInfo) {\n  var img = '';\n  if (cellInfo.row['playerId']) {\n    img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n      + String(cellInfo.row['playerId']).replace('CD_I', '')\n      + '.png?im=Resize=(50,50)\" alt=\"\" style=\"height:24px;vertical-align:middle;\"'\n      + ' onerror=\"this.style.display=\\'none\\'\">';\n  }\n  return '<div style=\"vertical-align:bottom;\">' + img + ' ' + (cellInfo.value || '') + '<\/div>';\n}","html":true,"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Transition","name":"Transition","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"elementId":"leaders-transition-FWD","dataKey":"9861dc47bce29fd47d67c949e5b81889"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell"],"jsHooks":[]}</script>
 </div>
 <div class="sc-leader">
 <h3>Stoppage Points (RUC)</h3>
-<div class="reactable html-widget html-fill-item" id="htmlwidget-7144099d192d696bebc9" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-7144099d192d696bebc9">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":["CD_I293957","CD_I1009399","CD_I290528","CD_I1021200","CD_I1004965","CD_I1006114","CD_I992330","CD_I1008436","CD_I298290","CD_I990291"],"Player":["Brodie Grundy","Luke Jackson","Max Gawn","Lachlan McAndrew","Tristan Xerri","Bailey J. Williams","Jordon Sweet","Kieren Briggs","Marc Pittonet","Darcy Cameron"],"G":[18,19,19,19,15,15,18,14,16,18],"AF":[102,102.105263157895,108.315789473684,84.8947368421053,95.7333333333333,83.0666666666667,79.1111111111111,75.4285714285714,68.25,88.2222222222222],"Stoppages":[76.3888888888889,68.5263157894737,67.0526315789474,62.9473684210526,62.5333333333333,59.8666666666667,57.4444444444444,55,53.25,52.4444444444444]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":[{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/293957.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Brodie Grundy"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1009399.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Luke Jackson"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/290528.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Max Gawn"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1021200.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Lachlan McAndrew"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1004965.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Tristan Xerri"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1006114.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Bailey J. Williams"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/992330.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Jordon Sweet"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1008436.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Kieren Briggs"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/298290.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Marc Pittonet"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/990291.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Darcy Cameron"]}]}],"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Stoppages","name":"Stoppages","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"dataKey":"71e0e3c6ec22bf549d686c6076ff50f6"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<div id="leaders-stoppages-RUC-loading" class="skeleton-table leader-loading">
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+</div>
+<div class="reactable html-widget html-fill-item" id="leaders-stoppages-RUC" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="leaders-stoppages-RUC">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"Player":[],"G":[],"AF":[],"Stoppages":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":"function(cellInfo) {\n  var img = '';\n  if (cellInfo.row['playerId']) {\n    img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n      + String(cellInfo.row['playerId']).replace('CD_I', '')\n      + '.png?im=Resize=(50,50)\" alt=\"\" style=\"height:24px;vertical-align:middle;\"'\n      + ' onerror=\"this.style.display=\\'none\\'\">';\n  }\n  return '<div style=\"vertical-align:bottom;\">' + img + ' ' + (cellInfo.value || '') + '<\/div>';\n}","html":true,"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Stoppages","name":"Stoppages","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"elementId":"leaders-stoppages-RUC","dataKey":"36bdb344b5a84ebe56e665fc3698afb2"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell"],"jsHooks":[]}</script>
 </div>
 <div class="sc-leader">
 <h3>Transition Points (RUC)</h3>
-<div class="reactable html-widget html-fill-item" id="htmlwidget-6593f06874883af7c70d" style="width:auto;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-6593f06874883af7c70d">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":["CD_I1004592","CD_I290528","CD_I298289","CD_I992468","CD_I990291","CD_I1009399","CD_I1004965","CD_I296733","CD_I298211","CD_I293957"],"Player":["Tim English","Max Gawn","Peter Wright","Rowan Marshall","Darcy Cameron","Luke Jackson","Tristan Xerri","Mark Blicavs","Darcy Fort","Brodie Grundy"],"G":[13,19,14,17,18,19,15,15,18,18],"AF":[87,108.315789473684,70.6428571428571,83.7058823529412,88.2222222222222,102.105263157895,95.7333333333333,58.6,61.2222222222222,102],"Transition":[41.8461538461538,41.2631578947368,39.0714285714286,36.7058823529412,35.7777777777778,33.5789473684211,33.2,31.0666666666667,27.8333333333333,25.6111111111111]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":[{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1004592.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Tim English"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/290528.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Max Gawn"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/298289.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Peter Wright"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/992468.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Rowan Marshall"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/990291.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Darcy Cameron"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1009399.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Luke Jackson"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1004965.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Tristan Xerri"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/296733.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Mark Blicavs"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/298211.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Darcy Fort"]}]},{"name":"Fragment","attribs":[],"children":[{"name":"div","attribs":{"style":{"vertical-align":"bottom"}},"children":[{"name":"img","attribs":{"src":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/293957.png?im=Resize=(50,50)","style":{"height":"24px","vertical-align":"middle"}},"children":[]}," Brodie Grundy"]}]}],"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Transition","name":"Transition","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"dataKey":"eccec1e09be5690aa3f3f259aa3cb2b9"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+<div id="leaders-transition-RUC-loading" class="skeleton-table leader-loading">
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:35 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:60 0 0;"></div>
 </div>
 </div>
-<!-- # 2023 Score Sources -->
-<!-- <a href="fantasy_score_sources">Player Score Sources</a> -->
-<!-- <a href="team_fantasy_sources">Team Score Sources</a> -->
-<!-- <a href="fantasy_stoppage_points">Stoppage Points by Round</a> | <a href="fantasy_stoppage_share">Stoppage Share (%)</a> -->
-<!-- <a href="fantasy_transition_points">Transition Points by Round</a> | <a href="fantasy_transition_share">Transition Share (%)</a> -->
-<!-- <a href="fantasy_captains_rankings">2023 AFL Fantasy Captains Rankings</a> -->
+<div class="reactable html-widget html-fill-item" id="leaders-transition-RUC" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="leaders-transition-RUC">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"Player":[],"G":[],"AF":[],"Transition":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60,"show":false},{"id":"Player","name":"Player","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":160,"defaultSortDesc":false,"cell":"function(cellInfo) {\n  var img = '';\n  if (cellInfo.row['playerId']) {\n    img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n      + String(cellInfo.row['playerId']).replace('CD_I', '')\n      + '.png?im=Resize=(50,50)\" alt=\"\" style=\"height:24px;vertical-align:middle;\"'\n      + ' onerror=\"this.style.display=\\'none\\'\">';\n  }\n  return '<div style=\"vertical-align:bottom;\">' + img + ' ' + (cellInfo.value || '') + '<\/div>';\n}","html":true,"width":160,"sticky":"left"},{"id":"G","name":"G","type":"numeric","format":{"cell":{"digits":0},"aggregated":{"digits":0}},"minWidth":35,"width":35},{"id":"AF","name":"AF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":50,"width":50},{"id":"Transition","name":"Transition","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60}],"sortable":false,"defaultSortDesc":true,"defaultPageSize":10,"showPageSizeOptions":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px","width":"auto","height":"auto"},"elementId":"leaders-transition-RUC","dataKey":"9861dc47bce29fd47d67c949e5b81889"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell"],"jsHooks":[]}</script>
+</div>
+</div>
+<script type="module">
+  const URL =
+    "https://firebasestorage.googleapis.com/v0/b/statsbyjaiden.firebasestorage.app/o/score_sources.json?alt=media";
+
+  const leaders = [
+    { id: "leaders-stoppages-MID",  pos: "MID", stat: "Stoppages"  },
+    { id: "leaders-transition-MID", pos: "MID", stat: "Transition" },
+    { id: "leaders-stoppages-DEF",  pos: "DEF", stat: "Stoppages"  },
+    { id: "leaders-transition-DEF", pos: "DEF", stat: "Transition" },
+    { id: "leaders-stoppages-FWD",  pos: "FWD", stat: "Stoppages"  },
+    { id: "leaders-transition-FWD", pos: "FWD", stat: "Transition" },
+    { id: "leaders-stoppages-RUC",  pos: "RUC", stat: "Stoppages"  },
+    { id: "leaders-transition-RUC", pos: "RUC", stat: "Transition" }
+  ];
+
+  function top10(rows, pos, stat) {
+    const filtered = rows.filter(function (r) {
+      return String(r.Position || "").indexOf(pos) >= 0;
+    });
+    const maxG = filtered.reduce(function (m, r) {
+      return Math.max(m, r.Games || 0);
+    }, 0);
+    return filtered
+      .filter(function (r) { return (r.Games || 0) >= maxG / 2; })
+      .map(function (r) {
+        var row = {
+          playerId: r.playerId,
+          Player: r.Player,
+          G: r.Games,
+          AF: r.Fantasy
+        };
+        row[stat] = r[stat];
+        return row;
+      })
+      .sort(function (a, b) {
+        return Math.abs(b[stat] || 0) - Math.abs(a[stat] || 0);
+      })
+      .slice(0, 10);
+  }
+
+  try {
+    const res = await fetch(URL);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const season = data.season || [];
+
+    leaders.forEach(function (L) {
+      Reactable.setData(L.id, top10(season, L.pos, L.stat));
+      const loading = document.getElementById(L.id + "-loading");
+      if (loading) loading.style.display = "none";
+      const table = document.getElementById(L.id);
+      if (table) table.style.display = "block";
+    });
+  } catch (e) {
+    console.error(e);
+    leaders.forEach(function (L) {
+      const loading = document.getElementById(L.id + "-loading");
+      if (loading) loading.style.display = "none";
+    });
+    const err = document.getElementById("fantasy-leaders-error");
+    if (err) {
+      err.style.display = "block";
+      err.textContent = "Failed to load leaderboards — please refresh.";
+    }
+  }
+</script>
 
 <hr>
 
