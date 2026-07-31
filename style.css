@@ -625,7 +625,3 @@ button:hover { background-color: darkblue; }
   color: #0056b3;
   transform: scale(1.05);
 }
-
-div[id^="kofi-widget-overlay"] {
-  position: fixed !important;
-}
