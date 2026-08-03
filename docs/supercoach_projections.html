@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>SuperCoach Projections</title>
+
+<script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/core-js-2.5.3/shim.min.js"></script>
+<script src="site_libs/react-18.2.0/react.min.js"></script>
+<script src="site_libs/react-18.2.0/react-dom.min.js"></script>
+<script src="site_libs/reactwidget-2.0.0/react-tools.js"></script>
+<link href="site_libs/htmltools-fill-0.5.9/fill.css" rel="stylesheet" />
+<script src="site_libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+<link href="site_libs/reactable-0.4.5/reactable.css" rel="stylesheet" />
+<script src="site_libs/reactable-binding-0.4.5/reactable.js"></script>
+<link href="site_libs/font-awesome-6.5.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet" />
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1GD8EVS054"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-1GD8EVS054');
+</script>
+<!-- header.html — included on every page via _site.yml in_header -->
+<script type="module" src="firebase.js"></script>
+<script type="module" src="auth.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Stats By Jaiden</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index">Home</a>
+</li>
+<li>
+  <a href="blog">Blog</a>
+</li>
+<li>
+  <a href="fantasy">Fantasy</a>
+</li>
+<li>
+  <a href="supercoach">SuperCoach</a>
+</li>
+<li>
+  <a href="aflw">AFLW</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://ko-fi.com/statsbyjaiden">
+    <span class="fa fa-solid fa-mug-hot"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://twitter.com/jaiden_popowski">
+    <span class="fa fa-brands fa-twitter"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://instagram.com/statsbyjaiden">
+    <span class="fa fa-brands fa-instagram"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="account">Account</a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">SuperCoach Projections</h1>
+
+</div>
+
+
+<script type="module">
+  import { mountSectionNav } from "./site_nav.js";
+  mountSectionNav("supercoach");
+</script>
+<!-- TEMP: accuracy blurb off while SC projections are open
+<p style="font-size: 12px;">Jaiden's projections are generated using an advanced machine-learning model that objectively captures player form, role and matchup dynamics to deliver SuperCoach projections more accurate than anywhere else.</p>
+-->
+<style>
+    .filter-bar {
+      margin-bottom: 10px; display: flex; flex-wrap: wrap;
+      gap: 8px; align-items: center;
+    }
+    #projections_table { display: none; }
+    .filter-btn {
+      padding: 4px 12px; border: 1px solid #ccc; border-radius: 4px;
+      background: #666; cursor: pointer; font-size: 12px;
+    }
+    .filter-btn.active { background: darkblue; color: white; border-color: #1a73e8; }
+    .filter-label { font-size: 12px; font-weight: bold; margin-right: 4px; }
+    #player-search {
+      font-size: 12px; padding: 3px 6px; border-radius: 4px; border: 1px solid #ccc;
+    }
+    #player-search { width: 160px; }
+    .team-dropdown { position: relative; display: inline-block; }
+    .team-dropdown-btn {
+      font-size: 12px; padding: 3px 8px; border-radius: 4px; border: 1px solid #ccc;
+      background: #666; color: white; cursor: pointer; min-width: 90px; text-align: left;
+    }
+    .team-dropdown-panel {
+      position: absolute; z-index: 999; top: 100%; left: 0; margin-top: 2px;
+      background: white; border: 1px solid #ccc; border-radius: 4px;
+      padding: 6px 10px; display: grid; grid-template-columns: repeat(3, max-content);
+      gap: 2px 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); 
+      width: max-content; max-width: calc(100vw - 32px);
+    }
+    @media (max-width: 480px) {
+      .team-dropdown-panel { grid-template-columns: repeat(2, max-content); }
+    }
+    .team-option {
+      font-size: 12px; display: flex; align-items: center; gap: 4px;
+      cursor: pointer; color: #333; white-space: nowrap;
+    }
+    .pos-map-tooltip {
+      position: relative; display: inline-block; cursor: help;
+      color: #888; font-size: 11px; margin-left: 4px;
+    }
+    .pos-map-tooltip .tooltip-content {
+      visibility: hidden; opacity: 0;
+      position: absolute; z-index: 9999;
+      top: 0; right: calc(100% + 8px); transform: none;
+      background: white; border: 1px solid #ddd; border-radius: 6px;
+      padding: 8px 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      width: 180px; transition: opacity 0.15s ease; pointer-events: none;
+    }
+    .pos-map-tooltip:hover .tooltip-content { visibility: visible; opacity: 1; }
+    .tooltip-item { display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 2px 0; }
+    .tooltip-swatch {
+      width: 26px; height: 14px; border-radius: 2px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: bold; color: black;
+    }
+    .rt-thead, .rt-th, .rt-th-inner { overflow: visible !important; }
+    /* Skeleton loading, sticky filter bar, row-fade transition, and empty-state
+       styling now live in style.css (shared across all projection-table pages). */
+  </style>
+<div id="loading-state" class="skeleton-table">
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+<div class="skeleton-row">
+<div class="skeleton-cell" style="flex:160 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:40 0 0;"></div>
+<div class="skeleton-cell" style="flex:55 0 0;"></div>
+<div class="skeleton-cell" style="flex:50 0 0;"></div>
+<div class="skeleton-cell" style="flex:45 0 0;"></div>
+<div class="skeleton-cell" style="flex:70 0 0;"></div>
+<div class="skeleton-cell" style="flex:120 0 0;"></div>
+</div>
+</div>
+<div id="filter-bar" class="filter-bar" style="display:none;">
+<input id="player-search" type="text" placeholder="Search..." oninput="filterPlayer(this.value)"/>
+<span class="filter-label" style="margin-left:12px;">Team:</span>
+<div class="team-dropdown" id="team-dropdown">
+<button id="team-dropdown-btn" class="team-dropdown-btn" type="button" onclick="toggleTeamDropdown()">All Teams</button>
+<div id="team-dropdown-panel" class="team-dropdown-panel" style="display:none;">
+<label class="team-option">
+<input type="checkbox" value="ADE" class="team-checkbox" onchange="toggleTeam(this)"/>
+ADE
+</label>
+<label class="team-option">
+<input type="checkbox" value="BRL" class="team-checkbox" onchange="toggleTeam(this)"/>
+BRL
+</label>
+<label class="team-option">
+<input type="checkbox" value="CAR" class="team-checkbox" onchange="toggleTeam(this)"/>
+CAR
+</label>
+<label class="team-option">
+<input type="checkbox" value="COL" class="team-checkbox" onchange="toggleTeam(this)"/>
+COL
+</label>
+<label class="team-option">
+<input type="checkbox" value="ESS" class="team-checkbox" onchange="toggleTeam(this)"/>
+ESS
+</label>
+<label class="team-option">
+<input type="checkbox" value="FRE" class="team-checkbox" onchange="toggleTeam(this)"/>
+FRE
+</label>
+<label class="team-option">
+<input type="checkbox" value="GEE" class="team-checkbox" onchange="toggleTeam(this)"/>
+GEE
+</label>
+<label class="team-option">
+<input type="checkbox" value="GCS" class="team-checkbox" onchange="toggleTeam(this)"/>
+GCS
+</label>
+<label class="team-option">
+<input type="checkbox" value="GWS" class="team-checkbox" onchange="toggleTeam(this)"/>
+GWS
+</label>
+<label class="team-option">
+<input type="checkbox" value="HAW" class="team-checkbox" onchange="toggleTeam(this)"/>
+HAW
+</label>
+<label class="team-option">
+<input type="checkbox" value="MEL" class="team-checkbox" onchange="toggleTeam(this)"/>
+MEL
+</label>
+<label class="team-option">
+<input type="checkbox" value="NTH" class="team-checkbox" onchange="toggleTeam(this)"/>
+NTH
+</label>
+<label class="team-option">
+<input type="checkbox" value="PTA" class="team-checkbox" onchange="toggleTeam(this)"/>
+PTA
+</label>
+<label class="team-option">
+<input type="checkbox" value="RIC" class="team-checkbox" onchange="toggleTeam(this)"/>
+RIC
+</label>
+<label class="team-option">
+<input type="checkbox" value="STK" class="team-checkbox" onchange="toggleTeam(this)"/>
+STK
+</label>
+<label class="team-option">
+<input type="checkbox" value="SYD" class="team-checkbox" onchange="toggleTeam(this)"/>
+SYD
+</label>
+<label class="team-option">
+<input type="checkbox" value="WCE" class="team-checkbox" onchange="toggleTeam(this)"/>
+WCE
+</label>
+<label class="team-option">
+<input type="checkbox" value="WBD" class="team-checkbox" onchange="toggleTeam(this)"/>
+WBD
+</label>
+</div>
+</div>
+<span class="filter-label">Position:</span>
+<button class="filter-btn active" onclick="filterPosition(&#39;ALL&#39;)">ALL</button>
+<button class="filter-btn" onclick="filterPosition(&#39;DEF&#39;)">DEF</button>
+<button class="filter-btn" onclick="filterPosition(&#39;MID&#39;)">MID</button>
+<button class="filter-btn" onclick="filterPosition(&#39;RUC&#39;)">RUC</button>
+<button class="filter-btn" onclick="filterPosition(&#39;FWD&#39;)">FWD</button>
+</div>
+<div class="reactable html-widget html-fill-item" id="projections_table" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="projections_table">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"playerId":[],"player":[],"Projected":[],"Team":[],"Position":[],"Price":[],"PricedAt":[],"Own":[],"Opponent":[],"KeyDef":[],"GenDef":[],"Distributor":[],"OutsideMid":[],"InsideMid":[],"GenFwd":[],"KeyFwd":[],"Ruck":[],"score":[]},"columns":[{"id":"playerId","name":"playerId","type":"character","show":false},{"id":"player","name":"Player","type":"character","cell":"function(cellInfo) {\n          var img = '';\n          if (cellInfo.row['playerId']) {\n            img = '<img src=\"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/'\n              + cellInfo.row['playerId'].replace('CD_I', '')\n              + '.png?im=Resize=(50,50)\" alt=\"\" style=\"height:24px;vertical-align:middle;\"'\n              + ' onerror=\"this.style.display=\\'none\\'\">';\n          }\n          var name = cellInfo.value === 'Hidden'\n            ? '<span style=\"color:#767676;vertical-align:middle;\">🔒 Premium player<\/span>'\n            : cellInfo.value;\n          return '<div style=\"vertical-align:bottom;\">' + img + ' ' + name + '<\/div>';\n        }","html":true,"minWidth":160,"sticky":"left"},{"id":"Projected","name":"Proj","type":"numeric","filterMethod":"function(rows, columnId, filterValue) {\n          return rows.filter(function(row) { return row.values[columnId] >= filterValue; });\n        }","format":{"cell":{"digits":2},"aggregated":{"digits":2}},"minWidth":65},{"id":"Team","name":"Team","type":"character","filterMethod":"function(rows, columnId, filterValue) {\n          if (!filterValue || filterValue.length === 0) return rows;\n          return rows.filter(function(row) { return filterValue.indexOf(row.values[columnId]) >= 0; });\n        }","minWidth":50},{"id":"Position","name":"Pos","type":"character","filterMethod":"function(rows, columnId, filterValue) {\n          if (!filterValue) return rows;\n          return rows.filter(function(row) { return row.values[columnId].indexOf(filterValue) >= 0; });\n        }","cell":"function(cellInfo) {\n          var value = String(cellInfo.value);\n          if (!value.includes('/')) return value;\n          var map = { DEF: 'D', MID: 'M', RUC: 'R', FWD: 'F' };\n          return value.split('/').map(function(x) { return map[x] || x; }).join('/');\n        }","minWidth":55},{"id":"Price","name":"Price","type":"numeric","filterMethod":"function(rows, columnId, filterValue) {\n          return rows.filter(function(row) { return row.values[columnId] >= filterValue; });\n        }","cell":"function(cellInfo) {\n          if (cellInfo.value === null || cellInfo.value === undefined) return '';\n          return '$' + cellInfo.value / 1000 + 'K';\n        }","minWidth":60},{"id":"PricedAt","name":"$/At","type":"numeric","filterMethod":"function(rows, columnId, filterValue) {\n          return rows.filter(function(row) { return row.values[columnId] >= filterValue; });\n        }","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60},{"id":"Own","name":"Own%","type":"numeric","filterMethod":"function(rows, columnId, filterValue) {\n          return rows.filter(function(row) { return row.values[columnId] >= filterValue; });\n        }","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"minWidth":60},{"id":"Opponent","name":"Opponent","type":"character"},{"id":"KeyDef","name":"KeyDef","type":"numeric","show":false},{"id":"GenDef","name":"GenDef","type":"numeric","show":false},{"id":"Distributor","name":"Distributor","type":"numeric","show":false},{"id":"OutsideMid","name":"OutsideMid","type":"numeric","show":false},{"id":"InsideMid","name":"InsideMid","type":"numeric","show":false},{"id":"GenFwd","name":"GenFwd","type":"numeric","show":false},{"id":"KeyFwd","name":"KeyFwd","type":"numeric","show":false},{"id":"Ruck","name":"Ruck","type":"numeric","show":false},{"id":"score","name":"Position Map","type":"numeric","filterable":false,"sortNALast":true,"cell":"function(cellInfo) {\n          var row = cellInfo.row;\n          var segments = [\n            { key: 'KeyDef',      label: 'KD', color: '#5A7DBA' },\n            { key: 'GenDef',      label: 'GD', color: '#87CEEB' },\n            { key: 'Distributor', label: 'DI', color: '#A8E1A2' },\n            { key: 'OutsideMid',  label: 'OM', color: '#FFEC8B' },\n            { key: 'InsideMid',   label: 'IM', color: '#FFD08A' },\n            { key: 'GenFwd',      label: 'GF', color: '#F6A9D1' },\n            { key: 'KeyFwd',      label: 'KF', color: '#D1A6E3' },\n            { key: 'Ruck',        label: 'RK', color: '#FFB3B3' }\n          ];\n          var html = '<div style=\"display:flex;height:25px;\">';\n          segments.forEach(function(seg) {\n            var pct = row[seg.key] || 0;\n            var label = pct >= 15 ? seg.label : '';\n            html += '<div title=\"' + seg.key + '\" style=\"width:' + pct + '%;background:' + seg.color + ';height:25px;display:flex;align-items:center;justify-content:center;color:black;font-weight:bold;font-size:11px;\">' + label + '<\/div>';\n          });\n          html += '<\/div>';\n          return html;\n        }","header":{"name":"Fragment","attribs":[],"children":[{"name":"span","attribs":{},"children":["Plays Like"]},{"name":"div","attribs":{"className":"pos-map-tooltip"},"children":["ⓘ",{"name":"div","attribs":{"className":"tooltip-content"},"children":[{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#5A7DBA"},"className":"tooltip-swatch"},"children":["KD"]},{"name":"span","attribs":{},"children":["Key Defender"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#87CEEB"},"className":"tooltip-swatch"},"children":["GD"]},{"name":"span","attribs":{},"children":["Gen Defender"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#A8E1A2"},"className":"tooltip-swatch"},"children":["DI"]},{"name":"span","attribs":{},"children":["Distributor"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#FFEC8B"},"className":"tooltip-swatch"},"children":["OM"]},{"name":"span","attribs":{},"children":["Outside Mid"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#FFD08A"},"className":"tooltip-swatch"},"children":["IM"]},{"name":"span","attribs":{},"children":["Inside Mid"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#F6A9D1"},"className":"tooltip-swatch"},"children":["GF"]},{"name":"span","attribs":{},"children":["Gen Forward"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#D1A6E3"},"className":"tooltip-swatch"},"children":["KF"]},{"name":"span","attribs":{},"children":["Key Forward"]}]},{"name":"div","attribs":{"className":"tooltip-item"},"children":[{"name":"div","attribs":{"style":{"background":"#FFB3B3"},"className":"tooltip-swatch"},"children":["RK"]},{"name":"span","attribs":{},"children":["Ruck"]}]}]}]}]},"html":true}],"defaultSortDesc":true,"defaultSorted":[{"id":"Projected","desc":true}],"defaultPageSize":25,"showPageSizeOptions":false,"pageSizeOptions":[25,50,100,200],"showPageInfo":false,"striped":true,"showSortIcon":false,"style":{"fontSize":"12px"},"language":{"noData":"No players match these filters — try widening your Team or Position selection."},"elementId":"projections_table","dataKey":"58854ecba1ffce073f3a016e1348f4bf"},"children":[]},"class":"reactR_markup"},"evals":["tag.attribs.columns.1.cell","tag.attribs.columns.2.filterMethod","tag.attribs.columns.3.filterMethod","tag.attribs.columns.4.filterMethod","tag.attribs.columns.4.cell","tag.attribs.columns.5.filterMethod","tag.attribs.columns.5.cell","tag.attribs.columns.6.filterMethod","tag.attribs.columns.7.filterMethod","tag.attribs.columns.17.cell"],"jsHooks":[]}</script>
+<p id="last-updated" style="display:none; margin-top:10px; font-size:12px; color:#666;"></p>
+<script>
+    var activePosition = 'ALL';
+    var activeTeams    = [];   // empty array = all teams
+    var activePlayer   = '';
+
+    function applyFilters() {
+      var tbody = document.querySelector('#projections_table .rt-tbody');
+      if (tbody) tbody.classList.add('rt-fading');
+
+      var instance = Reactable.getInstance('projections_table');
+      instance.setFilter('Position', activePosition === 'ALL' ? undefined : activePosition);
+      instance.setFilter('Team',     activeTeams.length === 0 ? undefined : activeTeams);
+      instance.setFilter('player',   activePlayer   || undefined);
+
+      // Let the new rows paint, then fade back in rather than snapping.
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          var tbody2 = document.querySelector('#projections_table .rt-tbody');
+          if (tbody2) tbody2.classList.remove('rt-fading');
+        });
+      });
+    }
+
+    function filterPosition(pos) {
+      activePosition = pos;
+      document.querySelectorAll('.filter-btn').forEach(function(btn) {
+        btn.classList.toggle('active', btn.textContent.trim() === pos);
+      });
+      applyFilters();
+    }
+
+    function toggleTeam(checkbox) {
+      if (checkbox.checked) {
+        activeTeams.push(checkbox.value);
+      } else {
+        activeTeams = activeTeams.filter(function(t) { return t !== checkbox.value; });
+      }
+      var btn = document.getElementById('team-dropdown-btn');
+      if (activeTeams.length === 0) {
+        btn.textContent = 'All Teams';
+      } else if (activeTeams.length <= 2) {
+        btn.textContent = activeTeams.join(', ');
+      } else {
+        btn.textContent = activeTeams.length + ' Teams';
+      }
+      applyFilters();
+    }
+
+    function toggleTeamDropdown() {
+      var panel = document.getElementById('team-dropdown-panel');
+      panel.style.display = panel.style.display === 'none' ? 'grid' : 'none';
+    }
+
+    document.addEventListener('click', function(e) {
+      var dropdown = document.getElementById('team-dropdown');
+      if (dropdown && !dropdown.contains(e.target)) {
+        document.getElementById('team-dropdown-panel').style.display = 'none';
+      }
+    });
+
+    function filterPlayer(val)    { activePlayer = val.toLowerCase(); applyFilters(); }
+  </script>
+<script type="module">
+  import { authReady } from "./auth.js";
+
+  function formatUpdatedAEST(iso) {
+    const d = new Date(iso);
+    const parts = Object.fromEntries(
+      new Intl.DateTimeFormat("en-AU", {
+        timeZone: "Australia/Melbourne",
+        day: "numeric",
+        month: "long",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+        timeZoneName: "short"
+      }).formatToParts(d).map(p => [p.type, p.value])
+    );
+    const day = parseInt(parts.day, 10);
+    const ord = (day % 10 === 1 && day !== 11) ? "st"
+              : (day % 10 === 2 && day !== 12) ? "nd"
+              : (day % 10 === 3 && day !== 13) ? "rd" : "th";
+    return day + ord + " " + parts.month + " "
+      + parts.hour + ":" + parts.minute + parts.dayPeriod.toLowerCase()
+      + " " + parts.timeZoneName;
+  }
+
+  async function showLastUpdated(objectName, headers) {
+    try {
+      const metaUrl = "https://firebasestorage.googleapis.com/v0/b/statsbyjaiden.firebasestorage.app/o/"
+        + encodeURIComponent(objectName);
+      const res = await fetch(metaUrl, { headers });
+      if (!res.ok) return;
+      const meta = await res.json();
+      const el = document.getElementById("last-updated");
+      if (el && meta.updated) {
+        el.textContent = "Last updated: " + formatUpdatedAEST(meta.updated);
+        el.style.display = "block";
+      }
+    } catch (e) {
+      console.warn("Could not load last-updated metadata:", e);
+    }
+  }
+
+  (async function() {
+    await authReady;
+
+    // TEMP: everyone gets full SC projections (no paid gate)
+    const objectName = "sc_projections_full.json";
+    const url = "https://firebasestorage.googleapis.com/v0/b/statsbyjaiden.firebasestorage.app/o/" + objectName + "?alt=media";
+    const headers = {};
+
+    // Fetch and populate table
+    try {
+      const res  = await fetch(url, { headers });
+      const data = await res.json();
+      Reactable.setData('projections_table', data);
+    } catch (e) {
+      document.getElementById("loading-state").textContent = "Failed to load projections — please refresh.";
+      return;
+    }
+
+    // Reveal UI
+    document.getElementById("loading-state").style.display = "none";
+    document.getElementById("filter-bar").style.display    = "flex";
+    document.getElementById("projections_table").style.display = "block";
+    showLastUpdated(objectName, headers);
+
+    const btn = document.createElement("button");
+    btn.textContent      = "Download CSV";
+    btn.className        = "filter-btn";
+    btn.style.marginLeft = "auto";
+    btn.onclick = function() {
+      const rows = Reactable.getState('projections_table').sortedData;
+      const cols = ['player','Projected','Team','Position','Price','PricedAt','Own','Opponent'];
+      const csv  = [
+        cols.join(','),
+        ...rows.map(r => cols.map(c => JSON.stringify(r[c] ?? '')).join(','))
+      ].join('\n');
+      const a    = document.createElement('a');
+      a.href     = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+      a.download = 'sc_projections.csv';
+      a.click();
+    };
+    document.querySelector('.filter-bar').appendChild(btn);
+  })();
+</script>
+
+<hr>
+
+
+<p style="text-align: center;"> Stats By Jaiden </p>
+
+<script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
+<script>
+  kofiWidgetOverlay.draw('statsbyjaiden', {
+    'type': 'floating-chat',
+    'floating-chat.donateButton.text': 'Support Me',
+    'floating-chat.donateButton.background-color': '#323842',
+    'floating-chat.donateButton.text-color': '#fff'
+  });
+</script>
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
