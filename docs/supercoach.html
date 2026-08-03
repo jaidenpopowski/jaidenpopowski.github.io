@@ -324,7 +324,7 @@ $(document).ready(function () {
   </div>
 
   <div class="hub-col">
-    <h3 class="hub-col-title"><a href="supercoach_projections">Projections</a></h3>
+    <h3 class="hub-col-title"><a href="supercoach_projections">SuperCoach Projections</a></h3>
     <div class="hub-panel" id="hub-projections">Loading…</div>
   </div>
 
@@ -337,19 +337,20 @@ $(document).ready(function () {
 
 <script type="module">
   import { renderFeaturedNav } from "./site_nav.js";
-  import { loadHub, renderHubPlaceholder } from "./hubs.js";
+  import { loadHub, renderHubPanel } from "./hubs.js";
 
   renderFeaturedNav("hub-featured", "supercoach");
 
   try {
     const data = await loadHub("supercoach");
     const p = (data.placeholders) || {};
-    renderHubPlaceholder("hub-projections", p.projections || "Coming soon");
-    renderHubPlaceholder("hub-season", p.season || "Coming soon");
+    renderHubPanel("hub-projections", data.projections, { kind: "projections" });
+    renderHubPanel("hub-season", data.season, { kind: "season" });
   } catch (e) {
     console.error(e);
-    renderHubPlaceholder("hub-projections", "Coming soon");
-    renderHubPlaceholder("hub-season", "Coming soon");
+    const msg = "Failed to load hub data — please refresh.";
+    document.getElementById("hub-projections").textContent = msg;
+    document.getElementById("hub-season").textContent = msg;
   }
 </script>
 
