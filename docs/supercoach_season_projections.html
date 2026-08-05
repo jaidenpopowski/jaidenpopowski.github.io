@@ -631,8 +631,8 @@ week projections available here</a></p>
       if (!res.ok) return;
       const meta = await res.json();
       const el = document.getElementById("last-updated");
-      if (el && meta.updated) {
-        el.textContent = "Last updated: " + formatUpdatedAEST(meta.updated);
+      if (el && meta.timeCreated) {
+        el.textContent = "Last updated: " + formatUpdatedAEST(meta.timeCreated);
         el.style.display = "block";
       }
     } catch (e) {
