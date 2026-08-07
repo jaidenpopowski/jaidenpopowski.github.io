@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>AFLW Fantasy Fixture Analysis</title>
+
+<script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/core-js-2.5.3/shim.min.js"></script>
+<script src="site_libs/react-18.2.0/react.min.js"></script>
+<script src="site_libs/react-18.2.0/react-dom.min.js"></script>
+<script src="site_libs/reactwidget-2.0.0/react-tools.js"></script>
+<link href="site_libs/htmltools-fill-0.5.9/fill.css" rel="stylesheet" />
+<script src="site_libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+<link href="site_libs/reactable-0.4.5/reactable.css" rel="stylesheet" />
+<script src="site_libs/reactable-binding-0.4.5/reactable.js"></script>
+<link href="site_libs/tippyjs-3.2.0/themes/google.css" rel="stylesheet" />
+<link href="site_libs/tippyjs-3.2.0/themes/light-border.css" rel="stylesheet" />
+<link href="site_libs/tippyjs-3.2.0/themes/light.css" rel="stylesheet" />
+<link href="site_libs/tippyjs-3.2.0/themes/translucent.css" rel="stylesheet" />
+<script src="site_libs/tippyjs-3.2.0/tippy.all.min.js"></script>
+<script src="site_libs/tippy-binding-0.1.0/tippy.js"></script>
+<link href="site_libs/font-awesome-6.5.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet" />
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1GD8EVS054"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-1GD8EVS054');
+</script>
+<!-- header.html — included on every page via _site.yml in_header -->
+<script type="module" src="firebase.js"></script>
+<script type="module" src="auth.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Stats By Jaiden</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index">Home</a>
+</li>
+<li>
+  <a href="blog">Blog</a>
+</li>
+<li>
+  <a href="fantasy">Fantasy</a>
+</li>
+<li>
+  <a href="supercoach">SuperCoach</a>
+</li>
+<li>
+  <a href="aflw">AFLW</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://ko-fi.com/statsbyjaiden">
+    <span class="fa fa-solid fa-mug-hot"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://twitter.com/jaiden_popowski">
+    <span class="fa fa-brands fa-twitter"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://instagram.com/statsbyjaiden">
+    <span class="fa fa-brands fa-instagram"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="account">Account</a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">AFLW Fantasy Fixture Analysis</h1>
+
+</div>
+
+
+<p>Blue = easy matchup, red = difficult matchup</p>
+<h1>Scale of Hardness</h1>
+<div class="row">
+<div class="sc-leader">
+<h1>Defenders</h1>
+<div class="reactable html-widget html-fill-item" id="htmlwidget-cc838d3ad97820de05bc" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-cc838d3ad97820de05bc">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"tabbrev":["MEL","WBD","FRE","BRL","GWS","CAR","COL","ADE","NTH","GEE","GCS","WCE","RIC","STK","ESS","HAW","SYD","PTA"],"N3":[-1.51375312166593,2.95194909395266,-0.748630866667637,0.661997552113927,-1.0519002167449,1.93733332010655,3.90359928331638,-1.93294840978327,-2.17295357695028,-0.183778039591935,-2.10357872818077,1.65880340208283,-0.77736869868273,-1.54626037696566,-0.236463509120133,-0.164909694031657,-0.160460775813322,1.47932336262587],"R1":["HAW","GCS","PTA","ESS","WCE","STK","RIC","SYD","GEE","NTH","WBD","GWS","COL","CAR","BRL","MEL","ADE","FRE"],"R2":["GWS","RIC","COL","NTH","MEL","ADE","FRE","CAR","BRL","STK","WCE","GCS","WBD","GEE","SYD","PTA","ESS","HAW"],"R3":["BRL","NTH","CAR","MEL","PTA","FRE","HAW","WCE","WBD","GCS","GEE","ADE","ESS","SYD","RIC","COL","STK","GWS"],"R4":["WCE","SYD","RIC","GWS","BRL","COL","CAR","HAW","STK","ESS","PTA","MEL","FRE","NTH","GEE","ADE","WBD","GCS"],"R5":["PTA","HAW","ESS","WCE","SYD","NTH","GCS","GEE","CAR","ADE","COL","BRL","STK","RIC","FRE","WBD","GWS","MEL"],"R6":["CAR","FRE","WBD","ADE","RIC","MEL","GEE","BRL","HAW","COL","ESS","STK","GWS","WCE","GCS","NTH","PTA","SYD"],"R7":["NTH","PTA","ADE","SYD","COL","RIC","GWS","FRE","MEL","HAW","STK","ESS","CAR","GCS","WCE","GEE","BRL","WBD"],"R8":["COL","STK","WCE","GCS","ESS","HAW","MEL","PTA","SYD","RIC","BRL","FRE","GEE","WBD","GWS","CAR","NTH","ADE"],"R9":["GCS","ESS","NTH","HAW","GEE","SYD","STK","RIC","FRE","GWS","MEL","PTA","ADE","COL","WBD","BRL","CAR","WCE"],"R10":["RIC","CAR","STK","PTA","HAW","WBD","SYD","GCS","ESS","WCE","ADE","GEE","MEL","FRE","NTH","GWS","COL","BRL"],"R11":["WBD","MEL","GEE","STK","CAR","GWS","PTA","NTH","ADE","FRE","RIC","SYD","GCS","BRL","HAW","ESS","WCE","COL"],"R12":["ADE","GEE","SYD","CAR","GCS","BRL","ESS","MEL","RIC","WBD","GWS","HAW","NTH","PTA","COL","WCE","FRE","STK"],"seasonDVP":[0.365642005301149,0.486892047404075,-0.26190489581229,-0.130956930707558,-0.593705540362784,0.70577706151042,0.152761224108218,0.242030214879673,0.418747504810783,0.666883860620016,-0.704154687667626,-0.21724616921517,0.308077179522385,-0.10822861244097,-0.0604178333198548,-0.63362599851641,-0.487769737027225,-0.14880069308683]},"columns":[{"id":"tabbrev","name":"Team","type":"character","width":60,"align":"center","style":{"background":"white"},"sticky":"left"},{"id":"N3","name":"N3","type":"numeric","width":60,"align":"center","style":{"background":"white"},"show":true,"format":{"cell":{"digits":1},"aggregated":{"digits":1}},"header":{"name":"div","attribs":{"style":{"text-decoration":"underline","text-decoration-style":"dotted","cursor":"help"}},"children":[{"name":"WidgetContainer","attribs":{"key":"a307900fb2216ed2c1abc6bcfd6a9482"},"children":[{"name":"Fragment","attribs":[],"children":[{"name":"span","attribs":{"id":"htmlwidget-7da0265dd2efc2c08f73","width":960,"height":500,"className":"tippy html-widget html-fill-item"},"children":[]},{"name":"script","attribs":{"type":"application/json","data-for":"htmlwidget-7da0265dd2efc2c08f73"},"children":["{\"x\":{\"opts\":{\"content\":\"Next 3 Games\"},\"text\":\"N3\"},\"evals\":[],\"jsHooks\":[]}"]}]}]}]}},{"id":"R1","name":"R1","type":"character","width":55,"align":"center","style":[{"background":"#B4DAFF","fontWeight":"normal"},{"background":"#C7E3FF","fontWeight":"normal"},{"background":"#FFEAE6","fontWeight":"normal"},{"background":"#FFBFB3","fontWeight":"normal"},{"background":"#FF6A4F","fontWeight":"normal"},{"background":"#FF7259","fontWeight":"normal"},{"background":"#339BFF","fontWeight":"normal"},{"background":"#FFCBC2","fontWeight":"normal"},{"background":"#FF917E","fontWeight":"normal"},{"background":"#B0D8FF","fontWeight":"normal"},{"background":"#D1E8FF","fontWeight":"normal"},{"background":"#FFBCB0","fontWeight":"normal"},{"background":"#FFC5BB","fontWeight":"normal"},{"background":"#FDFEFF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#BBDDFF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#55ACFF","fontWeight":"normal"}]},{"id":"R2","name":"R2","type":"character","width":55,"align":"center","style":[{"background":"#FFBCB0","fontWeight":"normal"},{"background":"#339BFF","fontWeight":"normal"},{"background":"#FFC5BB","fontWeight":"normal"},{"background":"#B0D8FF","fontWeight":"normal"},{"background":"#BBDDFF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#55ACFF","fontWeight":"normal"},{"background":"#FDFEFF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FF7259","fontWeight":"normal"},{"background":"#FF6A4F","fontWeight":"normal"},{"background":"#C7E3FF","fontWeight":"normal"},{"background":"#D1E8FF","fontWeight":"normal"},{"background":"#FF917E","fontWeight":"normal"},{"background":"#FFCBC2","fontWeight":"normal"},{"background":"#FFEAE6","fontWeight":"normal"},{"background":"#FFBFB3","fontWeight":"normal"},{"background":"#B4DAFF","fontWeight":"normal"}]},{"id":"R3","name":"R3","type":"character","width":55,"align":"center","style":[{"background":"#FF6347","fontWeight":"normal"},{"background":"#B0D8FF","fontWeight":"normal"},{"background":"#FDFEFF","fontWeight":"normal"},{"background":"#BBDDFF","fontWeight":"normal"},{"background":"#FFEAE6","fontWeight":"normal"},{"background":"#55ACFF","fontWeight":"normal"},{"background":"#B4DAFF","fontWeight":"normal"},{"background":"#FF6A4F","fontWeight":"normal"},{"background":"#D1E8FF","fontWeight":"normal"},{"background":"#C7E3FF","fontWeight":"normal"},{"background":"#FF917E","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FFBFB3","fontWeight":"normal"},{"background":"#FFCBC2","fontWeight":"normal"},{"background":"#339BFF","fontWeight":"normal"},{"background":"#FFC5BB","fontWeight":"normal"},{"background":"#FF7259","fontWeight":"normal"},{"background":"#FFBCB0","fontWeight":"normal"}]},{"id":"R4","name":"R4","type":"character","width":55,"align":"center","style":[{"background":"#FF6A4F","fontWeight":"normal"},{"background":"#FFCBC2","fontWeight":"normal"},{"background":"#339BFF","fontWeight":"normal"},{"background":"#FFBCB0","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FFC5BB","fontWeight":"normal"},{"background":"#FDFEFF","fontWeight":"normal"},{"background":"#B4DAFF","fontWeight":"normal"},{"background":"#FF7259","fontWeight":"normal"},{"background":"#FFBFB3","fontWeight":"normal"},{"background":"#FFEAE6","fontWeight":"normal"},{"background":"#BBDDFF","fontWeight":"normal"},{"background":"#55ACFF","fontWeight":"normal"},{"background":"#B0D8FF","fontWeight":"normal"},{"background":"#FF917E","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#D1E8FF","fontWeight":"normal"},{"background":"#C7E3FF","fontWeight":"normal"}]},{"id":"R5","name":"R5","type":"character","width":55,"align":"center","style":[{"background":"#FFEAE6","fontWeight":"normal"},{"background":"#B4DAFF","fontWeight":"normal"},{"background":"#FFBFB3","fontWeight":"normal"},{"background":"#FF6A4F","fontWeight":"normal"},{"background":"#FFCBC2","fontWeight":"normal"},{"background":"#B0D8FF","fontWeight":"normal"},{"background":"#C7E3FF","fontWeight":"normal"},{"background":"#FF917E","fontWeight":"normal"},{"background":"#FDFEFF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FFC5BB","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FF7259","fontWeight":"normal"},{"background":"#339BFF","fontWeight":"normal"},{"background":"#55ACFF","fontWeight":"normal"},{"background":"#D1E8FF","fontWeight":"normal"},{"background":"#FFBCB0","fontWeight":"normal"},{"background":"#BBDDFF","fontWeight":"normal"}]},{"id":"R6","name":"R6","type":"character","width":55,"align":"center","style":[{"background":"#FDFEFF","fontWeight":"normal"},{"background":"#55ACFF","fontWeight":"normal"},{"background":"#D1E8FF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#339BFF","fontWeight":"normal"},{"background":"#BBDDFF","fontWeight":"normal"},{"background":"#FF917E","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#B4DAFF","fontWeight":"normal"},{"background":"#FFC5BB","fontWeight":"normal"},{"background":"#FFBFB3","fontWeight":"normal"},{"background":"#FF7259","fontWeight":"normal"},{"background":"#FFBCB0","fontWeight":"normal"},{"background":"#FF6A4F","fontWeight":"normal"},{"background":"#C7E3FF","fontWeight":"normal"},{"background":"#B0D8FF","fontWeight":"normal"},{"background":"#FFEAE6","fontWeight":"normal"},{"background":"#FFCBC2","fontWeight":"normal"}]},{"id":"R7","name":"R7","type":"character","width":55,"align":"center","style":[{"background":"#B0D8FF","fontWeight":"normal"},{"background":"#FFEAE6","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FFCBC2","fontWeight":"normal"},{"background":"#FFC5BB","fontWeight":"normal"},{"background":"#339BFF","fontWeight":"normal"},{"background":"#FFBCB0","fontWeight":"normal"},{"background":"#55ACFF","fontWeight":"normal"},{"background":"#BBDDFF","fontWeight":"normal"},{"background":"#B4DAFF","fontWeight":"normal"},{"background":"#FF7259","fontWeight":"normal"},{"background":"#FFBFB3","fontWeight":"normal"},{"background":"#FDFEFF","fontWeight":"normal"},{"background":"#C7E3FF","fontWeight":"normal"},{"background":"#FF6A4F","fontWeight":"normal"},{"background":"#FF917E","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#D1E8FF","fontWeight":"normal"}]},{"id":"R8","name":"R8","type":"character","width":55,"align":"center","style":[{"background":"#FFC5BB","fontWeight":"normal"},{"background":"#FF7259","fontWeight":"normal"},{"background":"#FF6A4F","fontWeight":"normal"},{"background":"#C7E3FF","fontWeight":"normal"},{"background":"#FFBFB3","fontWeight":"normal"},{"background":"#B4DAFF","fontWeight":"normal"},{"background":"#BBDDFF","fontWeight":"normal"},{"background":"#FFEAE6","fontWeight":"normal"},{"background":"#FFCBC2","fontWeight":"normal"},{"background":"#339BFF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#55ACFF","fontWeight":"normal"},{"background":"#FF917E","fontWeight":"normal"},{"background":"#D1E8FF","fontWeight":"normal"},{"background":"#FFBCB0","fontWeight":"normal"},{"background":"#FDFEFF","fontWeight":"normal"},{"background":"#B0D8FF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"}]},{"id":"R9","name":"R9","type":"character","width":55,"align":"center","style":[{"background":"#C7E3FF","fontWeight":"normal"},{"background":"#FFBFB3","fontWeight":"normal"},{"background":"#B0D8FF","fontWeight":"normal"},{"background":"#B4DAFF","fontWeight":"normal"},{"background":"#FF917E","fontWeight":"normal"},{"background":"#FFCBC2","fontWeight":"normal"},{"background":"#FF7259","fontWeight":"normal"},{"background":"#339BFF","fontWeight":"normal"},{"background":"#55ACFF","fontWeight":"normal"},{"background":"#FFBCB0","fontWeight":"normal"},{"background":"#BBDDFF","fontWeight":"normal"},{"background":"#FFEAE6","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FFC5BB","fontWeight":"normal"},{"background":"#D1E8FF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FDFEFF","fontWeight":"normal"},{"background":"#FF6A4F","fontWeight":"normal"}]},{"id":"R10","name":"R10","type":"character","width":55,"align":"center","style":[{"background":"#339BFF","fontWeight":"normal"},{"background":"#FDFEFF","fontWeight":"normal"},{"background":"#FF7259","fontWeight":"normal"},{"background":"#FFEAE6","fontWeight":"normal"},{"background":"#B4DAFF","fontWeight":"normal"},{"background":"#D1E8FF","fontWeight":"normal"},{"background":"#FFCBC2","fontWeight":"normal"},{"background":"#C7E3FF","fontWeight":"normal"},{"background":"#FFBFB3","fontWeight":"normal"},{"background":"#FF6A4F","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FF917E","fontWeight":"normal"},{"background":"#BBDDFF","fontWeight":"normal"},{"background":"#55ACFF","fontWeight":"normal"},{"background":"#B0D8FF","fontWeight":"normal"},{"background":"#FFBCB0","fontWeight":"normal"},{"background":"#FFC5BB","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"}]},{"id":"R11","name":"R11","type":"character","width":55,"align":"center","style":[{"background":"#D1E8FF","fontWeight":"normal"},{"background":"#BBDDFF","fontWeight":"normal"},{"background":"#FF917E","fontWeight":"normal"},{"background":"#FF7259","fontWeight":"normal"},{"background":"#FDFEFF","fontWeight":"normal"},{"background":"#FFBCB0","fontWeight":"normal"},{"background":"#FFEAE6","fontWeight":"normal"},{"background":"#B0D8FF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#55ACFF","fontWeight":"normal"},{"background":"#339BFF","fontWeight":"normal"},{"background":"#FFCBC2","fontWeight":"normal"},{"background":"#C7E3FF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#B4DAFF","fontWeight":"normal"},{"background":"#FFBFB3","fontWeight":"normal"},{"background":"#FF6A4F","fontWeight":"normal"},{"background":"#FFC5BB","fontWeight":"normal"}]},{"id":"R12","name":"R12","type":"character","width":55,"align":"center","style":[{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FF917E","fontWeight":"normal"},{"background":"#FFCBC2","fontWeight":"normal"},{"background":"#FDFEFF","fontWeight":"normal"},{"background":"#C7E3FF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FFBFB3","fontWeight":"normal"},{"background":"#BBDDFF","fontWeight":"normal"},{"background":"#339BFF","fontWeight":"normal"},{"background":"#D1E8FF","fontWeight":"normal"},{"background":"#FFBCB0","fontWeight":"normal"},{"background":"#B4DAFF","fontWeight":"normal"},{"background":"#B0D8FF","fontWeight":"normal"},{"background":"#FFEAE6","fontWeight":"normal"},{"background":"#FFC5BB","fontWeight":"normal"},{"background":"#FF6A4F","fontWeight":"normal"},{"background":"#55ACFF","fontWeight":"normal"},{"background":"#FF7259","fontWeight":"normal"}]},{"id":"seasonDVP","name":"seasonDVP","type":"numeric","width":60,"align":"center","style":{"background":"white"},"format":{"cell":{"digits":1},"aggregated":{"digits":1}},"header":{"name":"div","attribs":{"style":{"text-decoration":"underline","text-decoration-style":"dotted","cursor":"help"}},"children":[{"name":"WidgetContainer","attribs":{"key":"cff3b79d56abad3cdeeecb76d253eb68"},"children":[{"name":"Fragment","attribs":[],"children":[{"name":"span","attribs":{"id":"htmlwidget-f77638a246b63eebe9db","width":960,"height":500,"className":"tippy html-widget html-fill-item"},"children":[]},{"name":"script","attribs":{"type":"application/json","data-for":"htmlwidget-f77638a246b63eebe9db"},"children":["{\"x\":{\"opts\":{\"content\":\"All remaining games\"},\"text\":\"TOT\"},\"evals\":[],\"jsHooks\":[]}"]}]}]}]}}],"defaultSorted":[{"id":"tabbrev","desc":false}],"defaultPageSize":18,"showPageSizeOptions":false,"showSortIcon":false,"style":{"fontSize":"12px","align":"center"},"dataKey":"e514725d47bef82b0cc87dfd32b915ef"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+</div>
+<div class="sc-leader">
+<h1>Midfielders</h1>
+<div class="reactable html-widget html-fill-item" id="htmlwidget-94caacaf41411a634ae6" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-94caacaf41411a634ae6">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"tabbrev":["MEL","WBD","FRE","BRL","GWS","CAR","COL","ADE","NTH","GEE","GCS","WCE","RIC","STK","ESS","HAW","SYD","PTA"],"N3":[-0.739731961056179,0.100423845838359,1.34708031265239,-1.28249779525686,1.39886658505874,1.19602865017057,0.710728202967924,0.150067441390315,-3.97970227411995,0.102394544367136,-2.71747046184096,3.67591001449343,-1.71879571313835,-0.23679140687314,-1.7357209715447,1.5221183093793,0.592981161856518,1.61411151565545],"R1":["HAW","GCS","PTA","ESS","WCE","STK","RIC","SYD","GEE","NTH","WBD","GWS","COL","CAR","BRL","MEL","ADE","FRE"],"R2":["GWS","RIC","COL","NTH","MEL","ADE","FRE","CAR","BRL","STK","WCE","GCS","WBD","GEE","SYD","PTA","ESS","HAW"],"R3":["BRL","NTH","CAR","MEL","PTA","FRE","HAW","WCE","WBD","GCS","GEE","ADE","ESS","SYD","RIC","COL","STK","GWS"],"R4":["WCE","SYD","RIC","GWS","BRL","COL","CAR","HAW","STK","ESS","PTA","MEL","FRE","NTH","GEE","ADE","WBD","GCS"],"R5":["PTA","HAW","ESS","WCE","SYD","NTH","GCS","GEE","CAR","ADE","COL","BRL","STK","RIC","FRE","WBD","GWS","MEL"],"R6":["CAR","FRE","WBD","ADE","RIC","MEL","GEE","BRL","HAW","COL","ESS","STK","GWS","WCE","GCS","NTH","PTA","SYD"],"R7":["NTH","PTA","ADE","SYD","COL","RIC","GWS","FRE","MEL","HAW","STK","ESS","CAR","GCS","WCE","GEE","BRL","WBD"],"R8":["COL","STK","WCE","GCS","ESS","HAW","MEL","PTA","SYD","RIC","BRL","FRE","GEE","WBD","GWS","CAR","NTH","ADE"],"R9":["GCS","ESS","NTH","HAW","GEE","SYD","STK","RIC","FRE","GWS","MEL","PTA","ADE","COL","WBD","BRL","CAR","WCE"],"R10":["RIC","CAR","STK","PTA","HAW","WBD","SYD","GCS","ESS","WCE","ADE","GEE","MEL","FRE","NTH","GWS","COL","BRL"],"R11":["WBD","MEL","GEE","STK","CAR","GWS","PTA","NTH","ADE","FRE","RIC","SYD","GCS","BRL","HAW","ESS","WCE","COL"],"R12":["ADE","GEE","SYD","CAR","GCS","BRL","ESS","MEL","RIC","WBD","GWS","HAW","NTH","PTA","COL","WCE","FRE","STK"],"seasonDVP":[-0.273658226706052,0.615940525409813,-0.848698623311645,0.797649776869082,0.434971493063051,-0.733661020889528,1.5365629465229,0.0189463473992205,-0.273030211351559,0.0250391585233472,-0.187942421797544,0.879562458060825,0.431445562085013,-0.637321408894571,-0.812653593171824,-0.727322539206936,-0.556860885746453,0.31103066314286]},"columns":[{"id":"tabbrev","name":"Team","type":"character","width":60,"align":"center","style":{"background":"white"},"sticky":"left"},{"id":"N3","name":"N3","type":"numeric","width":60,"align":"center","style":{"background":"white"},"show":true,"format":{"cell":{"digits":1},"aggregated":{"digits":1}},"header":{"name":"div","attribs":{"style":{"text-decoration":"underline","text-decoration-style":"dotted","cursor":"help"}},"children":[{"name":"WidgetContainer","attribs":{"key":"a307900fb2216ed2c1abc6bcfd6a9482"},"children":[{"name":"Fragment","attribs":[],"children":[{"name":"span","attribs":{"id":"htmlwidget-9282a1e2646d8e297027","width":960,"height":500,"className":"tippy html-widget html-fill-item"},"children":[]},{"name":"script","attribs":{"type":"application/json","data-for":"htmlwidget-9282a1e2646d8e297027"},"children":["{\"x\":{\"opts\":{\"content\":\"Next 3 Games\"},\"text\":\"N3\"},\"evals\":[],\"jsHooks\":[]}"]}]}]}]}},{"id":"R1","name":"R1","type":"character","width":55,"align":"center","style":[{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#C2E1FF","fontWeight":"normal"},{"background":"#F2F9FF","fontWeight":"normal"},{"background":"#FFE8E4","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#FFE5E1","fontWeight":"normal"},{"background":"#FFD0C8","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FF9987","fontWeight":"normal"},{"background":"#94CAFF","fontWeight":"normal"},{"background":"#FFF0EE","fontWeight":"normal"},{"background":"#ADD7FF","fontWeight":"normal"},{"background":"#FF9A87","fontWeight":"normal"},{"background":"#9ECFFF","fontWeight":"normal"},{"background":"#EFF7FF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"}]},{"id":"R2","name":"R2","type":"character","width":55,"align":"center","style":[{"background":"#94CAFF","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#FFF0EE","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#9ECFFF","fontWeight":"normal"},{"background":"#EFF7FF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#ADD7FF","fontWeight":"normal"},{"background":"#FF9A87","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#FFE8E4","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FF9987","fontWeight":"normal"},{"background":"#FFD0C8","fontWeight":"normal"},{"background":"#FFE5E1","fontWeight":"normal"},{"background":"#C2E1FF","fontWeight":"normal"},{"background":"#F2F9FF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"}]},{"id":"R3","name":"R3","type":"character","width":55,"align":"center","style":[{"background":"#FF9A87","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#ADD7FF","fontWeight":"normal"},{"background":"#9ECFFF","fontWeight":"normal"},{"background":"#C2E1FF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#FFE8E4","fontWeight":"normal"},{"background":"#FF9987","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FFD0C8","fontWeight":"normal"},{"background":"#EFF7FF","fontWeight":"normal"},{"background":"#F2F9FF","fontWeight":"normal"},{"background":"#FFE5E1","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#FFF0EE","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#94CAFF","fontWeight":"normal"}]},{"id":"R4","name":"R4","type":"character","width":55,"align":"center","style":[{"background":"#FFE8E4","fontWeight":"normal"},{"background":"#FFE5E1","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#94CAFF","fontWeight":"normal"},{"background":"#FF9A87","fontWeight":"normal"},{"background":"#FFF0EE","fontWeight":"normal"},{"background":"#ADD7FF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#F2F9FF","fontWeight":"normal"},{"background":"#C2E1FF","fontWeight":"normal"},{"background":"#9ECFFF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FFD0C8","fontWeight":"normal"},{"background":"#EFF7FF","fontWeight":"normal"},{"background":"#FF9987","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"}]},{"id":"R5","name":"R5","type":"character","width":55,"align":"center","style":[{"background":"#C2E1FF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#F2F9FF","fontWeight":"normal"},{"background":"#FFE8E4","fontWeight":"normal"},{"background":"#FFE5E1","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FFD0C8","fontWeight":"normal"},{"background":"#ADD7FF","fontWeight":"normal"},{"background":"#EFF7FF","fontWeight":"normal"},{"background":"#FFF0EE","fontWeight":"normal"},{"background":"#FF9A87","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#FF9987","fontWeight":"normal"},{"background":"#94CAFF","fontWeight":"normal"},{"background":"#9ECFFF","fontWeight":"normal"}]},{"id":"R6","name":"R6","type":"character","width":55,"align":"center","style":[{"background":"#ADD7FF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#FF9987","fontWeight":"normal"},{"background":"#EFF7FF","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#9ECFFF","fontWeight":"normal"},{"background":"#FFD0C8","fontWeight":"normal"},{"background":"#FF9A87","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#FFF0EE","fontWeight":"normal"},{"background":"#F2F9FF","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#94CAFF","fontWeight":"normal"},{"background":"#FFE8E4","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#C2E1FF","fontWeight":"normal"},{"background":"#FFE5E1","fontWeight":"normal"}]},{"id":"R7","name":"R7","type":"character","width":55,"align":"center","style":[{"background":"#FF6347","fontWeight":"normal"},{"background":"#C2E1FF","fontWeight":"normal"},{"background":"#EFF7FF","fontWeight":"normal"},{"background":"#FFE5E1","fontWeight":"normal"},{"background":"#FFF0EE","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#94CAFF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#9ECFFF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#F2F9FF","fontWeight":"normal"},{"background":"#ADD7FF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FFE8E4","fontWeight":"normal"},{"background":"#FFD0C8","fontWeight":"normal"},{"background":"#FF9A87","fontWeight":"normal"},{"background":"#FF9987","fontWeight":"normal"}]},{"id":"R8","name":"R8","type":"character","width":55,"align":"center","style":[{"background":"#FFF0EE","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#FFE8E4","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#F2F9FF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#9ECFFF","fontWeight":"normal"},{"background":"#C2E1FF","fontWeight":"normal"},{"background":"#FFE5E1","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#FF9A87","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#FFD0C8","fontWeight":"normal"},{"background":"#FF9987","fontWeight":"normal"},{"background":"#94CAFF","fontWeight":"normal"},{"background":"#ADD7FF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#EFF7FF","fontWeight":"normal"}]},{"id":"R9","name":"R9","type":"character","width":55,"align":"center","style":[{"background":"#2F99FF","fontWeight":"normal"},{"background":"#F2F9FF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#FFD0C8","fontWeight":"normal"},{"background":"#FFE5E1","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#94CAFF","fontWeight":"normal"},{"background":"#9ECFFF","fontWeight":"normal"},{"background":"#C2E1FF","fontWeight":"normal"},{"background":"#EFF7FF","fontWeight":"normal"},{"background":"#FFF0EE","fontWeight":"normal"},{"background":"#FF9987","fontWeight":"normal"},{"background":"#FF9A87","fontWeight":"normal"},{"background":"#ADD7FF","fontWeight":"normal"},{"background":"#FFE8E4","fontWeight":"normal"}]},{"id":"R10","name":"R10","type":"character","width":55,"align":"center","style":[{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#ADD7FF","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#C2E1FF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#FF9987","fontWeight":"normal"},{"background":"#FFE5E1","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#F2F9FF","fontWeight":"normal"},{"background":"#FFE8E4","fontWeight":"normal"},{"background":"#EFF7FF","fontWeight":"normal"},{"background":"#FFD0C8","fontWeight":"normal"},{"background":"#9ECFFF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#94CAFF","fontWeight":"normal"},{"background":"#FFF0EE","fontWeight":"normal"},{"background":"#FF9A87","fontWeight":"normal"}]},{"id":"R11","name":"R11","type":"character","width":55,"align":"center","style":[{"background":"#FF9987","fontWeight":"normal"},{"background":"#9ECFFF","fontWeight":"normal"},{"background":"#FFD0C8","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#ADD7FF","fontWeight":"normal"},{"background":"#94CAFF","fontWeight":"normal"},{"background":"#C2E1FF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#EFF7FF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#FFE5E1","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FF9A87","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#F2F9FF","fontWeight":"normal"},{"background":"#FFE8E4","fontWeight":"normal"},{"background":"#FFF0EE","fontWeight":"normal"}]},{"id":"R12","name":"R12","type":"character","width":55,"align":"center","style":[{"background":"#EFF7FF","fontWeight":"normal"},{"background":"#FFD0C8","fontWeight":"normal"},{"background":"#FFE5E1","fontWeight":"normal"},{"background":"#ADD7FF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FF9A87","fontWeight":"normal"},{"background":"#F2F9FF","fontWeight":"normal"},{"background":"#9ECFFF","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#FF9987","fontWeight":"normal"},{"background":"#94CAFF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#C2E1FF","fontWeight":"normal"},{"background":"#FFF0EE","fontWeight":"normal"},{"background":"#FFE8E4","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"}]},{"id":"seasonDVP","name":"seasonDVP","type":"numeric","width":60,"align":"center","style":{"background":"white"},"format":{"cell":{"digits":1},"aggregated":{"digits":1}},"header":{"name":"div","attribs":{"style":{"text-decoration":"underline","text-decoration-style":"dotted","cursor":"help"}},"children":[{"name":"WidgetContainer","attribs":{"key":"cff3b79d56abad3cdeeecb76d253eb68"},"children":[{"name":"Fragment","attribs":[],"children":[{"name":"span","attribs":{"id":"htmlwidget-37f2d1a7179c63ce7f7a","width":960,"height":500,"className":"tippy html-widget html-fill-item"},"children":[]},{"name":"script","attribs":{"type":"application/json","data-for":"htmlwidget-37f2d1a7179c63ce7f7a"},"children":["{\"x\":{\"opts\":{\"content\":\"All remaining games\"},\"text\":\"TOT\"},\"evals\":[],\"jsHooks\":[]}"]}]}]}]}}],"defaultSorted":[{"id":"tabbrev","desc":false}],"defaultPageSize":18,"showPageSizeOptions":false,"showSortIcon":false,"style":{"fontSize":"12px","align":"center"},"dataKey":"5642e8ce537ad6405dc6840da124225b"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+</div>
+<div class="sc-leader">
+<h1>Rucks</h1>
+<div class="reactable html-widget html-fill-item" id="htmlwidget-5f576d827517bf533e6e" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-5f576d827517bf533e6e">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"tabbrev":["MEL","WBD","FRE","BRL","GWS","CAR","COL","ADE","NTH","GEE","GCS","WCE","RIC","STK","ESS","HAW","SYD","PTA"],"N3":[1.48759663662488,-1.2762203479557,1.20622960523278,-2.61687411223496,-2.294957332816,-1.01557087346074,2.4646385236658,-0.039196552081244,-1.48121626933655,-0.0188705247742404,0.778955887750161,-0.593887278886893,0.792130382505264,2.3070215351023,-2.49641244870835,-0.514183402910289,-0.30029312448283,3.61110969676661],"R1":["HAW","GCS","PTA","ESS","WCE","STK","RIC","SYD","GEE","NTH","WBD","GWS","COL","CAR","BRL","MEL","ADE","FRE"],"R2":["GWS","RIC","COL","NTH","MEL","ADE","FRE","CAR","BRL","STK","WCE","GCS","WBD","GEE","SYD","PTA","ESS","HAW"],"R3":["BRL","NTH","CAR","MEL","PTA","FRE","HAW","WCE","WBD","GCS","GEE","ADE","ESS","SYD","RIC","COL","STK","GWS"],"R4":["WCE","SYD","RIC","GWS","BRL","COL","CAR","HAW","STK","ESS","PTA","MEL","FRE","NTH","GEE","ADE","WBD","GCS"],"R5":["PTA","HAW","ESS","WCE","SYD","NTH","GCS","GEE","CAR","ADE","COL","BRL","STK","RIC","FRE","WBD","GWS","MEL"],"R6":["CAR","FRE","WBD","ADE","RIC","MEL","GEE","BRL","HAW","COL","ESS","STK","GWS","WCE","GCS","NTH","PTA","SYD"],"R7":["NTH","PTA","ADE","SYD","COL","RIC","GWS","FRE","MEL","HAW","STK","ESS","CAR","GCS","WCE","GEE","BRL","WBD"],"R8":["COL","STK","WCE","GCS","ESS","HAW","MEL","PTA","SYD","RIC","BRL","FRE","GEE","WBD","GWS","CAR","NTH","ADE"],"R9":["GCS","ESS","NTH","HAW","GEE","SYD","STK","RIC","FRE","GWS","MEL","PTA","ADE","COL","WBD","BRL","CAR","WCE"],"R10":["RIC","CAR","STK","PTA","HAW","WBD","SYD","GCS","ESS","WCE","ADE","GEE","MEL","FRE","NTH","GWS","COL","BRL"],"R11":["WBD","MEL","GEE","STK","CAR","GWS","PTA","NTH","ADE","FRE","RIC","SYD","GCS","BRL","HAW","ESS","WCE","COL"],"R12":["ADE","GEE","SYD","CAR","GCS","BRL","ESS","MEL","RIC","WBD","GWS","HAW","NTH","PTA","COL","WCE","FRE","STK"],"seasonDVP":[-0.419880337904379,0.759112713302698,0.0957312837060964,0.110874497496739,0.581102960282979,-0.490530501981611,1.35658149227029,-0.309341694951448,-0.175439922530503,0.562026988700101,-0.39448529413113,0.270972756234256,0.0594958348538086,-0.525445850335392,0.555132429260739,-0.970412800733787,-0.895952323819884,-0.169542229719579]},"columns":[{"id":"tabbrev","name":"Team","type":"character","width":60,"align":"center","style":{"background":"white"},"sticky":"left"},{"id":"N3","name":"N3","type":"numeric","width":60,"align":"center","style":{"background":"white"},"show":true,"format":{"cell":{"digits":1},"aggregated":{"digits":1}},"header":{"name":"div","attribs":{"style":{"text-decoration":"underline","text-decoration-style":"dotted","cursor":"help"}},"children":[{"name":"WidgetContainer","attribs":{"key":"a307900fb2216ed2c1abc6bcfd6a9482"},"children":[{"name":"Fragment","attribs":[],"children":[{"name":"span","attribs":{"id":"htmlwidget-fff27de5a1947ee5f492","width":960,"height":500,"className":"tippy html-widget html-fill-item"},"children":[]},{"name":"script","attribs":{"type":"application/json","data-for":"htmlwidget-fff27de5a1947ee5f492"},"children":["{\"x\":{\"opts\":{\"content\":\"Next 3 Games\"},\"text\":\"N3\"},\"evals\":[],\"jsHooks\":[]}"]}]}]}]}},{"id":"R1","name":"R1","type":"character","width":55,"align":"center","style":[{"background":"#2F99FF","fontWeight":"normal"},{"background":"#F5FAFF","fontWeight":"normal"},{"background":"#FFE4DF","fontWeight":"normal"},{"background":"#E8F4FF","fontWeight":"normal"},{"background":"#FFEEEB","fontWeight":"normal"},{"background":"#ACD6FF","fontWeight":"normal"},{"background":"#FFF9F8","fontWeight":"normal"},{"background":"#F7FBFF","fontWeight":"normal"},{"background":"#6BB6FF","fontWeight":"normal"},{"background":"#FFAC9E","fontWeight":"normal"},{"background":"#FFBEB2","fontWeight":"normal"},{"background":"#B3DAFF","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#F6FBFF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FF9B89","fontWeight":"normal"},{"background":"#FF907C","fontWeight":"normal"},{"background":"#FFE6E1","fontWeight":"normal"}]},{"id":"R2","name":"R2","type":"character","width":55,"align":"center","style":[{"background":"#B3DAFF","fontWeight":"normal"},{"background":"#FFF9F8","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#FFAC9E","fontWeight":"normal"},{"background":"#FF9B89","fontWeight":"normal"},{"background":"#FF907C","fontWeight":"normal"},{"background":"#FFE6E1","fontWeight":"normal"},{"background":"#F6FBFF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#ACD6FF","fontWeight":"normal"},{"background":"#FFEEEB","fontWeight":"normal"},{"background":"#F5FAFF","fontWeight":"normal"},{"background":"#FFBEB2","fontWeight":"normal"},{"background":"#6BB6FF","fontWeight":"normal"},{"background":"#F7FBFF","fontWeight":"normal"},{"background":"#FFE4DF","fontWeight":"normal"},{"background":"#E8F4FF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"}]},{"id":"R3","name":"R3","type":"character","width":55,"align":"center","style":[{"background":"#FF6347","fontWeight":"normal"},{"background":"#FFAC9E","fontWeight":"normal"},{"background":"#F6FBFF","fontWeight":"normal"},{"background":"#FF9B89","fontWeight":"normal"},{"background":"#FFE4DF","fontWeight":"normal"},{"background":"#FFE6E1","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FFEEEB","fontWeight":"normal"},{"background":"#FFBEB2","fontWeight":"normal"},{"background":"#F5FAFF","fontWeight":"normal"},{"background":"#6BB6FF","fontWeight":"normal"},{"background":"#FF907C","fontWeight":"normal"},{"background":"#E8F4FF","fontWeight":"normal"},{"background":"#F7FBFF","fontWeight":"normal"},{"background":"#FFF9F8","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#ACD6FF","fontWeight":"normal"},{"background":"#B3DAFF","fontWeight":"normal"}]},{"id":"R4","name":"R4","type":"character","width":55,"align":"center","style":[{"background":"#FFEEEB","fontWeight":"normal"},{"background":"#F7FBFF","fontWeight":"normal"},{"background":"#FFF9F8","fontWeight":"normal"},{"background":"#B3DAFF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#F6FBFF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#ACD6FF","fontWeight":"normal"},{"background":"#E8F4FF","fontWeight":"normal"},{"background":"#FFE4DF","fontWeight":"normal"},{"background":"#FF9B89","fontWeight":"normal"},{"background":"#FFE6E1","fontWeight":"normal"},{"background":"#FFAC9E","fontWeight":"normal"},{"background":"#6BB6FF","fontWeight":"normal"},{"background":"#FF907C","fontWeight":"normal"},{"background":"#FFBEB2","fontWeight":"normal"},{"background":"#F5FAFF","fontWeight":"normal"}]},{"id":"R5","name":"R5","type":"character","width":55,"align":"center","style":[{"background":"#FFE4DF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#E8F4FF","fontWeight":"normal"},{"background":"#FFEEEB","fontWeight":"normal"},{"background":"#F7FBFF","fontWeight":"normal"},{"background":"#FFAC9E","fontWeight":"normal"},{"background":"#F5FAFF","fontWeight":"normal"},{"background":"#6BB6FF","fontWeight":"normal"},{"background":"#F6FBFF","fontWeight":"normal"},{"background":"#FF907C","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#ACD6FF","fontWeight":"normal"},{"background":"#FFF9F8","fontWeight":"normal"},{"background":"#FFE6E1","fontWeight":"normal"},{"background":"#FFBEB2","fontWeight":"normal"},{"background":"#B3DAFF","fontWeight":"normal"},{"background":"#FF9B89","fontWeight":"normal"}]},{"id":"R6","name":"R6","type":"character","width":55,"align":"center","style":[{"background":"#F6FBFF","fontWeight":"normal"},{"background":"#FFE6E1","fontWeight":"normal"},{"background":"#FFBEB2","fontWeight":"normal"},{"background":"#FF907C","fontWeight":"normal"},{"background":"#FFF9F8","fontWeight":"normal"},{"background":"#FF9B89","fontWeight":"normal"},{"background":"#6BB6FF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#E8F4FF","fontWeight":"normal"},{"background":"#ACD6FF","fontWeight":"normal"},{"background":"#B3DAFF","fontWeight":"normal"},{"background":"#FFEEEB","fontWeight":"normal"},{"background":"#F5FAFF","fontWeight":"normal"},{"background":"#FFAC9E","fontWeight":"normal"},{"background":"#FFE4DF","fontWeight":"normal"},{"background":"#F7FBFF","fontWeight":"normal"}]},{"id":"R7","name":"R7","type":"character","width":55,"align":"center","style":[{"background":"#FFAC9E","fontWeight":"normal"},{"background":"#FFE4DF","fontWeight":"normal"},{"background":"#FF907C","fontWeight":"normal"},{"background":"#F7FBFF","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#FFF9F8","fontWeight":"normal"},{"background":"#B3DAFF","fontWeight":"normal"},{"background":"#FFE6E1","fontWeight":"normal"},{"background":"#FF9B89","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#ACD6FF","fontWeight":"normal"},{"background":"#E8F4FF","fontWeight":"normal"},{"background":"#F6FBFF","fontWeight":"normal"},{"background":"#F5FAFF","fontWeight":"normal"},{"background":"#FFEEEB","fontWeight":"normal"},{"background":"#6BB6FF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FFBEB2","fontWeight":"normal"}]},{"id":"R8","name":"R8","type":"character","width":55,"align":"center","style":[{"background":"#93CAFF","fontWeight":"normal"},{"background":"#ACD6FF","fontWeight":"normal"},{"background":"#FFEEEB","fontWeight":"normal"},{"background":"#F5FAFF","fontWeight":"normal"},{"background":"#E8F4FF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FF9B89","fontWeight":"normal"},{"background":"#FFE4DF","fontWeight":"normal"},{"background":"#F7FBFF","fontWeight":"normal"},{"background":"#FFF9F8","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FFE6E1","fontWeight":"normal"},{"background":"#6BB6FF","fontWeight":"normal"},{"background":"#FFBEB2","fontWeight":"normal"},{"background":"#B3DAFF","fontWeight":"normal"},{"background":"#F6FBFF","fontWeight":"normal"},{"background":"#FFAC9E","fontWeight":"normal"},{"background":"#FF907C","fontWeight":"normal"}]},{"id":"R9","name":"R9","type":"character","width":55,"align":"center","style":[{"background":"#F5FAFF","fontWeight":"normal"},{"background":"#E8F4FF","fontWeight":"normal"},{"background":"#FFAC9E","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#6BB6FF","fontWeight":"normal"},{"background":"#F7FBFF","fontWeight":"normal"},{"background":"#ACD6FF","fontWeight":"normal"},{"background":"#FFF9F8","fontWeight":"normal"},{"background":"#FFE6E1","fontWeight":"normal"},{"background":"#B3DAFF","fontWeight":"normal"},{"background":"#FF9B89","fontWeight":"normal"},{"background":"#FFE4DF","fontWeight":"normal"},{"background":"#FF907C","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#FFBEB2","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#F6FBFF","fontWeight":"normal"},{"background":"#FFEEEB","fontWeight":"normal"}]},{"id":"R10","name":"R10","type":"character","width":55,"align":"center","style":[{"background":"#FFF9F8","fontWeight":"normal"},{"background":"#F6FBFF","fontWeight":"normal"},{"background":"#ACD6FF","fontWeight":"normal"},{"background":"#FFE4DF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FFBEB2","fontWeight":"normal"},{"background":"#F7FBFF","fontWeight":"normal"},{"background":"#F5FAFF","fontWeight":"normal"},{"background":"#E8F4FF","fontWeight":"normal"},{"background":"#FFEEEB","fontWeight":"normal"},{"background":"#FF907C","fontWeight":"normal"},{"background":"#6BB6FF","fontWeight":"normal"},{"background":"#FF9B89","fontWeight":"normal"},{"background":"#FFE6E1","fontWeight":"normal"},{"background":"#FFAC9E","fontWeight":"normal"},{"background":"#B3DAFF","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"}]},{"id":"R11","name":"R11","type":"character","width":55,"align":"center","style":[{"background":"#FFBEB2","fontWeight":"normal"},{"background":"#FF9B89","fontWeight":"normal"},{"background":"#6BB6FF","fontWeight":"normal"},{"background":"#ACD6FF","fontWeight":"normal"},{"background":"#F6FBFF","fontWeight":"normal"},{"background":"#B3DAFF","fontWeight":"normal"},{"background":"#FFE4DF","fontWeight":"normal"},{"background":"#FFAC9E","fontWeight":"normal"},{"background":"#FF907C","fontWeight":"normal"},{"background":"#FFE6E1","fontWeight":"normal"},{"background":"#FFF9F8","fontWeight":"normal"},{"background":"#F7FBFF","fontWeight":"normal"},{"background":"#F5FAFF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#E8F4FF","fontWeight":"normal"},{"background":"#FFEEEB","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"}]},{"id":"R12","name":"R12","type":"character","width":55,"align":"center","style":[{"background":"#FF907C","fontWeight":"normal"},{"background":"#6BB6FF","fontWeight":"normal"},{"background":"#F7FBFF","fontWeight":"normal"},{"background":"#F6FBFF","fontWeight":"normal"},{"background":"#F5FAFF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#E8F4FF","fontWeight":"normal"},{"background":"#FF9B89","fontWeight":"normal"},{"background":"#FFF9F8","fontWeight":"normal"},{"background":"#FFBEB2","fontWeight":"normal"},{"background":"#B3DAFF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FFAC9E","fontWeight":"normal"},{"background":"#FFE4DF","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#FFEEEB","fontWeight":"normal"},{"background":"#FFE6E1","fontWeight":"normal"},{"background":"#ACD6FF","fontWeight":"normal"}]},{"id":"seasonDVP","name":"seasonDVP","type":"numeric","width":60,"align":"center","style":{"background":"white"},"format":{"cell":{"digits":1},"aggregated":{"digits":1}},"header":{"name":"div","attribs":{"style":{"text-decoration":"underline","text-decoration-style":"dotted","cursor":"help"}},"children":[{"name":"WidgetContainer","attribs":{"key":"cff3b79d56abad3cdeeecb76d253eb68"},"children":[{"name":"Fragment","attribs":[],"children":[{"name":"span","attribs":{"id":"htmlwidget-6684030b5292e0e885c0","width":960,"height":500,"className":"tippy html-widget html-fill-item"},"children":[]},{"name":"script","attribs":{"type":"application/json","data-for":"htmlwidget-6684030b5292e0e885c0"},"children":["{\"x\":{\"opts\":{\"content\":\"All remaining games\"},\"text\":\"TOT\"},\"evals\":[],\"jsHooks\":[]}"]}]}]}]}}],"defaultSorted":[{"id":"tabbrev","desc":false}],"defaultPageSize":18,"showPageSizeOptions":false,"showSortIcon":false,"style":{"fontSize":"12px","align":"center"},"dataKey":"500c92046953f04e75f6852ea4fb3c81"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+</div>
+<div class="sc-leader">
+<h1>Forwards</h1>
+<div class="reactable html-widget html-fill-item" id="htmlwidget-4477f54d52b9d13040e9" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-4477f54d52b9d13040e9">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"tabbrev":["MEL","WBD","FRE","BRL","GWS","CAR","COL","ADE","NTH","GEE","GCS","WCE","RIC","STK","ESS","HAW","SYD","PTA"],"N3":[-0.227445959975499,-0.960438157084011,1.12895137544868,-2.01470993313501,0.62147816668836,-0.454680525050419,0.060749356047875,0.141003393232688,-1.64744246796411,-1.00625058170109,-0.160036519169189,1.86873637705216,1.10425563746035,-0.0831691620387807,-0.837878231627443,0.957514760108263,1.17610800766737,0.333254464039806],"R1":["HAW","GCS","PTA","ESS","WCE","STK","RIC","SYD","GEE","NTH","WBD","GWS","COL","CAR","BRL","MEL","ADE","FRE"],"R2":["GWS","RIC","COL","NTH","MEL","ADE","FRE","CAR","BRL","STK","WCE","GCS","WBD","GEE","SYD","PTA","ESS","HAW"],"R3":["BRL","NTH","CAR","MEL","PTA","FRE","HAW","WCE","WBD","GCS","GEE","ADE","ESS","SYD","RIC","COL","STK","GWS"],"R4":["WCE","SYD","RIC","GWS","BRL","COL","CAR","HAW","STK","ESS","PTA","MEL","FRE","NTH","GEE","ADE","WBD","GCS"],"R5":["PTA","HAW","ESS","WCE","SYD","NTH","GCS","GEE","CAR","ADE","COL","BRL","STK","RIC","FRE","WBD","GWS","MEL"],"R6":["CAR","FRE","WBD","ADE","RIC","MEL","GEE","BRL","HAW","COL","ESS","STK","GWS","WCE","GCS","NTH","PTA","SYD"],"R7":["NTH","PTA","ADE","SYD","COL","RIC","GWS","FRE","MEL","HAW","STK","ESS","CAR","GCS","WCE","GEE","BRL","WBD"],"R8":["COL","STK","WCE","GCS","ESS","HAW","MEL","PTA","SYD","RIC","BRL","FRE","GEE","WBD","GWS","CAR","NTH","ADE"],"R9":["GCS","ESS","NTH","HAW","GEE","SYD","STK","RIC","FRE","GWS","MEL","PTA","ADE","COL","WBD","BRL","CAR","WCE"],"R10":["RIC","CAR","STK","PTA","HAW","WBD","SYD","GCS","ESS","WCE","ADE","GEE","MEL","FRE","NTH","GWS","COL","BRL"],"R11":["WBD","MEL","GEE","STK","CAR","GWS","PTA","NTH","ADE","FRE","RIC","SYD","GCS","BRL","HAW","ESS","WCE","COL"],"R12":["ADE","GEE","SYD","CAR","GCS","BRL","ESS","MEL","RIC","WBD","GWS","HAW","NTH","PTA","COL","WCE","FRE","STK"],"seasonDVP":[-0.099913102251773,0.0742226967336338,-0.0417436371321113,0.328854567869754,0.814635842587274,-0.863222766751087,0.837985541204786,-0.417451721357844,-0.282130377510374,0.237274236036336,0.37559991897454,0.581540638990171,-0.176825371767227,-0.39428204936537,-0.277520747667708,-0.435714623328059,-0.452810737040564,0.191501691775623]},"columns":[{"id":"tabbrev","name":"Team","type":"character","width":60,"align":"center","style":{"background":"white"},"sticky":"left"},{"id":"N3","name":"N3","type":"numeric","width":60,"align":"center","style":{"background":"white"},"show":true,"format":{"cell":{"digits":1},"aggregated":{"digits":1}},"header":{"name":"div","attribs":{"style":{"text-decoration":"underline","text-decoration-style":"dotted","cursor":"help"}},"children":[{"name":"WidgetContainer","attribs":{"key":"a307900fb2216ed2c1abc6bcfd6a9482"},"children":[{"name":"Fragment","attribs":[],"children":[{"name":"span","attribs":{"id":"htmlwidget-f0ffdeda6b90d9e0bdef","width":960,"height":500,"className":"tippy html-widget html-fill-item"},"children":[]},{"name":"script","attribs":{"type":"application/json","data-for":"htmlwidget-f0ffdeda6b90d9e0bdef"},"children":["{\"x\":{\"opts\":{\"content\":\"Next 3 Games\"},\"text\":\"N3\"},\"evals\":[],\"jsHooks\":[]}"]}]}]}]}},{"id":"R1","name":"R1","type":"character","width":55,"align":"center","style":[{"background":"#C0E0FF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#64B3FF","fontWeight":"normal"},{"background":"#CAE5FF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#E3F1FF","fontWeight":"normal"},{"background":"#F1F8FF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FFD6CF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#99CDFF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#FFBBAF","fontWeight":"normal"},{"background":"#FFE1DC","fontWeight":"normal"},{"background":"#FFFCFC","fontWeight":"normal"},{"background":"#FFDDD7","fontWeight":"normal"}]},{"id":"R2","name":"R2","type":"character","width":55,"align":"center","style":[{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#E3F1FF","fontWeight":"normal"},{"background":"#99CDFF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FFE1DC","fontWeight":"normal"},{"background":"#FFFCFC","fontWeight":"normal"},{"background":"#FFDDD7","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#FFBBAF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#CAE5FF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FFD6CF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#F1F8FF","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#64B3FF","fontWeight":"normal"},{"background":"#C0E0FF","fontWeight":"normal"}]},{"id":"R3","name":"R3","type":"character","width":55,"align":"center","style":[{"background":"#FFBBAF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#FFE1DC","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#FFDDD7","fontWeight":"normal"},{"background":"#C0E0FF","fontWeight":"normal"},{"background":"#CAE5FF","fontWeight":"normal"},{"background":"#FFD6CF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#FFFCFC","fontWeight":"normal"},{"background":"#64B3FF","fontWeight":"normal"},{"background":"#F1F8FF","fontWeight":"normal"},{"background":"#E3F1FF","fontWeight":"normal"},{"background":"#99CDFF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"}]},{"id":"R4","name":"R4","type":"character","width":55,"align":"center","style":[{"background":"#CAE5FF","fontWeight":"normal"},{"background":"#F1F8FF","fontWeight":"normal"},{"background":"#E3F1FF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#FFBBAF","fontWeight":"normal"},{"background":"#99CDFF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#C0E0FF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#64B3FF","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#FFE1DC","fontWeight":"normal"},{"background":"#FFDDD7","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#FFFCFC","fontWeight":"normal"},{"background":"#FFD6CF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"}]},{"id":"R5","name":"R5","type":"character","width":55,"align":"center","style":[{"background":"#93CAFF","fontWeight":"normal"},{"background":"#C0E0FF","fontWeight":"normal"},{"background":"#64B3FF","fontWeight":"normal"},{"background":"#CAE5FF","fontWeight":"normal"},{"background":"#F1F8FF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#FFFCFC","fontWeight":"normal"},{"background":"#99CDFF","fontWeight":"normal"},{"background":"#FFBBAF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#E3F1FF","fontWeight":"normal"},{"background":"#FFDDD7","fontWeight":"normal"},{"background":"#FFD6CF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#FFE1DC","fontWeight":"normal"}]},{"id":"R6","name":"R6","type":"character","width":55,"align":"center","style":[{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#FFDDD7","fontWeight":"normal"},{"background":"#FFD6CF","fontWeight":"normal"},{"background":"#FFFCFC","fontWeight":"normal"},{"background":"#E3F1FF","fontWeight":"normal"},{"background":"#FFE1DC","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#FFBBAF","fontWeight":"normal"},{"background":"#C0E0FF","fontWeight":"normal"},{"background":"#99CDFF","fontWeight":"normal"},{"background":"#64B3FF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#CAE5FF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#F1F8FF","fontWeight":"normal"}]},{"id":"R7","name":"R7","type":"character","width":55,"align":"center","style":[{"background":"#FF6347","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#FFFCFC","fontWeight":"normal"},{"background":"#F1F8FF","fontWeight":"normal"},{"background":"#99CDFF","fontWeight":"normal"},{"background":"#E3F1FF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#FFDDD7","fontWeight":"normal"},{"background":"#FFE1DC","fontWeight":"normal"},{"background":"#C0E0FF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#64B3FF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#CAE5FF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#FFBBAF","fontWeight":"normal"},{"background":"#FFD6CF","fontWeight":"normal"}]},{"id":"R8","name":"R8","type":"character","width":55,"align":"center","style":[{"background":"#99CDFF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#CAE5FF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#64B3FF","fontWeight":"normal"},{"background":"#C0E0FF","fontWeight":"normal"},{"background":"#FFE1DC","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#F1F8FF","fontWeight":"normal"},{"background":"#E3F1FF","fontWeight":"normal"},{"background":"#FFBBAF","fontWeight":"normal"},{"background":"#FFDDD7","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#FFD6CF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FFFCFC","fontWeight":"normal"}]},{"id":"R9","name":"R9","type":"character","width":55,"align":"center","style":[{"background":"#2F99FF","fontWeight":"normal"},{"background":"#64B3FF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#C0E0FF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#F1F8FF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#E3F1FF","fontWeight":"normal"},{"background":"#FFDDD7","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#FFE1DC","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#FFFCFC","fontWeight":"normal"},{"background":"#99CDFF","fontWeight":"normal"},{"background":"#FFD6CF","fontWeight":"normal"},{"background":"#FFBBAF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#CAE5FF","fontWeight":"normal"}]},{"id":"R10","name":"R10","type":"character","width":55,"align":"center","style":[{"background":"#E3F1FF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#C0E0FF","fontWeight":"normal"},{"background":"#FFD6CF","fontWeight":"normal"},{"background":"#F1F8FF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#64B3FF","fontWeight":"normal"},{"background":"#CAE5FF","fontWeight":"normal"},{"background":"#FFFCFC","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#FFE1DC","fontWeight":"normal"},{"background":"#FFDDD7","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#99CDFF","fontWeight":"normal"},{"background":"#FFBBAF","fontWeight":"normal"}]},{"id":"R11","name":"R11","type":"character","width":55,"align":"center","style":[{"background":"#FFD6CF","fontWeight":"normal"},{"background":"#FFE1DC","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FFFCFC","fontWeight":"normal"},{"background":"#FFDDD7","fontWeight":"normal"},{"background":"#E3F1FF","fontWeight":"normal"},{"background":"#F1F8FF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FFBBAF","fontWeight":"normal"},{"background":"#C0E0FF","fontWeight":"normal"},{"background":"#64B3FF","fontWeight":"normal"},{"background":"#CAE5FF","fontWeight":"normal"},{"background":"#99CDFF","fontWeight":"normal"}]},{"id":"R12","name":"R12","type":"character","width":55,"align":"center","style":[{"background":"#FFFCFC","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#F1F8FF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#FFBBAF","fontWeight":"normal"},{"background":"#64B3FF","fontWeight":"normal"},{"background":"#FFE1DC","fontWeight":"normal"},{"background":"#E3F1FF","fontWeight":"normal"},{"background":"#FFD6CF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#C0E0FF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#99CDFF","fontWeight":"normal"},{"background":"#CAE5FF","fontWeight":"normal"},{"background":"#FFDDD7","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"}]},{"id":"seasonDVP","name":"seasonDVP","type":"numeric","width":60,"align":"center","style":{"background":"white"},"format":{"cell":{"digits":1},"aggregated":{"digits":1}},"header":{"name":"div","attribs":{"style":{"text-decoration":"underline","text-decoration-style":"dotted","cursor":"help"}},"children":[{"name":"WidgetContainer","attribs":{"key":"cff3b79d56abad3cdeeecb76d253eb68"},"children":[{"name":"Fragment","attribs":[],"children":[{"name":"span","attribs":{"id":"htmlwidget-6c4412519fb5a7243f45","width":960,"height":500,"className":"tippy html-widget html-fill-item"},"children":[]},{"name":"script","attribs":{"type":"application/json","data-for":"htmlwidget-6c4412519fb5a7243f45"},"children":["{\"x\":{\"opts\":{\"content\":\"All remaining games\"},\"text\":\"TOT\"},\"evals\":[],\"jsHooks\":[]}"]}]}]}]}}],"defaultSorted":[{"id":"tabbrev","desc":false}],"defaultPageSize":18,"showPageSizeOptions":false,"showSortIcon":false,"style":{"fontSize":"12px","align":"center"},"dataKey":"fbd5c48e4c5ebfb37352c5024e4bfef4"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<h1>Matchup Difficulty Values</h1>
+<div class="reactable html-widget html-fill-item" id="htmlwidget-6c677f5a5f698a57de09" style="width:auto;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-6c677f5a5f698a57de09">{"x":{"tag":{"name":"Reactable","attribs":{"data":{"oabbrev":["HAW","GCS","PTA","ESS","WCE","STK","RIC","SYD","GEE","NTH","WBD","GWS","COL","CAR","BRL","MEL","ADE","FRE"],"DEF":[1.94762258502203,1.46735858020814,-0.601355278204958,-1.85608031491807,-4.3338029337253,-4.08130810854824,5.32587329208555,-1.49333633941212,-3.17373883527247,2.06261540956429,1.19680558445546,-1.94695446998599,-1.67283136558557,0.0282940437876216,-4.54192748003383,1.77945756169556,5.45600609602634,4.43730197284155],"MID":[-0.926339965291001,6.94927099656467,2.01712638213054,0.40472228113018,-1.0609702472256,0.850571923708766,0.844659828122435,-1.20415705869397,-2.22154679201597,-7.49265928717202,-4.86989434628132,3.55480976618503,-0.691215074263904,2.71532963009052,-4.84766568406256,3.24044362027127,0.523649280730607,2.21386474607234],"RUC":[8.83900896833914,0.403635888801945,-1.27964808613318,0.951782401772182,-0.784073554326624,3.5210069173642,-0.25104255218019,0.326395231641895,6.25458070722401,-3.98125438048887,-3.1336394896469,3.18837096712225,4.55824823539051,0.340088666440997,-7.56459002558675,-4.8211503579882,-5.37366869258488,-1.19405084516156],"FWD":[1.29595724654296,4.33685352173679,2.23790992195118,3.21392101140942,1.10167198759492,0.427298134493383,0.564735408344607,0.282175755562917,0.429154321780514,-7.78290340133343,-2.010935866883,1.3822507323204,2.10978176785463,-0.960837563459772,-3.36054585878985,-1.47514740948102,-0.112895122900699,-1.67844458674394]},"columns":[{"id":"oabbrev","name":"vs","type":"character","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"width":50},{"id":"DEF","name":"DEF","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"width":50,"style":[{"background":"#B4DAFF","fontWeight":"normal"},{"background":"#C7E3FF","fontWeight":"normal"},{"background":"#FFEAE6","fontWeight":"normal"},{"background":"#FFBFB3","fontWeight":"normal"},{"background":"#FF6A4F","fontWeight":"normal"},{"background":"#FF7259","fontWeight":"normal"},{"background":"#339BFF","fontWeight":"normal"},{"background":"#FFCBC2","fontWeight":"normal"},{"background":"#FF917E","fontWeight":"normal"},{"background":"#B0D8FF","fontWeight":"normal"},{"background":"#D1E8FF","fontWeight":"normal"},{"background":"#FFBCB0","fontWeight":"normal"},{"background":"#FFC5BB","fontWeight":"normal"},{"background":"#FDFEFF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#BBDDFF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#55ACFF","fontWeight":"normal"}]},{"id":"MID","name":"MID","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"width":50,"style":[{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#C2E1FF","fontWeight":"normal"},{"background":"#F2F9FF","fontWeight":"normal"},{"background":"#FFE8E4","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#E5F2FF","fontWeight":"normal"},{"background":"#FFE5E1","fontWeight":"normal"},{"background":"#FFD0C8","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FF9987","fontWeight":"normal"},{"background":"#94CAFF","fontWeight":"normal"},{"background":"#FFF0EE","fontWeight":"normal"},{"background":"#ADD7FF","fontWeight":"normal"},{"background":"#FF9A87","fontWeight":"normal"},{"background":"#9ECFFF","fontWeight":"normal"},{"background":"#EFF7FF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"}]},{"id":"RUC","name":"RUC","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"width":50,"style":[{"background":"#2F99FF","fontWeight":"normal"},{"background":"#F5FAFF","fontWeight":"normal"},{"background":"#FFE4DF","fontWeight":"normal"},{"background":"#E8F4FF","fontWeight":"normal"},{"background":"#FFEEEB","fontWeight":"normal"},{"background":"#ACD6FF","fontWeight":"normal"},{"background":"#FFF9F8","fontWeight":"normal"},{"background":"#F7FBFF","fontWeight":"normal"},{"background":"#6BB6FF","fontWeight":"normal"},{"background":"#FFAC9E","fontWeight":"normal"},{"background":"#FFBEB2","fontWeight":"normal"},{"background":"#B3DAFF","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#F6FBFF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FF9B89","fontWeight":"normal"},{"background":"#FF907C","fontWeight":"normal"},{"background":"#FFE6E1","fontWeight":"normal"}]},{"id":"FWD","name":"FWD","type":"numeric","format":{"cell":{"digits":1},"aggregated":{"digits":1}},"width":50,"style":[{"background":"#C0E0FF","fontWeight":"normal"},{"background":"#2F99FF","fontWeight":"normal"},{"background":"#93CAFF","fontWeight":"normal"},{"background":"#64B3FF","fontWeight":"normal"},{"background":"#CAE5FF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#E3F1FF","fontWeight":"normal"},{"background":"#F1F8FF","fontWeight":"normal"},{"background":"#EAF4FF","fontWeight":"normal"},{"background":"#FF6347","fontWeight":"normal"},{"background":"#FFD6CF","fontWeight":"normal"},{"background":"#BCDEFF","fontWeight":"normal"},{"background":"#99CDFF","fontWeight":"normal"},{"background":"#FFEBE8","fontWeight":"normal"},{"background":"#FFBBAF","fontWeight":"normal"},{"background":"#FFE1DC","fontWeight":"normal"},{"background":"#FFFCFC","fontWeight":"normal"},{"background":"#FFDDD7","fontWeight":"normal"}]}],"defaultSorted":[{"id":"oabbrev","desc":false}],"defaultPageSize":18,"showPageSizeOptions":false,"showSortIcon":false,"style":{"fontSize":"12px","align":"center"},"dataKey":"7401223d5e2bde731bfa59aae561602c"},"children":[]},"class":"reactR_markup"},"evals":[],"jsHooks":[]}</script>
+
+<hr>
+
+
+<p style="text-align: center;"> Stats By Jaiden </p>
+
+<script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
+<script>
+  kofiWidgetOverlay.draw('statsbyjaiden', {
+    'type': 'floating-chat',
+    'floating-chat.donateButton.text': 'Support Me',
+    'floating-chat.donateButton.background-color': '#323842',
+    'floating-chat.donateButton.text-color': '#fff'
+  });
+</script>
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
