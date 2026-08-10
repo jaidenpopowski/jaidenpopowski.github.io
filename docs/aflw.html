@@ -325,31 +325,37 @@ $(document).ready(function () {
 
   <div class="hub-col">
     <h3 class="hub-col-title"><a href="aflw_cbas">CBAs</a></h3>
-    <div class="hub-panel" id="hub-col2">Loading…</div>
+    <div class="hub-panel" id="hub-cbas">Loading…</div>
   </div>
 
   <div class="hub-col">
     <h3 class="hub-col-title"><a href="aflw_kickins">Kick-Ins</a></h3>
-    <div class="hub-panel" id="hub-col3">Loading…</div>
+    <div class="hub-panel" id="hub-kickins">Loading…</div>
   </div>
 
 </div>
 
 <script type="module">
   import { renderFeaturedNav } from "./site_nav.js";
-  import { loadHub, renderHubPlaceholder } from "./hubs.js";
+  import { loadHub, renderHubPanel } from "./hubs.js";
 
   renderFeaturedNav("hub-featured", "aflw");
 
   try {
     const data = await loadHub("aflw");
-    const p = (data.placeholders) || {};
-    renderHubPlaceholder("hub-col2", p.col2 || "Coming soon");
-    renderHubPlaceholder("hub-col3", p.col3 || "Coming soon");
+    renderHubPanel("hub-cbas", data.cbas, {
+      kind: "cbas",
+      emptyMessage: "No CBA data yet."
+    });
+    renderHubPanel("hub-kickins", data.kickins, {
+      kind: "kikcins",
+      emptyMessage: "No kick-in data yet."
+    });
   } catch (e) {
     console.error(e);
-    renderHubPlaceholder("hub-col2", "Coming soon");
-    renderHubPlaceholder("hub-col3", "Coming soon");
+    const msg = "Failed to load hub data — please refresh.";
+    document.getElementById("hub-cbas").textContent = msg;
+    document.getElementById("hub-kickins").textContent = msg;
   }
 </script>
 
