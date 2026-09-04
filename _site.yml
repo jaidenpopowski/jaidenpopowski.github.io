@@ -6,8 +6,6 @@ navbar:
   left:
     - text: "Home"
       href: index
-    - text: "Blog"
-      href: blog
     - text: "Fantasy"
       href: fantasy
     - text: "SuperCoach"

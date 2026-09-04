@@ -43,6 +43,9 @@
 
   gtag('config', 'G-1GD8EVS054');
 </script>
+<!-- header.html — included on every page via _site.yml in_header -->
+<script type="module" src="firebase.js"></script>
+<script type="module" src="auth.js"></script>
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -256,9 +259,6 @@ $(document).ready(function () {
       <ul class="nav navbar-nav">
         <li>
   <a href="index">Home</a>
-</li>
-<li>
-  <a href="blog">Blog</a>
 </li>
 <li>
   <a href="fantasy">Fantasy</a>
@@ -541,8 +541,7 @@ $(document).ready(function () {
 
 <hr>
 
-
-<p style="text-align: center;"> Stats By Jaiden </p>
+<p style="text-align: center;"> Stats By Jaiden &middot; <a href="privacy">Privacy</a></p>
 
 <script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
 <script>
