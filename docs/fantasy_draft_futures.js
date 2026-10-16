@@ -8,6 +8,8 @@
   const POS_KEYS = ["DEF", "MID", "RUC", "FWD"];
   const STORAGE_URL =
     "https://firebasestorage.googleapis.com/v0/b/statsbyjaiden.firebasestorage.app/o/fantasy_draft_futures.json?alt=media";
+  const HEADSHOT_BASE =
+    "https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/";
 
   const DEFAULT_CFG = {
     teams: 10,
@@ -26,7 +28,8 @@
     data: null,
     seasons: [],
     rows: [],
-    table: null
+    table: null,
+    hadQueryOnLoad: false
   };
 
   // ── URL config ─────────────────────────────────────────────────────────────
@@ -85,6 +88,20 @@
     let s = 0;
     for (let i = 0; i < h && i < arr.length; i++) s += Number(arr[i]) || 0;
     return s;
+  }
+
+  function cumAt(arr, i) {
+    if (!arr || !arr.length || i < 0) return null;
+    let s = 0;
+    let any = false;
+    for (let j = 0; j <= i && j < arr.length; j++) {
+      const v = Number(arr[j]);
+      if (Number.isFinite(v)) {
+        s += v;
+        any = true;
+      }
+    }
+    return any ? s : null;
   }
 
   function meanPos(asset, pos, h) {
@@ -149,7 +166,6 @@
         baselines[p] = 0;
       } else {
         const idx = Math.min(depth, ranked.length) - 1;
-        // Soft baseline: use the asset's full value at that rank (not fractional score)
         const id = ranked[idx].id;
         const hit = enriched.find((r) => r.asset.id === id);
         baselines[p] = hit ? hit.value : 0;
@@ -169,7 +185,8 @@
         type: a.type,
         name: a.name,
         club: a.club,
-        age: a.age,
+        teamAbbr: a.club || null,
+        age: a.age != null && Number.isFinite(Number(a.age)) ? Math.round(Number(a.age)) : null,
         contract: a.contract,
         fantasyPos: Array.isArray(a.fantasyPos) ? a.fantasyPos.join("/") : "",
         status: a.status,
@@ -179,7 +196,7 @@
         driver: a.delta && a.delta.driver,
         event: (a.delta && a.delta.event) || null,
         xAvg: numAt(a.xAvg, last),
-        xGames: numAt(a.xGames, last),
+        xGames: cumAt(a.xGames, last),
         pListed: numAt(a.probListed, last),
         pDEF: r.P.DEF,
         pMID: r.P.MID,
@@ -197,7 +214,7 @@
     return Number(arr[i]);
   }
 
-  // ── Columns / views ────────────────────────────────────────────────────────
+  // ── Formatters ─────────────────────────────────────────────────────────────
 
   function fmt1(v) {
     if (v == null || !Number.isFinite(v)) return "—";
@@ -211,36 +228,99 @@
     if (v == null || !Number.isFinite(v)) return "—";
     return String(Math.round(v));
   }
-
-  function yearCols(seasons, metric, labelPrefix, fmt) {
-    return seasons.map((y, i) => ({
-      title: labelPrefix + " " + y,
-      field: metric + "_Y" + (i + 1),
-      hozAlign: "right",
-      sorter: "number",
-      formatter: (cell) => fmt(cell.getValue())
-    }));
+  function fmtPct(v) {
+    if (v == null || !Number.isFinite(v)) return "—";
+    return Math.round(v * 100) + "%";
   }
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function headshotHtml(row) {
+    const isPick = row.type === "pick" || !row.id || String(row.id).indexOf("CD_I") !== 0;
+    if (isPick) {
+      return '<span class="fd-headshot fd-headshot-empty" aria-hidden="true"></span>';
+    }
+    const pid = String(row.id).replace("CD_I", "");
+    const src = HEADSHOT_BASE + pid + ".png?im=Resize=(80,80)";
+    return (
+      '<span class="fd-headshot">' +
+      '<img src="' +
+      src +
+      '" alt="" loading="lazy" onerror="this.parentNode.classList.add(\'fd-headshot-empty\');this.remove();">' +
+      "</span>"
+    );
+  }
+
+  function posChipsHtml(fantasyPos) {
+    const parts = String(fantasyPos || "")
+      .split("/")
+      .map((p) => p.trim())
+      .filter(Boolean);
+    if (!parts.length) return "";
+    return parts
+      .map((p) => '<span class="fd-pos-chip fd-pos-' + escapeHtml(p) + '">' + escapeHtml(p) + "</span>")
+      .join("");
+  }
+
+  function nameCellHtml(cell) {
+    const row = cell.getRow().getData();
+    const abbr = row.teamAbbr || row.club || "";
+    const teamChip = abbr
+      ? '<span class="fd-team-chip fd-team-' +
+        escapeHtml(abbr) +
+        '">' +
+        escapeHtml(abbr) +
+        "</span>"
+      : "";
+    return (
+      '<div class="fd-name-cell">' +
+      headshotHtml(row) +
+      '<div class="fd-name-meta">' +
+      '<div class="fd-name-top" title="' +
+      escapeHtml(row.name || "") +
+      '">' +
+      escapeHtml(row.name || "") +
+      "</div>" +
+      '<div class="fd-name-bottom">' +
+      teamChip +
+      posChipsHtml(row.fantasyPos) +
+      "</div>" +
+      "</div>" +
+      "</div>"
+    );
+  }
+
+  // ── Columns / views ────────────────────────────────────────────────────────
 
   function buildColumnDefs(seasons, view, byYear) {
     const baseName = {
       title: "Name",
       field: "name",
       frozen: true,
-      minWidth: 140,
-      headerFilter: false
+      width: 220,
+      minWidth: 220,
+      maxWidth: 220,
+      headerFilter: false,
+      formatter: nameCellHtml,
+      variableHeight: true
     };
     const cols = {
       name: baseName,
       type: { title: "Type", field: "type", width: 70 },
-      pos: { title: "Pos", field: "fantasyPos", width: 70 },
       club: { title: "Club", field: "club", width: 70 },
+      teamAbbr: { title: "Team", field: "teamAbbr", width: 70 },
       age: {
         title: "Age",
         field: "age",
-        width: 55,
+        width: 52,
         hozAlign: "right",
-        formatter: (c) => fmt1(c.getValue())
+        formatter: (c) => fmtInt(c.getValue())
       },
       contract: {
         title: "Contract",
@@ -252,75 +332,85 @@
       vorp: {
         title: "VORP",
         field: "vorp",
+        width: 72,
         hozAlign: "right",
         sorter: "number",
-        formatter: (c) => fmt1(c.getValue())
+        formatter: (c) => fmtInt(c.getValue())
       },
       xValue: {
         title: "xValue",
         field: "value",
+        width: 80,
         hozAlign: "right",
         sorter: "number",
-        formatter: (c) => fmt1(c.getValue())
+        formatter: (c) => fmtInt(c.getValue())
       },
       xAvg: {
         title: "xAvg",
         field: "xAvg",
+        width: 64,
         hozAlign: "right",
         formatter: (c) => fmt1(c.getValue())
       },
       xGames: {
         title: "xGames",
         field: "xGames",
+        width: 72,
         hozAlign: "right",
         formatter: (c) => fmt1(c.getValue())
       },
       pListed: {
         title: "pListed",
         field: "pListed",
+        width: 72,
         hozAlign: "right",
-        formatter: (c) => fmt3(c.getValue())
+        formatter: (c) => fmtPct(c.getValue())
       },
       dxPoints: {
         title: "Δ xPts",
         field: "dxPoints",
+        width: 80,
         hozAlign: "right",
         sorter: "number",
         formatter: (c) => fmt1(c.getValue())
       },
       driver: { title: "Driver", field: "driver", width: 90 },
-      event: { title: "Event", field: "event", minWidth: 100 },
+      event: { title: "Event", field: "event", width: 120 },
       pDEF: {
         title: "pDEF",
         field: "pDEF",
+        width: 64,
         hozAlign: "right",
         formatter: (c) => fmt3(c.getValue())
       },
       pMID: {
         title: "pMID",
         field: "pMID",
+        width: 64,
         hozAlign: "right",
         formatter: (c) => fmt3(c.getValue())
       },
       pRUC: {
         title: "pRUC",
         field: "pRUC",
+        width: 64,
         hozAlign: "right",
         formatter: (c) => fmt3(c.getValue())
       },
       pFWD: {
         title: "pFWD",
         field: "pFWD",
+        width: 64,
         hozAlign: "right",
         formatter: (c) => fmt3(c.getValue())
       }
     };
 
     const views = {
-      value: ["name", "pos", "age", "vorp", "xValue", "xAvg", "xGames", "pListed"],
-      lists: ["name", "club", "age", "contract"],
+      value: ["name", "age", "vorp", "xValue", "xAvg", "xGames", "pListed"],
+      lists: ["name", "teamAbbr", "age", "contract"],
       scoring: ["name"],
-      positions: ["name", "pos", "pDEF", "pMID", "pRUC", "pFWD"],
+      positions: ["name", "pDEF", "pMID", "pRUC", "pFWD"],
       movers: ["name", "vorp", "dxPoints", "driver", "event"]
     };
 
@@ -328,14 +418,14 @@
     let out = keys.map((k) => cols[k]).filter(Boolean);
 
     if (view === "lists" || (byYear && view === "value")) {
-      // pListed by year
       seasons.forEach((y, i) => {
         out.push({
           title: "pListed " + y,
           field: "pListed_Y" + (i + 1),
+          width: 88,
           hozAlign: "right",
           sorter: "number",
-          formatter: (c) => fmt3(c.getValue())
+          formatter: (c) => fmtPct(c.getValue())
         });
       });
     }
@@ -344,12 +434,14 @@
         out.push({
           title: "xAvg " + y,
           field: "xAvg_Y" + (i + 1),
+          width: 80,
           hozAlign: "right",
           formatter: (c) => fmt1(c.getValue())
         });
         out.push({
           title: "xGames " + y,
           field: "xGames_Y" + (i + 1),
+          width: 88,
           hozAlign: "right",
           formatter: (c) => fmt1(c.getValue())
         });
@@ -360,6 +452,7 @@
         out.push({
           title: "xPts " + y,
           field: "xPoints_Y" + (i + 1),
+          width: 80,
           hozAlign: "right",
           formatter: (c) => fmt1(c.getValue())
         });
@@ -375,7 +468,7 @@
     seasons.forEach((y, i) => {
       out["pListed_Y" + (i + 1)] = numAt(a.probListed, i);
       out["xAvg_Y" + (i + 1)] = numAt(a.xAvg, i);
-      out["xGames_Y" + (i + 1)] = numAt(a.xGames, i);
+      out["xGames_Y" + (i + 1)] = cumAt(a.xGames, i);
       out["xPoints_Y" + (i + 1)] = numAt(a.xPoints, i);
     });
     return out;
@@ -386,7 +479,6 @@
       if (cfg.posFilter && cfg.posFilter !== "ALL") {
         const fp = r.fantasyPos || "";
         if (r.type === "pick") {
-          // picks: use dominant soft pos
           const scores = {
             DEF: r.pDEF,
             MID: r.pMID,
@@ -417,13 +509,15 @@
     seasons.forEach((y) => lines.push("<th>" + y + "</th>"));
     lines.push("</tr></thead><tbody>");
     [
-      ["pListed", a.probListed, fmt3],
-      ["xGames", a.xGames, fmt1],
-      ["xAvg", a.xAvg, fmt1],
-      ["xPoints", a.xPoints, fmt1]
-    ].forEach(([lab, arr, fmt]) => {
+      ["pListed", a.probListed, fmtPct, false],
+      ["xGames", a.xGames, fmt1, true],
+      ["xAvg", a.xAvg, fmt1, false],
+      ["xPoints", a.xPoints, fmt1, false]
+    ].forEach(([lab, arr, fmt, asCum]) => {
       lines.push("<tr><td>" + lab + "</td>");
-      seasons.forEach((_, i) => lines.push("<td>" + fmt(numAt(arr, i)) + "</td>"));
+      seasons.forEach((_, i) =>
+        lines.push("<td>" + fmt(asCum ? cumAt(arr, i) : numAt(arr, i)) + "</td>")
+      );
       lines.push("</tr>");
     });
     lines.push("</tbody></table>");
@@ -476,7 +570,7 @@
         .map(
           (m) =>
             "<li><span>" +
-            (m.name || m.id) +
+            escapeHtml(m.name || m.id) +
             "</span> <span class='" +
             (pos ? "up" : "down") +
             "'>" +
@@ -495,25 +589,8 @@
 
   // ── Tabulator ──────────────────────────────────────────────────────────────
 
-  function ensureTable(columns) {
-    const hold = document.getElementById("futures-table");
-    if (!hold) return;
-    if (state.table) {
-      state.table.setColumns(columns);
-      return;
-    }
-    state.table = new Tabulator("#futures-table", {
-      data: [],
-      columns,
-      layout: "fitDataFill",
-      height: "640px",
-      placeholder: "No assets match these filters",
-      initialSort: [{ column: "vorp", dir: "desc" }],
-      rowFormatter: function (row) {
-        // no-op; expansion via click
-      }
-    });
-    state.table.on("rowClick", function (e, row) {
+  function bindTableRowClick(table) {
+    table.on("rowClick", function (e, row) {
       const d = row.getData();
       const existing = row.getElement().querySelector(".futures-detail");
       if (existing) {
@@ -526,30 +603,68 @@
     });
   }
 
+  /** Create or update the table. First paint must include data — replaceData
+   *  before tableBuilt is silently dropped by Tabulator. */
+  function ensureTable(columns, data) {
+    const hold = document.getElementById("futures-table");
+    if (!hold) return Promise.resolve(null);
+
+    if (state.table) {
+      state.table.setColumns(columns);
+      return Promise.resolve(state.table.replaceData(data)).then(function () {
+        return state.table;
+      });
+    }
+
+    return new Promise(function (resolve) {
+      const table = new Tabulator("#futures-table", {
+        data: data || [],
+        columns,
+        layout: "fitData",
+        height: "640px",
+        rowHeight: 48,
+        placeholder: "No assets match these filters",
+        initialSort: [{ column: "vorp", dir: "desc" }],
+        columnHeaderVertAlign: "bottom"
+      });
+      state.table = table;
+      bindTableRowClick(table);
+      table.on("tableBuilt", function () {
+        resolve(table);
+      });
+    });
+  }
+
   function refresh() {
-    if (!state.data) return;
+    if (!state.data) return Promise.resolve();
     const cfg = state.cfg;
     writeCfgToUrl(cfg);
     const all = computeRows(state.data.assets, cfg, state.seasons);
     state.rows = all;
     const filtered = filterRows(all, cfg).map((r) => flattenRow(r, state.seasons));
     const columns = buildColumnDefs(state.seasons, cfg.view, cfg.byYear);
-    ensureTable(columns);
-    state.table.replaceData(filtered);
-    renderMoversPanel(all, cfg, state.data);
-    const meta = document.getElementById("futures-meta");
-    if (meta && state.data.meta) {
-      meta.textContent =
-        "As of " +
-        state.data.meta.asOf +
-        " · " +
-        state.data.assets.length +
-        " assets · model " +
-        (state.data.meta.modelVersion || "");
-    }
+    return ensureTable(columns, filtered).then(function () {
+      renderMoversPanel(all, cfg, state.data);
+      const meta = document.getElementById("futures-meta");
+      if (meta && state.data.meta) {
+        meta.textContent =
+          "As of " +
+          state.data.meta.asOf +
+          " · " +
+          state.data.assets.length +
+          " assets · model " +
+          (state.data.meta.modelVersion || "");
+      }
+    });
   }
 
   // ── Controls wiring ────────────────────────────────────────────────────────
+
+  function applySettingsOpenState() {
+    const details = document.getElementById("futures-settings");
+    if (!details) return;
+    details.open = !state.hadQueryOnLoad;
+  }
 
   function syncControlsToDom(cfg, seasons) {
     const setVal = (id, v) => {
@@ -642,7 +757,9 @@
   // ── Boot ───────────────────────────────────────────────────────────────────
 
   async function init() {
+    state.hadQueryOnLoad = window.location.search.length > 1;
     state.cfg = readCfgFromUrl();
+    applySettingsOpenState();
     bindControls();
 
     const loading = document.getElementById("loading-state");
@@ -661,8 +778,12 @@
       }
       syncControlsToDom(state.cfg, state.seasons);
       if (loading) loading.style.display = "none";
-      if (shell) shell.style.display = "block";
-      refresh();
+      if (shell) {
+        shell.style.display = "block";
+        // Force layout before Tabulator measures the container
+        void shell.offsetHeight;
+      }
+      await refresh();
     } catch (e) {
       console.error(e);
       if (loading) loading.style.display = "none";
