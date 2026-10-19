@@ -401,28 +401,28 @@
         field: "pDEF",
         width: 64,
         hozAlign: "right",
-        formatter: (c) => fmt3(c.getValue())
+        formatter: (c) => fmtPct(c.getValue())
       },
       pMID: {
         title: "pMID",
         field: "pMID",
         width: 64,
         hozAlign: "right",
-        formatter: (c) => fmt3(c.getValue())
+        formatter: (c) => fmtPct(c.getValue())
       },
       pRUC: {
         title: "pRUC",
         field: "pRUC",
         width: 64,
         hozAlign: "right",
-        formatter: (c) => fmt3(c.getValue())
+        formatter: (c) => fmtPct(c.getValue())
       },
       pFWD: {
         title: "pFWD",
         field: "pFWD",
         width: 64,
         hozAlign: "right",
-        formatter: (c) => fmt3(c.getValue())
+        formatter: (c) => fmtPct(c.getValue())
       }
     };
 
@@ -521,6 +521,16 @@
 
   // ── Detail / movers ────────────────────────────────────────────────────────
 
+  /** Per-season xGames for detail: raw × pListed (not cumulative). */
+  function xGamesListedAt(xgArr, plArr, i) {
+    const xg = numAt(xgArr, i);
+    const pl = numAt(plArr, i);
+    if (xg == null || pl == null || !Number.isFinite(xg) || !Number.isFinite(pl)) {
+      return null;
+    }
+    return xg * pl;
+  }
+
   function detailHtml(row) {
     const a = row._asset;
     const seasons = state.seasons;
@@ -529,15 +539,21 @@
     seasons.forEach((y) => lines.push("<th>" + y + "</th>"));
     lines.push("</tr></thead><tbody>");
     [
-      ["pListed", a.probListed, fmtPct, false],
-      ["xGames", a.xGames, fmt1, true],
-      ["xAvg", a.xAvg, fmt1, false],
-      ["xPoints", a.xPoints, fmt1, false]
-    ].forEach(([lab, arr, fmt, asCum]) => {
+      ["pListed", a.probListed, fmtPct, "raw"],
+      ["xGames", a.xGames, fmt1, "xGamesListed"],
+      ["xAvg", a.xAvg, fmt1, "raw"],
+      ["xPoints", a.xPoints, fmt1, "raw"]
+    ].forEach(([lab, arr, fmt, mode]) => {
       lines.push("<tr><td>" + lab + "</td>");
-      seasons.forEach((_, i) =>
-        lines.push("<td>" + fmt(asCum ? cumAt(arr, i) : numAt(arr, i)) + "</td>")
-      );
+      seasons.forEach((_, i) => {
+        let v;
+        if (mode === "xGamesListed") {
+          v = xGamesListedAt(arr, a.probListed, i);
+        } else {
+          v = numAt(arr, i);
+        }
+        lines.push("<td>" + fmt(v) + "</td>");
+      });
       lines.push("</tr>");
     });
     lines.push("</tbody></table>");
@@ -645,7 +661,10 @@
         rowHeight: 48,
         placeholder: "No assets match these filters",
         initialSort: [{ column: "vorp", dir: "desc" }],
-        columnHeaderVertAlign: "bottom"
+        columnHeaderVertAlign: "bottom",
+        columnDefaults: {
+          resizable: false
+        }
       });
       state.table = table;
       bindTableRowClick(table);

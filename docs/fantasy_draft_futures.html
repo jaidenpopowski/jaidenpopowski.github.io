@@ -440,6 +440,18 @@ computed in the browser. Bookmark the URL to keep your settings.
     #futures-table .tabulator-row .tabulator-cell[tabulator-field='name'] {
       padding-top: 4px; padding-bottom: 4px;
     }
+    /* Lock headers: no resize handle; sort arrow only on the active sort column */
+    #futures-table .tabulator-col .tabulator-col-resize-handle { display: none; }
+    #futures-table .tabulator-col .tabulator-col-sorter { display: none; }
+    #futures-table .tabulator-col[aria-sort='ascending'] .tabulator-col-sorter,
+    #futures-table .tabulator-col[aria-sort='descending'] .tabulator-col-sorter {
+      display: flex;
+    }
+    #futures-table .tabulator-col .tabulator-col-title {
+      overflow: visible;
+      text-overflow: clip;
+      white-space: nowrap;
+    }
 
     @media (max-width: 900px) {
       .futures-layout { grid-template-columns: 1fr; }
