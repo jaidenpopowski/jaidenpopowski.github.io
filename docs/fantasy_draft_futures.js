@@ -193,9 +193,15 @@
     });
 
     return enriched.map((r) => {
+      // Rank-by-position uses raw eligibility / xGamesPOS (DPP may sum > 1).
+      // Replacement cost must not: a player is only rostered once, so weight
+      // baselines by P[p] / sum(P). Otherwise DEF/MID DPP pays ~2× replacement
+      // and can go deeply negative despite elite xValue (e.g. Max Holmes 2027).
+      const sumP = POS_KEYS.reduce((s, p) => s + (r.P[p] || 0), 0);
       let repl = 0;
       POS_KEYS.forEach((p) => {
-        repl += r.P[p] * baselines[p];
+        const w = sumP > 0 ? (r.P[p] || 0) / sumP : 0;
+        repl += w * baselines[p];
       });
       const vorp = r.value - repl;
       const a = r.asset;
