@@ -113,6 +113,24 @@
     return n ? s / n : 0;
   }
 
+  /** Position-weighted value: Σ probListed * xGamesPOS * xAvg over horizon. */
+  function posScore(asset, pos, h) {
+    const key = "xGames" + pos;
+    const xgPos = asset[key];
+    const pl = asset.probListed;
+    const xa = asset.xAvg;
+    if (xgPos && xgPos.length && pl && xa) {
+      let s = 0;
+      const n = Math.min(h, xgPos.length, pl.length, xa.length);
+      for (let i = 0; i < n; i++) {
+        s += (Number(pl[i]) || 0) * (Number(xgPos[i]) || 0) * (Number(xa[i]) || 0);
+      }
+      return s;
+    }
+    // Fallback: full value × mean eligibility share
+    return sumSlice(asset.xPoints, h) * meanPos(asset, pos, h);
+  }
+
   /** Formation-proportional bench seats; remainder to largest on-field slots. */
   function allocateBenchSlots(slots, bench) {
     const total = POS_KEYS.reduce((s, k) => s + (slots[k] || 0), 0);
@@ -148,19 +166,21 @@
     const enriched = assets.map((a) => {
       const value = sumSlice(a.xPoints, h);
       const P = {};
+      const score = {};
       POS_KEYS.forEach((p) => {
         P[p] = meanPos(a, p, h);
+        score[p] = posScore(a, p, h);
       });
       const prevXp = a.prev && a.prev.xPoints ? a.prev.xPoints : null;
       const dxPoints = prevXp != null ? value - sumSlice(prevXp, h) : null;
-      return { asset: a, value, P, dxPoints, h };
+      return { asset: a, value, P, score, dxPoints, h };
     });
 
     const baselines = {};
     POS_KEYS.forEach((p) => {
       const depth = cfg.teams * ((cfg.slots[p] || 0) + (benchSlots[p] || 0));
       const ranked = enriched
-        .map((r) => ({ id: r.asset.id, score: r.value * r.P[p] }))
+        .map((r) => ({ id: r.asset.id, score: r.score[p] }))
         .sort((a, b) => b.score - a.score);
       if (depth <= 0 || !ranked.length) {
         baselines[p] = 0;
