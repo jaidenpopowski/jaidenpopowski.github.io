@@ -434,7 +434,7 @@
 
     const views = {
       value: ["name", "age", "vorp", "xValue", "xAvg", "xGames", "pListed"],
-      lists: ["name", "teamAbbr", "age", "contract"],
+      lists: ["name", "age", "contract"],
       scoring: ["name"],
       positions: ["name", "pDEF", "pMID", "pRUC", "pFWD"],
       movers: ["name", "vorp", "dxPoints", "driver", "event"]
