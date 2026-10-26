@@ -445,20 +445,28 @@ computed in the browser. Bookmark the URL to keep your settings.
       margin-top: 12px; padding: 10px; background: #fff;
       border: 1px solid #e2e2e2; border-radius: 4px;
     }
-    .tc-net-row {
-      display: flex; flex-wrap: wrap; gap: 8px;
+    .tc-net > .muted { margin: 0 0 8px; font-size: 11px; }
+    .tc-overview-wrap { overflow-x: auto; }
+    .tc-overview {
+      border-collapse: collapse; width: 100%; min-width: 480px; font-size: 12px;
+      font-variant-numeric: tabular-nums;
     }
-    .tc-net-cell {
-      flex: 1 1 72px; min-width: 64px; text-align: center;
-      padding: 6px 4px; background: #f7f7f7; border-radius: 4px;
+    .tc-overview th, .tc-overview td {
+      padding: 5px 8px; border-bottom: 1px solid #eee; text-align: right;
     }
-    .tc-net-total { background: #eceff1; }
-    .tc-net-lab { font-size: 10px; font-weight: 700; color: #666; margin-bottom: 2px; }
-    .tc-net-val {
-      font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums;
+    .tc-overview th { font-weight: 700; color: #444; background: #f3f3f3; }
+    .tc-overview .tc-team-col { text-align: left; white-space: nowrap; }
+    .tc-overview .tc-num.up { color: #2e7d32; font-weight: 700; }
+    .tc-overview .tc-num.down { color: #c62828; font-weight: 700; }
+    .tc-overview .tc-emph { background: #eceff1; font-weight: 700; }
+    .tc-overview .tc-row-a td:first-child { background: #e3f2fd; }
+    .tc-overview .tc-winner-cell {
+      font-size: 11px; font-weight: 700; max-width: 110px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .tc-net-val.up { color: #2e7d32; }
-    .tc-net-val.down { color: #c62828; }
+    .tc-overview .tc-win-a { background: #e8f5e9; color: #2e7d32; }
+    .tc-overview .tc-win-b { background: #ffebee; color: #c62828; }
+    .tc-overview .tc-win-tie { background: #f5f5f5; color: #888; }
     #my-team-wrap { display: none; }
     #my-team-wrap select {
       font-size: 12px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; min-width: 140px;
