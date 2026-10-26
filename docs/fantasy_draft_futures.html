@@ -394,14 +394,80 @@ computed in the browser. Bookmark the URL to keep your settings.
     .lt-mine-board { border-color: #64b5f6; box-shadow: 0 0 0 2px rgba(33,150,243,.25); }
     .lt-mine-board .lt-board-head { background: #e3f2fd; }
     #futures-table .fd-my-team-row .tabulator-cell { background: #e3f2fd !important; }
+    #trade-calculator {
+      display: none; margin: 14px 0 0; padding: 10px 12px;
+      border: 1px solid #e2e2e2; border-radius: 4px; background: #fafafa; font-size: 12px;
+    }
+    #trade-calculator h3 { margin: 0 0 4px; font-size: 13px; }
+    #trade-calculator h4 { margin: 0 0 6px; font-size: 12px; }
+    #trade-calculator h4.tc-sub { margin-top: 10px; font-weight: 600; color: #555; }
+    #trade-calculator > .muted { margin: 0 0 10px; font-size: 11px; }
+    .tc-sides {
+      display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 10px;
+    }
+    .tc-side-label {
+      display: flex; flex-direction: column; gap: 2px; font-weight: 600; color: #444;
+    }
+    .tc-side-label select {
+      font-size: 12px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; min-width: 160px;
+    }
+    .tc-swap { font-size: 18px; color: #888; padding-top: 14px; }
+    .tc-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    @media (max-width: 720px) {
+      .tc-grid { grid-template-columns: 1fr; }
+    }
+    .tc-col {
+      background: #fff; border: 1px solid #e2e2e2; border-radius: 4px; padding: 8px 10px;
+      min-width: 0;
+    }
+    .tc-list {
+      display: flex; flex-direction: column; gap: 2px;
+      max-height: 280px; overflow: auto;
+    }
+    .tc-list-picks { max-height: 220px; }
+    .tc-asset {
+      display: grid; grid-template-columns: 18px minmax(0, 1fr) 48px;
+      gap: 6px; align-items: center; padding: 2px 0;
+      font-weight: 400; cursor: pointer;
+    }
+    .tc-asset-name {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600;
+    }
+    .tc-asset-vorp {
+      text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 11px;
+    }
+    .tc-pick .tc-asset-name .muted { font-weight: 400; font-size: 10px; }
+    .tc-more-picks { margin-top: 6px; font-size: 11px; }
+    .tc-more-picks summary { cursor: pointer; color: #555; font-weight: 600; }
+    .tc-net {
+      margin-top: 12px; padding: 10px; background: #fff;
+      border: 1px solid #e2e2e2; border-radius: 4px;
+    }
+    .tc-net-row {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .tc-net-cell {
+      flex: 1 1 72px; min-width: 64px; text-align: center;
+      padding: 6px 4px; background: #f7f7f7; border-radius: 4px;
+    }
+    .tc-net-total { background: #eceff1; }
+    .tc-net-lab { font-size: 10px; font-weight: 700; color: #666; margin-bottom: 2px; }
+    .tc-net-val {
+      font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums;
+    }
+    .tc-net-val.up { color: #2e7d32; }
+    .tc-net-val.down { color: #c62828; }
     #my-team-wrap { display: none; }
     #my-team-wrap select {
       font-size: 12px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; min-width: 140px;
     }
     .owned-filter-label {
-      display: inline-flex; align-items: center; gap: 4px; margin-left: 10px;
+      display: none; align-items: center; gap: 4px; margin-left: 10px;
       font-weight: 700; font-size: 12px; color: #333; cursor: pointer; user-select: none;
     }
+    .owned-filter-label.is-visible { display: inline-flex; }
     .team-dropdown { position: relative; display: inline-block; margin-left: 8px; }
     .team-dropdown-btn {
       font-size: 12px; padding: 3px 8px; border-radius: 4px; border: 1px solid #ccc;
@@ -791,6 +857,7 @@ Owned
 <div class="futures-table-col">
 <div id="futures-table"></div>
 <div id="team-ratings"></div>
+<div id="trade-calculator"></div>
 </div>
 <aside class="futures-movers-col" id="movers-panel"></aside>
 </div>

@@ -164,7 +164,15 @@
     table: null,
     hadQueryOnLoad: false,
     /** @type {null | {source:string, fileName:string, ownership:Object.<string,string>, owners:string[], unmatchedOwned:Array, matchedOwned:number, totalOwned:number}} */
-    league: null
+    league: null,
+    /** Trade calculator selections (player ids / PICK:n keys). */
+    trade: {
+      sideA: "",
+      sideB: "",
+      give: [],
+      get: [],
+      bound: false
+    }
   };
 
   // ── URL config ─────────────────────────────────────────────────────────────
@@ -482,9 +490,22 @@
     el.classList.toggle("is-error", !!isError);
   }
 
+  function syncOwnedFilterVisibility(league) {
+    const label = document.querySelector(".owned-filter-label");
+    if (!label) return;
+    const hasLeague = !!(league && league.owners && league.owners.length);
+    label.classList.toggle("is-visible", hasLeague);
+    if (!hasLeague) {
+      state.cfg.includeOwned = true;
+      const cb = document.getElementById("cfg-includeOwned");
+      if (cb) cb.checked = true;
+    }
+  }
+
   function syncMyTeamSelect(league, cfg) {
     const wrap = document.getElementById("my-team-wrap");
     const sel = document.getElementById("cfg-myTeam");
+    syncOwnedFilterVisibility(league);
     if (!wrap || !sel) return;
     if (!league || !league.owners || !league.owners.length) {
       wrap.style.display = "none";
@@ -513,6 +534,10 @@
   function clearKeeperLeague() {
     state.league = null;
     state.cfg.myTeam = "";
+    state.trade.sideA = "";
+    state.trade.sideB = "";
+    state.trade.give = [];
+    state.trade.get = [];
     const input = document.getElementById("keeper-csv-input");
     if (input) input.value = "";
     setLeagueStatus("");
@@ -1137,6 +1162,411 @@
     );
   }
 
+  // ── Trade calculator ───────────────────────────────────────────────────────
+
+  function yearPointsForRow(row, yearCount) {
+    const xp = row && row._asset && row._asset.xPoints;
+    const out = [];
+    for (let i = 0; i < yearCount; i++) out.push(Number(numAt(xp, i)) || 0);
+    return out;
+  }
+
+  /** Players not kept after cuts: free agents + rostered players outside each team's top Keepers. */
+  function unownedAfterCuts(rows, league, cfg) {
+    const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
+    const cutN = Math.max(0, Number(cfg.keeperCount) || 0);
+    const kept = new Set();
+    if (league && league.owners && cutOn && cutN > 0) {
+      league.owners.forEach((owner) => {
+        rows
+          .filter((r) => r.owner === owner)
+          .slice()
+          .sort(
+            (a, b) =>
+              (b.vorp || 0) - (a.vorp || 0) || (a.name || "").localeCompare(b.name || "")
+          )
+          .slice(0, cutN)
+          .forEach((r) => kept.add(r.id));
+      });
+    } else if (league && league.owners && !cutOn) {
+      rows.forEach((r) => {
+        if (r.owner) kept.add(r.id);
+      });
+    }
+    return rows
+      .filter((r) => r.type !== "pick" && r.id && String(r.id).indexOf("CD_I") === 0)
+      .filter((r) => !kept.has(r.id))
+      .slice()
+      .sort(
+        (a, b) =>
+          (b.vorp || 0) - (a.vorp || 0) || (a.name || "").localeCompare(b.name || "")
+      );
+  }
+
+  /** Full roster = on-field slots + bench. Draft picks/team = roster − keepers. */
+  function rosterSize(cfg) {
+    const slots = cfg.slots || {};
+    return (
+      POS_KEYS.reduce((s, k) => s + (Number(slots[k]) || 0), 0) +
+      (Number(cfg.bench) || 0)
+    );
+  }
+
+  function keeperDraftPicksPerTeam(cfg) {
+    return Math.max(0, rosterSize(cfg) - (Number(cfg.keeperCount) || 0));
+  }
+
+  function buildKeeperDraftPicks(unowned, cfg, seasons) {
+    const h = horizonLen(seasons, cfg.endSeason);
+    const yearSeasons = seasons.slice(0, h);
+    const draftYear = yearSeasons[0] || seasons[0] || "";
+    const nTeams = Math.max(
+      2,
+      (state.league && state.league.owners && state.league.owners.length) || cfg.teams || 2
+    );
+    const perTeam = keeperDraftPicksPerTeam(cfg);
+    const nPicks = Math.max(0, nTeams * perTeam);
+    const picks = [];
+    for (let i = 0; i < nPicks; i++) {
+      const proxy = unowned[i] || null;
+      const ypts = proxy
+        ? yearPointsForRow(proxy, yearSeasons.length)
+        : yearSeasons.map(() => 0);
+      picks.push({
+        key: "PICK:" + (i + 1),
+        pick: i + 1,
+        id: "KD_PICK_" + String(i + 1).padStart(2, "0"),
+        name: draftYear + " Pick " + (i + 1),
+        vorp: proxy ? Number(proxy.vorp) || 0 : 0,
+        yearPts: ypts,
+        proxyName: proxy ? proxy.name : null,
+        proxyId: proxy ? proxy.id : null
+      });
+    }
+    return picks;
+  }
+
+  function tradeAssetMap(rows, picks) {
+    const yLen =
+      (picks[0] && picks[0].yearPts && picks[0].yearPts.length) ||
+      horizonLen(state.seasons, state.cfg.endSeason);
+    const map = Object.create(null);
+    rows.forEach((r) => {
+      if (!r.id) return;
+      map[r.id] = {
+        key: r.id,
+        kind: "player",
+        name: r.name,
+        vorp: Number(r.vorp) || 0,
+        yearPts: yearPointsForRow(r, yLen),
+        owner: r.owner || null
+      };
+    });
+    picks.forEach((p) => {
+      map[p.key] = {
+        key: p.key,
+        kind: "pick",
+        name: p.name,
+        vorp: p.vorp,
+        yearPts: p.yearPts.slice(),
+        proxyName: p.proxyName,
+        pick: p.pick
+      };
+    });
+    return map;
+  }
+
+  function sumTradeKeys(keys, assetMap, yearCount) {
+    const out = {
+      vorp: 0,
+      yearPts: Array.from({ length: yearCount }, () => 0),
+      items: []
+    };
+    (keys || []).forEach((k) => {
+      const a = assetMap[k];
+      if (!a) return;
+      out.vorp += a.vorp;
+      for (let i = 0; i < yearCount; i++) out.yearPts[i] += a.yearPts[i] || 0;
+      out.items.push(a);
+    });
+    return out;
+  }
+
+  function fmtSigned(v) {
+    if (v == null || !Number.isFinite(v)) return "—";
+    const n = Math.round(v);
+    return (n > 0 ? "+" : "") + String(n);
+  }
+
+  function renderTradeCalculator(rows, league, cfg) {
+    const el = document.getElementById("trade-calculator");
+    if (!el) return;
+    if (!league || !league.owners || !league.owners.length) {
+      el.style.display = "none";
+      el.innerHTML = "";
+      return;
+    }
+
+    const h = horizonLen(state.seasons, cfg.endSeason);
+    const yearSeasons = state.seasons.slice(0, h);
+    const unowned = unownedAfterCuts(rows, league, cfg);
+    const picks = buildKeeperDraftPicks(unowned, cfg, state.seasons);
+    const assetMap = tradeAssetMap(rows, picks);
+
+    let sideA = state.trade.sideA;
+    let sideB = state.trade.sideB;
+    if (!sideA || league.owners.indexOf(sideA) < 0) {
+      sideA = cfg.myTeam && league.owners.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : league.owners[0];
+    }
+    if (!sideB || league.owners.indexOf(sideB) < 0 || sideB === sideA) {
+      sideB = league.owners.find((o) => o !== sideA) || league.owners[0];
+    }
+    state.trade.sideA = sideA;
+    state.trade.sideB = sideB;
+
+    // Drop selections that no longer exist
+    state.trade.give = (state.trade.give || []).filter((k) => assetMap[k]);
+    state.trade.get = (state.trade.get || []).filter((k) => assetMap[k]);
+
+    const byOwner = Object.create(null);
+    league.owners.forEach((o) => {
+      byOwner[o] = rows
+        .filter((r) => r.owner === o)
+        .slice()
+        .sort(
+          (a, b) =>
+            (b.vorp || 0) - (a.vorp || 0) || (a.name || "").localeCompare(b.name || "")
+        );
+    });
+
+    const giveSet = new Set(state.trade.give);
+    const getSet = new Set(state.trade.get);
+
+    function teamOptions(selected) {
+      return league.owners
+        .map(
+          (o) =>
+            '<option value="' +
+            escapeHtml(o) +
+            '"' +
+            (o === selected ? " selected" : "") +
+            ">" +
+            escapeHtml(o) +
+            "</option>"
+        )
+        .join("");
+    }
+
+    function playerChecks(owner, selectedSet, side) {
+      const list = byOwner[owner] || [];
+      if (!list.length) return '<p class="muted">No matched players</p>';
+      return list
+        .map((p) => {
+          const id = p.id;
+          return (
+            '<label class="tc-asset">' +
+            '<input type="checkbox" data-trade-side="' +
+            side +
+            '" data-trade-key="' +
+            escapeHtml(id) +
+            '"' +
+            (selectedSet.has(id) ? " checked" : "") +
+            "/>" +
+            '<span class="tc-asset-name" title="' +
+            escapeHtml(p.name) +
+            '">' +
+            escapeHtml(p.name) +
+            "</span>" +
+            '<span class="tc-asset-vorp">' +
+            fmtInt(p.vorp) +
+            "</span>" +
+            "</label>"
+          );
+        })
+        .join("");
+    }
+
+    function pickChecks(selectedSet, side) {
+      if (!picks.length) {
+        return '<p class="muted">No draft picks — roster (DEF+MID+RUC+FWD+bench) must exceed Keepers.</p>';
+      }
+      // Show first 3 rounds worth (3 * nTeams) expanded; rest in details
+      const nTeams = league.owners.length;
+      const preview = Math.min(picks.length, Math.max(nTeams * 3, 15));
+      function pickLabel(p) {
+        return (
+          '<label class="tc-asset tc-pick">' +
+          '<input type="checkbox" data-trade-side="' +
+          side +
+          '" data-trade-key="' +
+          escapeHtml(p.key) +
+          '"' +
+          (selectedSet.has(p.key) ? " checked" : "") +
+          "/>" +
+          '<span class="tc-asset-name" title="' +
+          (p.proxyName
+            ? "≈ " + p.proxyName + " (unowned #" + p.pick + ")"
+            : "No unowned proxy") +
+          '">' +
+          escapeHtml(p.name) +
+          (p.proxyName ? ' <span class="muted">≈ ' + escapeHtml(p.proxyName) + "</span>" : "") +
+          "</span>" +
+          '<span class="tc-asset-vorp">' +
+          fmtInt(p.vorp) +
+          "</span>" +
+          "</label>"
+        );
+      }
+      let html = picks.slice(0, preview).map(pickLabel).join("");
+      if (picks.length > preview) {
+        html +=
+          "<details class='tc-more-picks'><summary>More picks (" +
+          (picks.length - preview) +
+          ")</summary>" +
+          picks.slice(preview).map(pickLabel).join("") +
+          "</details>";
+      }
+      return html;
+    }
+
+    const given = sumTradeKeys(state.trade.give, assetMap, yearSeasons.length);
+    const received = sumTradeKeys(state.trade.get, assetMap, yearSeasons.length);
+    const netVorp = received.vorp - given.vorp;
+    const netYears = yearSeasons.map((_, i) => received.yearPts[i] - given.yearPts[i]);
+
+    const netCells = yearSeasons
+      .map((y, i) => {
+        const v = netYears[i];
+        return (
+          "<div class='tc-net-cell'>" +
+          "<div class='tc-net-lab'>" +
+          y +
+          "</div>" +
+          "<div class='tc-net-val " +
+          (v > 0 ? "up" : v < 0 ? "down" : "") +
+          "'>" +
+          fmtSigned(v) +
+          "</div>" +
+          "</div>"
+        );
+      })
+      .join("");
+
+    const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
+    const roster = rosterSize(cfg);
+    const perTeam = keeperDraftPicksPerTeam(cfg);
+    const note =
+      "Pick values ≈ ranked unowned players after" +
+      (cutOn ? " keeper cuts (top " + cfg.keeperCount + " kept per team)" : " treating all rostered players as kept") +
+      ". Roster " +
+      roster +
+      " (DEF+MID+RUC+FWD+bench) − " +
+      cfg.keeperCount +
+      " keepers = " +
+      perTeam +
+      " draft picks / team (" +
+      picks.length +
+      " total).";
+
+    el.style.display = "block";
+    el.innerHTML =
+      "<h3>Trade calculator</h3>" +
+      "<p class='muted'>" +
+      note +
+      "</p>" +
+      "<div class='tc-sides'>" +
+      "<label class='tc-side-label'>You" +
+      '<select id="tc-side-a">' +
+      teamOptions(sideA) +
+      "</select></label>" +
+      "<span class='tc-swap' aria-hidden='true'>⇄</span>" +
+      "<label class='tc-side-label'>Them" +
+      '<select id="tc-side-b">' +
+      teamOptions(sideB) +
+      "</select></label>" +
+      "</div>" +
+      "<div class='tc-grid'>" +
+      "<div class='tc-col'>" +
+      "<h4>You give</h4>" +
+      "<div class='tc-list'>" +
+      playerChecks(sideA, giveSet, "give") +
+      "</div>" +
+      "<h4 class='tc-sub'>Picks you give</h4>" +
+      "<div class='tc-list tc-list-picks'>" +
+      pickChecks(giveSet, "give") +
+      "</div>" +
+      "</div>" +
+      "<div class='tc-col'>" +
+      "<h4>You get</h4>" +
+      "<div class='tc-list'>" +
+      playerChecks(sideB, getSet, "get") +
+      "</div>" +
+      "<h4 class='tc-sub'>Picks you get</h4>" +
+      "<div class='tc-list tc-list-picks'>" +
+      pickChecks(getSet, "get") +
+      "</div>" +
+      "</div>" +
+      "</div>" +
+      "<div class='tc-net'>" +
+      "<h4>Net for " +
+      escapeHtml(sideA) +
+      "</h4>" +
+      "<div class='tc-net-row'>" +
+      netCells +
+      "<div class='tc-net-cell tc-net-total'>" +
+      "<div class='tc-net-lab'>VORP</div>" +
+      "<div class='tc-net-val " +
+      (netVorp > 0 ? "up" : netVorp < 0 ? "down" : "") +
+      "'>" +
+      fmtSigned(netVorp) +
+      "</div>" +
+      "</div>" +
+      "</div>" +
+      "</div>";
+  }
+
+  function bindTradeCalculator() {
+    if (state.trade.bound) return;
+    state.trade.bound = true;
+    const el = document.getElementById("trade-calculator");
+    if (!el) return;
+    el.addEventListener("change", (e) => {
+      const t = e.target;
+      if (!t) return;
+      if (t.id === "tc-side-a") {
+        state.trade.sideA = t.value;
+        state.trade.give = [];
+        if (state.trade.sideB === state.trade.sideA) {
+          const owners = (state.league && state.league.owners) || [];
+          state.trade.sideB = owners.find((o) => o !== state.trade.sideA) || "";
+        }
+        renderTradeCalculator(state.rows, state.league, state.cfg);
+        return;
+      }
+      if (t.id === "tc-side-b") {
+        state.trade.sideB = t.value;
+        state.trade.get = [];
+        renderTradeCalculator(state.rows, state.league, state.cfg);
+        return;
+      }
+      if (t.matches && t.matches("input[data-trade-key]")) {
+        const side = t.getAttribute("data-trade-side");
+        const key = t.getAttribute("data-trade-key");
+        const arr = side === "give" ? "give" : "get";
+        const other = side === "give" ? "get" : "give";
+        const set = new Set(state.trade[arr]);
+        if (t.checked) {
+          set.add(key);
+          state.trade[other] = (state.trade[other] || []).filter((k) => k !== key);
+        } else {
+          set.delete(key);
+        }
+        state.trade[arr] = Array.from(set);
+        renderTradeCalculator(state.rows, state.league, state.cfg);
+      }
+    });
+  }
+
   /** Map owner → medal place (1–3) for a numeric column. */
   function medalPlaces(teams, valueFn) {
     const ranked = teams
@@ -1438,6 +1868,7 @@
     return ensureTable(columns, filtered).then(function () {
       renderMoversPanel(all, cfg, state.data);
       renderTeamRatings(all, state.league, cfg);
+      renderTradeCalculator(all, state.league, cfg);
       const meta = document.getElementById("futures-meta");
       if (meta && state.data.meta) {
         meta.textContent =
@@ -1605,6 +2036,7 @@
       });
     });
 
+    bindTradeCalculator();
     ensureClubDropdownBuilt();
     const clubBtn = document.getElementById("club-dropdown-btn");
     if (clubBtn) {
