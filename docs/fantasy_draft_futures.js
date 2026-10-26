@@ -23,13 +23,110 @@
     search: ""
   };
 
+  /** Keeper Fantasy CSV club codes → AFL / futures JSON abbreviations. */
+  const KEEPER_TEAM_MAP = {
+    ADE: "ADEL",
+    BRL: "BL",
+    CAR: "CARL",
+    COL: "COLL",
+    ESS: "ESS",
+    FRE: "FRE",
+    GCS: "GCFC",
+    GEE: "GEEL",
+    GWS: "GWS",
+    HAW: "HAW",
+    MEL: "MELB",
+    NTH: "NMFC",
+    PTA: "PORT",
+    RIC: "RICH",
+    STK: "STK",
+    SYD: "SYD",
+    WBD: "WB",
+    WCE: "WCE"
+  };
+
+  /** Given-name aliases (already normalised) — subset of Keeper playerNameHelpers.R. */
+  const GIVEN_ALIASES = [
+    ["matt", "matthew"],
+    ["matty", "matthew"],
+    ["matty", "matt"],
+    ["matt", "matty"],
+    ["mat", "matthew"],
+    ["mathew", "matthew"],
+    ["josh", "joshua"],
+    ["sam", "samuel"],
+    ["sammy", "samuel"],
+    ["tom", "thomas"],
+    ["tommy", "thomas"],
+    ["nick", "nicholas"],
+    ["nic", "nicholas"],
+    ["will", "william"],
+    ["bill", "william"],
+    ["billy", "william"],
+    ["harry", "harrison"],
+    ["harrison", "harry"],
+    ["zac", "zachary"],
+    ["zach", "zachary"],
+    ["zack", "zachary"],
+    ["zac", "zach"],
+    ["alex", "alexander"],
+    ["archie", "archer"],
+    ["lachie", "lachlan"],
+    ["lachlan", "lachie"],
+    ["max", "maxwell"],
+    ["ben", "benjamin"],
+    ["brad", "bradley"],
+    ["chris", "christopher"],
+    ["dan", "daniel"],
+    ["danny", "daniel"],
+    ["dom", "dominic"],
+    ["mitch", "mitchell"],
+    ["mitchell", "mitch"],
+    ["ollie", "oliver"],
+    ["oliver", "ollie"],
+    ["pat", "patrick"],
+    ["paddy", "patrick"],
+    ["tim", "timothy"],
+    ["ed", "edward"],
+    ["eddie", "edward"],
+    ["cam", "cameron"],
+    ["joe", "joseph"],
+    ["jake", "jacob"],
+    ["fin", "finlay"],
+    ["finn", "finnegan"],
+    ["charlie", "charles"],
+    ["charles", "charlie"],
+    ["jim", "james"],
+    ["jimmy", "james"],
+    ["jamie", "james"],
+    ["rob", "robert"],
+    ["robbie", "robert"],
+    ["steve", "stephen"],
+    ["steve", "steven"],
+    ["tony", "anthony"],
+    ["seb", "sebastian"],
+    ["oskar", "oscar"],
+    ["oscar", "oskar"],
+    ["jordon", "jordan"]
+  ];
+
+  /** Stubborn full-name remaps (normalised on use). */
+  const FULL_NAME_OVERRIDES = [
+    ["bobby hill", "ian hill"],
+    ["ian hill", "bobby hill"],
+    ["charles cameron", "charlie cameron"],
+    ["charlie cameron", "charles cameron"]
+  ];
+
   let state = {
     cfg: { ...DEFAULT_CFG, slots: { ...DEFAULT_CFG.slots } },
     data: null,
     seasons: [],
     rows: [],
     table: null,
-    hadQueryOnLoad: false
+    hadQueryOnLoad: false,
+    /** @type {null | {source:string, fileName:string, ownership:Object.<string,string>, owners:string[], unmatchedOwned:Array, matchedOwned:number, totalOwned:number}} */
+    league: null
   };
 
   // ── URL config ─────────────────────────────────────────────────────────────
@@ -71,6 +168,319 @@
     const n = parseInt(v, 10);
     if (!Number.isFinite(n)) return fallback;
     return Math.max(lo, Math.min(hi, n));
+  }
+
+  // ── Keeper Fantasy CSV import / name matching ───────────────────────────────
+
+  function normName(x) {
+    let s = String(x == null ? "" : x);
+    s = s.replace(/\*/g, "");
+    s = s.replace(/[\u2018\u2019\u201A\u201B\u2032\u0060\u00B4']/g, "");
+    s = s.toLowerCase();
+    // Strip combining marks after a light ASCII fold for common Latin accents
+    try {
+      s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    } catch (e) {
+      /* older browsers */
+    }
+    s = s.replace(/\s+(jnr|jr|junior)\.?\s*$/i, "");
+    s = s.replace(/[^a-z\- ]/g, " ");
+    s = s.replace(/\s+/g, " ").trim();
+    return s;
+  }
+
+  function nameParts(fullN) {
+    const bits = String(fullN || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!bits.length) return { given: "", surname: "" };
+    return { given: bits[0], surname: bits.slice(1).join(" ") };
+  }
+
+  /** Expand a normalised name with given-aliases, middle-initial drop, overrides. */
+  function nameVariants(fullN) {
+    const out = new Set();
+    const base = normName(fullN);
+    if (!base) return out;
+    out.add(base);
+
+    FULL_NAME_OVERRIDES.forEach(([a, b]) => {
+      if (base === a) out.add(b);
+      if (base === b) out.add(a);
+    });
+
+    const addGivenSwap = (n) => {
+      const { given, surname } = nameParts(n);
+      if (!surname) return;
+      const givenFirst = given.replace(/(?:\s+[a-z])+$/g, "");
+      if (givenFirst && givenFirst !== given) {
+        out.add(givenFirst + " " + surname);
+      }
+      GIVEN_ALIASES.forEach(([alias, givenCanon]) => {
+        if (given === alias || givenFirst === alias) {
+          out.add(givenCanon + " " + surname);
+        }
+        if (given === givenCanon || givenFirst === givenCanon) {
+          out.add(alias + " " + surname);
+        }
+      });
+    };
+
+    Array.from(out).forEach(addGivenSwap);
+    // Second pass so alias↔alias chains (zac↔zach↔zachary) expand once more
+    Array.from(out).forEach(addGivenSwap);
+    return out;
+  }
+
+  function parseCsvText(text) {
+    if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+    const rows = [];
+    let row = [];
+    let cell = "";
+    let i = 0;
+    let inQuotes = false;
+    while (i < text.length) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (text[i + 1] === '"') {
+            cell += '"';
+            i += 2;
+            continue;
+          }
+          inQuotes = false;
+          i++;
+          continue;
+        }
+        cell += c;
+        i++;
+        continue;
+      }
+      if (c === '"') {
+        inQuotes = true;
+        i++;
+        continue;
+      }
+      if (c === ",") {
+        row.push(cell);
+        cell = "";
+        i++;
+        continue;
+      }
+      if (c === "\n" || c === "\r") {
+        if (c === "\r" && text[i + 1] === "\n") i++;
+        row.push(cell);
+        cell = "";
+        if (row.length > 1 || (row[0] && row[0].length)) rows.push(row);
+        row = [];
+        i++;
+        continue;
+      }
+      cell += c;
+      i++;
+    }
+    if (cell.length || row.length) {
+      row.push(cell);
+      rows.push(row);
+    }
+    return rows;
+  }
+
+  function csvRowsToObjects(matrix) {
+    if (!matrix.length) return [];
+    const headers = matrix[0].map((h) => String(h || "").trim());
+    return matrix.slice(1).map((cells) => {
+      const o = {};
+      headers.forEach((h, idx) => {
+        o[h] = cells[idx] != null ? String(cells[idx]).trim() : "";
+      });
+      return o;
+    });
+  }
+
+  function mapKeeperClub(code) {
+    const k = String(code || "")
+      .trim()
+      .toUpperCase();
+    return KEEPER_TEAM_MAP[k] || k;
+  }
+
+  function buildPlayerIndex(assets) {
+    const byClub = new Map(); // key "norm|club" → Map(id → asset)
+    const byName = new Map();
+    function add(map, key, asset) {
+      if (!key) return;
+      let m = map.get(key);
+      if (!m) {
+        m = new Map();
+        map.set(key, m);
+      }
+      m.set(asset.id, asset);
+    }
+    (assets || []).forEach((a) => {
+      if (!a || a.type === "pick") return;
+      const club = a.club || "";
+      nameVariants(a.name).forEach((v) => {
+        add(byName, v, a);
+        add(byClub, v + "|" + club, a);
+      });
+    });
+    return { byClub, byName };
+  }
+
+  function uniqueHit(map, key) {
+    const m = map.get(key);
+    if (!m || m.size !== 1) return null;
+    return m.values().next().value;
+  }
+
+  function matchKeeperPlayers(csvRows, assets) {
+    const index = buildPlayerIndex(assets);
+    const ownership = Object.create(null);
+    const unmatchedOwned = [];
+    const unmatchedAll = [];
+    let matchedOwned = 0;
+    let totalOwned = 0;
+    const ownersSet = new Set();
+
+    csvRows.forEach((r) => {
+      const name = r.name || r.Player || r.player || "";
+      const owner = r.owner || r.Owner || "";
+      const team = r.team || r.Team || "";
+      if (!name) return;
+      const isFa = !owner || /^free\s*agent$/i.test(owner);
+      if (!isFa) {
+        totalOwned++;
+        ownersSet.add(owner);
+      }
+      const club = mapKeeperClub(team);
+      let hit = null;
+      const variants = nameVariants(name);
+      for (const v of variants) {
+        hit = uniqueHit(index.byClub, v + "|" + club);
+        if (hit) break;
+      }
+      if (!hit) {
+        for (const v of variants) {
+          hit = uniqueHit(index.byName, v);
+          if (hit) break;
+        }
+      }
+      if (hit) {
+        if (!isFa) {
+          ownership[hit.id] = owner;
+          matchedOwned++;
+        }
+      } else {
+        const miss = { name, team, owner: owner || "Free Agent", club };
+        unmatchedAll.push(miss);
+        if (!isFa) unmatchedOwned.push(miss);
+      }
+    });
+
+    return {
+      ownership,
+      owners: Array.from(ownersSet).sort((a, b) => a.localeCompare(b)),
+      unmatchedOwned,
+      unmatchedAll,
+      matchedOwned,
+      totalOwned
+    };
+  }
+
+  function applyLeagueOwnership(rows, league) {
+    if (!league || !league.ownership) {
+      rows.forEach((r) => {
+        r.owner = null;
+      });
+      return rows;
+    }
+    rows.forEach((r) => {
+      r.owner = league.ownership[r.id] || null;
+    });
+    return rows;
+  }
+
+  function setLeagueStatus(msg, isError) {
+    const el = document.getElementById("keeper-import-status");
+    if (!el) return;
+    el.textContent = msg || "";
+    el.classList.toggle("is-error", !!isError);
+  }
+
+  function clearKeeperLeague() {
+    state.league = null;
+    const input = document.getElementById("keeper-csv-input");
+    if (input) input.value = "";
+    setLeagueStatus("");
+    refresh();
+  }
+
+  function handleKeeperCsvFile(file) {
+    if (!file) return;
+    if (!state.data || !state.data.assets) {
+      setLeagueStatus("Player data still loading — try again in a moment.", true);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function () {
+      try {
+        const text = String(reader.result || "");
+        const matrix = parseCsvText(text);
+        const objects = csvRowsToObjects(matrix);
+        if (!objects.length) throw new Error("CSV has no data rows");
+        const cols = Object.keys(objects[0]);
+        if (!cols.some((c) => /^name$/i.test(c)) || !cols.some((c) => /^owner$/i.test(c))) {
+          throw new Error('Expected columns include "name" and "owner"');
+        }
+        const matched = matchKeeperPlayers(objects, state.data.assets);
+        if (!matched.owners.length) {
+          throw new Error("No fantasy teams found (every row was Free Agent?)");
+        }
+        state.league = {
+          source: "keeper",
+          fileName: file.name || "players.csv",
+          ownership: matched.ownership,
+          owners: matched.owners,
+          unmatchedOwned: matched.unmatchedOwned,
+          unmatchedAll: matched.unmatchedAll,
+          matchedOwned: matched.matchedOwned,
+          totalOwned: matched.totalOwned
+        };
+        // Align VORP depth with imported league size
+        state.cfg.teams = Math.max(2, matched.owners.length);
+        const teamsEl = document.getElementById("cfg-teams");
+        if (teamsEl) teamsEl.value = String(state.cfg.teams);
+
+        const missN = matched.unmatchedOwned.length;
+        setLeagueStatus(
+          "Loaded " +
+            matched.owners.length +
+            " teams · matched " +
+            matched.matchedOwned +
+            "/" +
+            matched.totalOwned +
+            " rostered players" +
+            (missN
+              ? " · " + missN + " owned unmatched (often delisted / not in model)"
+              : "")
+        );
+        refresh();
+      } catch (e) {
+        console.error(e);
+        state.league = null;
+        setLeagueStatus(
+          "Could not import CSV — " + (e && e.message ? e.message : "unknown error"),
+          true
+        );
+        refresh();
+      }
+    };
+    reader.onerror = function () {
+      setLeagueStatus("Failed to read file.", true);
+    };
+    reader.readAsText(file);
   }
 
   // ── Aggregation / VORP ─────────────────────────────────────────────────────
@@ -581,6 +991,60 @@
     return lines.join("");
   }
 
+  function renderTeamRatings(rows, league) {
+    const el = document.getElementById("team-ratings");
+    if (!el) return;
+    if (!league || !league.owners || !league.owners.length) {
+      el.style.display = "none";
+      el.innerHTML = "";
+      return;
+    }
+    const byOwner = Object.create(null);
+    league.owners.forEach((o) => {
+      byOwner[o] = { owner: o, vorp: 0, n: 0 };
+    });
+    rows.forEach((r) => {
+      const o = r.owner;
+      if (!o || !byOwner[o]) return;
+      byOwner[o].vorp += Number(r.vorp) || 0;
+      byOwner[o].n += 1;
+    });
+    const ranked = league.owners
+      .map((o) => byOwner[o])
+      .sort((a, b) => b.vorp - a.vorp || a.owner.localeCompare(b.owner));
+
+    const lis = ranked
+      .map((t, i) => {
+        return (
+          "<li>" +
+          '<span class="tr-rank">' +
+          (i + 1) +
+          "</span>" +
+          '<span class="tr-name" title="' +
+          escapeHtml(t.owner) +
+          '">' +
+          escapeHtml(t.owner) +
+          "</span>" +
+          '<span class="tr-n muted">' +
+          t.n +
+          "p</span>" +
+          '<span class="tr-vorp">' +
+          fmtInt(t.vorp) +
+          "</span>" +
+          "</li>"
+        );
+      })
+      .join("");
+
+    el.style.display = "block";
+    el.innerHTML =
+      "<h3>Team ratings</h3>" +
+      "<p class='muted'>Sum of player VORP under current league settings (Free Agent excluded).</p>" +
+      "<ol class='team-ratings-list'>" +
+      lis +
+      "</ol>";
+  }
+
   function renderMoversPanel(rows, cfg, data) {
     const el = document.getElementById("movers-panel");
     if (!el) return;
@@ -684,12 +1148,16 @@
     if (!state.data) return Promise.resolve();
     const cfg = state.cfg;
     writeCfgToUrl(cfg);
-    const all = computeRows(state.data.assets, cfg, state.seasons);
+    const all = applyLeagueOwnership(
+      computeRows(state.data.assets, cfg, state.seasons),
+      state.league
+    );
     state.rows = all;
     const filtered = filterRows(all, cfg).map((r) => flattenRow(r, state.seasons));
     const columns = buildColumnDefs(state.seasons, cfg.view, cfg.byYear);
     return ensureTable(columns, filtered).then(function () {
       renderMoversPanel(all, cfg, state.data);
+      renderTeamRatings(all, state.league);
       const meta = document.getElementById("futures-meta");
       if (meta && state.data.meta) {
         meta.textContent =
@@ -797,6 +1265,18 @@
         refresh();
       });
     });
+
+    const keeperInput = document.getElementById("keeper-csv-input");
+    if (keeperInput) {
+      keeperInput.addEventListener("change", () => {
+        const file = keeperInput.files && keeperInput.files[0];
+        if (file) handleKeeperCsvFile(file);
+      });
+    }
+    const keeperClear = document.getElementById("keeper-csv-clear");
+    if (keeperClear) {
+      keeperClear.addEventListener("click", () => clearKeeperLeague());
+    }
   }
 
   // ── Boot ───────────────────────────────────────────────────────────────────

@@ -328,6 +328,60 @@ computed in the browser. Bookmark the URL to keep your settings.
       font-size: 12px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; min-width: 64px;
     }
     .futures-controls .row-inline { display: flex; gap: 8px; align-items: flex-end; }
+    .futures-import-row {
+      flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end;
+      padding-top: 8px; margin-top: 4px; border-top: 1px dashed #ddd;
+    }
+    .keeper-import-label { position: relative; }
+    .keeper-tip {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 14px; height: 14px; margin-left: 4px; border-radius: 50%;
+      background: #888; color: #fff; font-size: 10px; font-weight: 700;
+      cursor: help; vertical-align: middle; position: relative;
+    }
+    .keeper-tip:hover::after, .keeper-tip:focus::after {
+      content: attr(data-tip);
+      position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%);
+      width: 240px; padding: 8px 10px; background: #222; color: #fff;
+      font-size: 11px; font-weight: 400; line-height: 1.45; text-align: left;
+      border-radius: 4px; white-space: pre-line; z-index: 20;
+      box-shadow: 0 4px 12px rgba(0,0,0,.18);
+    }
+    .keeper-tip:hover::before, .keeper-tip:focus::before {
+      content: ''; position: absolute; left: 50%; bottom: calc(100% + 2px);
+      transform: translateX(-50%); border: 6px solid transparent; border-top-color: #222;
+    }
+    #keeper-csv-input { font-size: 12px; max-width: 220px; }
+    #keeper-csv-clear {
+      font-size: 11px; padding: 3px 8px; border: 1px solid #ccc; border-radius: 4px;
+      background: #fff; cursor: pointer; color: #444;
+    }
+    #keeper-import-status {
+      flex: 1 1 100%; font-size: 11px; font-weight: 400; color: #555; margin: 0;
+    }
+    #keeper-import-status.is-error { color: #c62828; }
+    #team-ratings {
+      display: none; margin: 14px 0 0; padding: 10px 12px;
+      border: 1px solid #e2e2e2; border-radius: 4px; background: #fafafa; font-size: 12px;
+    }
+    #team-ratings h3 { margin: 0 0 4px; font-size: 13px; }
+    #team-ratings > .muted { margin: 0 0 8px; font-size: 11px; }
+    .team-ratings-list {
+      list-style: none; margin: 0; padding: 0;
+      display: grid; gap: 0;
+    }
+    .team-ratings-list li {
+      display: grid; grid-template-columns: 28px minmax(0, 1fr) 36px 64px;
+      gap: 8px; align-items: center; padding: 4px 0; border-bottom: 1px solid #eee;
+      font-variant-numeric: tabular-nums;
+    }
+    .team-ratings-list li:last-child { border-bottom: none; }
+    .team-ratings-list .tr-rank { color: #888; font-weight: 700; }
+    .team-ratings-list .tr-name {
+      font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .team-ratings-list .tr-n { text-align: right; font-size: 11px; }
+    .team-ratings-list .tr-vorp { text-align: right; font-weight: 700; }
     #futures-settings {
       margin: 12px 0 8px; border: 1px solid #e2e2e2; border-radius: 4px; background: #fafafa;
     }
@@ -603,6 +657,18 @@ View
 <input id="cfg-byYear" type="checkbox"/>
 By year
 </label>
+<div class="futures-import-row">
+<label class="keeper-import-label">
+Keeper Fantasy
+<span class="keeper-tip" tabindex="0" role="img" aria-label="How to export from Keeper Fantasy" data-tip="1. Open your league on Keeper Fantasy's website
+2. Go to the Players page
+3. Download List
+4. Upload the file here">?</span>
+<input id="keeper-csv-input" type="file" accept=".csv,text/csv"/>
+</label>
+<button id="keeper-csv-clear" type="button">Clear</button>
+<p id="keeper-import-status"></p>
+</div>
 </div>
 </details>
 <div class="filter-bar-futures">
@@ -617,6 +683,7 @@ By year
 <div class="futures-layout">
 <div class="futures-table-col">
 <div id="futures-table"></div>
+<div id="team-ratings"></div>
 </div>
 <aside class="futures-movers-col" id="movers-panel"></aside>
 </div>
