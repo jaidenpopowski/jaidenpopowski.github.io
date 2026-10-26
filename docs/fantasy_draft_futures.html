@@ -341,15 +341,15 @@ computed in the browser. Bookmark the URL to keep your settings.
     }
     .keeper-tip:hover::after, .keeper-tip:focus::after {
       content: attr(data-tip);
-      position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%);
+      position: absolute; left: 0; bottom: calc(100% + 8px); transform: none;
       width: 240px; padding: 8px 10px; background: #222; color: #fff;
       font-size: 11px; font-weight: 400; line-height: 1.45; text-align: left;
       border-radius: 4px; white-space: pre-line; z-index: 20;
       box-shadow: 0 4px 12px rgba(0,0,0,.18);
     }
     .keeper-tip:hover::before, .keeper-tip:focus::before {
-      content: ''; position: absolute; left: 50%; bottom: calc(100% + 2px);
-      transform: translateX(-50%); border: 6px solid transparent; border-top-color: #222;
+      content: ''; position: absolute; left: 6px; bottom: calc(100% + 2px);
+      transform: none; border: 6px solid transparent; border-top-color: #222;
     }
     #keeper-csv-input { font-size: 12px; max-width: 220px; }
     #keeper-csv-clear {
@@ -367,26 +367,60 @@ computed in the browser. Bookmark the URL to keep your settings.
     #team-ratings h3 { margin: 0 0 4px; font-size: 13px; }
     #team-ratings h3.lt-boards-heading { margin-top: 16px; }
     #team-ratings > .muted { margin: 0 0 8px; font-size: 11px; }
-    .team-ratings-list {
-      list-style: none; margin: 0; padding: 0;
-      display: grid; gap: 0; max-width: 420px;
-    }
-    .team-ratings-list li {
-      display: grid; grid-template-columns: 28px minmax(0, 1fr) 36px 64px;
-      gap: 8px; align-items: center; padding: 4px 0; border-bottom: 1px solid #eee;
+    .lt-ladder-wrap { overflow-x: auto; margin-bottom: 4px; }
+    .lt-ladder {
+      border-collapse: collapse; width: 100%; min-width: 480px; font-size: 12px;
       font-variant-numeric: tabular-nums;
     }
-    .team-ratings-list.has-keeper li {
-      grid-template-columns: 28px minmax(0, 1fr) 36px 48px 64px;
+    .lt-ladder th, .lt-ladder td {
+      padding: 5px 8px; border-bottom: 1px solid #eee; text-align: right;
     }
-    .team-ratings-list li:last-child { border-bottom: none; }
-    .team-ratings-list .tr-rank { color: #888; font-weight: 700; }
-    .team-ratings-list .tr-name {
-      font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    .lt-ladder th { font-weight: 700; color: #444; background: #f3f3f3; }
+    .lt-ladder .lt-ladder-team { text-align: left; white-space: nowrap; }
+    .lt-ladder .tr-rank { color: #888; font-weight: 700; margin-right: 4px; }
+    .lt-ladder .lt-vorp-col { font-weight: 700; }
+    .lt-ladder .medal-1 { background: #ffe082; }
+    .lt-ladder .medal-2 { background: #e8e8e8; }
+    .lt-ladder .medal-3 { background: #ffcc80; }
+    .lt-mine-row td { background: #e3f2fd; }
+    .lt-mine-row .medal-1 { background: #ffe082; }
+    .lt-mine-row .medal-2 { background: #e8e8e8; }
+    .lt-mine-row .medal-3 { background: #ffcc80; }
+    .lt-you {
+      display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.04em;
+      text-transform: uppercase; color: #1565c0; background: #bbdefb;
+      padding: 1px 5px; border-radius: 3px; vertical-align: middle;
     }
-    .team-ratings-list .tr-n,
-    .team-ratings-list .tr-keeper { text-align: right; font-size: 11px; }
-    .team-ratings-list .tr-vorp { text-align: right; font-weight: 700; }
+    .lt-mine-board { border-color: #64b5f6; box-shadow: 0 0 0 2px rgba(33,150,243,.25); }
+    .lt-mine-board .lt-board-head { background: #e3f2fd; }
+    #futures-table .fd-my-team-row .tabulator-cell { background: #e3f2fd !important; }
+    #my-team-wrap { display: none; }
+    #my-team-wrap select {
+      font-size: 12px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; min-width: 140px;
+    }
+    .owned-filter-label {
+      display: inline-flex; align-items: center; gap: 4px; margin-left: 10px;
+      font-weight: 700; font-size: 12px; color: #333; cursor: pointer; user-select: none;
+    }
+    .team-dropdown { position: relative; display: inline-block; margin-left: 8px; }
+    .team-dropdown-btn {
+      font-size: 12px; padding: 3px 8px; border-radius: 4px; border: 1px solid #ccc;
+      background: #666; color: #fff; cursor: pointer; min-width: 90px; text-align: left;
+    }
+    .team-dropdown-panel {
+      position: absolute; z-index: 999; top: 100%; left: 0; margin-top: 2px;
+      background: #fff; border: 1px solid #ccc; border-radius: 4px;
+      padding: 6px 10px; display: grid; grid-template-columns: repeat(3, max-content);
+      gap: 2px 10px; box-shadow: 0 2px 8px rgba(0,0,0,.15);
+      width: max-content; max-width: calc(100vw - 32px);
+    }
+    @media (max-width: 480px) {
+      .team-dropdown-panel { grid-template-columns: repeat(2, max-content); }
+    }
+    .team-option {
+      font-size: 12px; display: flex; align-items: center; gap: 4px;
+      cursor: pointer; color: #333; white-space: nowrap; font-weight: 400;
+    }
     .lt-boards {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
       gap: 12px; margin-top: 4px;
@@ -727,18 +761,31 @@ Keeper Fantasy
 <input id="keeper-csv-input" type="file" accept=".csv,text/csv"/>
 </label>
 <button id="keeper-csv-clear" type="button">Clear</button>
+<label id="my-team-wrap">
+My team
+<select id="cfg-myTeam"></select>
+</label>
 <p id="keeper-import-status"></p>
 </div>
 </div>
 </details>
 <div class="filter-bar-futures">
 <input id="cfg-search" type="text" placeholder="Search..."/>
+<span class="filter-label" style="margin-left:8px;">Club:</span>
+<div class="team-dropdown" id="club-dropdown">
+<button id="club-dropdown-btn" class="team-dropdown-btn" type="button">All Clubs</button>
+<div id="club-dropdown-panel" class="team-dropdown-panel" style="display:none;"></div>
+</div>
 <span class="filter-label" style="margin-left:8px;">Pos:</span>
 <button class="filter-btn pos-filter-btn active" data-pos="ALL" type="button">ALL</button>
 <button class="filter-btn pos-filter-btn" data-pos="DEF" type="button">DEF</button>
 <button class="filter-btn pos-filter-btn" data-pos="MID" type="button">MID</button>
 <button class="filter-btn pos-filter-btn" data-pos="RUC" type="button">RUC</button>
 <button class="filter-btn pos-filter-btn" data-pos="FWD" type="button">FWD</button>
+<label class="owned-filter-label" title="On: all players. Off: unowned / free agents only.">
+<input id="cfg-includeOwned" type="checkbox" checked="checked"/>
+Owned
+</label>
 </div>
 <div class="futures-layout">
 <div class="futures-table-col">
