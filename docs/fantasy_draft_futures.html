@@ -365,23 +365,79 @@ computed in the browser. Bookmark the URL to keep your settings.
       border: 1px solid #e2e2e2; border-radius: 4px; background: #fafafa; font-size: 12px;
     }
     #team-ratings h3 { margin: 0 0 4px; font-size: 13px; }
+    #team-ratings h3.lt-boards-heading { margin-top: 16px; }
     #team-ratings > .muted { margin: 0 0 8px; font-size: 11px; }
     .team-ratings-list {
       list-style: none; margin: 0; padding: 0;
-      display: grid; gap: 0;
+      display: grid; gap: 0; max-width: 420px;
     }
     .team-ratings-list li {
       display: grid; grid-template-columns: 28px minmax(0, 1fr) 36px 64px;
       gap: 8px; align-items: center; padding: 4px 0; border-bottom: 1px solid #eee;
       font-variant-numeric: tabular-nums;
     }
+    .team-ratings-list.has-keeper li {
+      grid-template-columns: 28px minmax(0, 1fr) 36px 48px 64px;
+    }
     .team-ratings-list li:last-child { border-bottom: none; }
     .team-ratings-list .tr-rank { color: #888; font-weight: 700; }
     .team-ratings-list .tr-name {
       font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .team-ratings-list .tr-n { text-align: right; font-size: 11px; }
+    .team-ratings-list .tr-n,
+    .team-ratings-list .tr-keeper { text-align: right; font-size: 11px; }
     .team-ratings-list .tr-vorp { text-align: right; font-weight: 700; }
+    .lt-boards {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px; margin-top: 4px;
+    }
+    .lt-board {
+      background: #fff; border: 1px solid #e2e2e2; border-radius: 4px; overflow: hidden;
+      display: flex; flex-direction: column; min-width: 0;
+    }
+    .lt-board-head {
+      display: flex; justify-content: space-between; gap: 8px; align-items: baseline;
+      padding: 8px 10px; background: #f3f3f3; border-bottom: 1px solid #e2e2e2;
+    }
+    .lt-board-title {
+      font-weight: 700; font-size: 12px; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .lt-board-rank { color: #888; font-weight: 700; }
+    .lt-board-stats {
+      display: flex; gap: 8px; flex-shrink: 0; font-variant-numeric: tabular-nums; font-size: 11px;
+    }
+    .lt-stat { color: #666; }
+    .lt-stat-total { font-weight: 700; color: #222; }
+    .lt-board-body { padding: 4px 0; max-height: 520px; overflow: auto; }
+    .lt-player {
+      display: grid; grid-template-columns: 28px minmax(0, 1fr) 44px;
+      gap: 6px; align-items: center; padding: 3px 8px;
+    }
+    .lt-player .fd-headshot, .lt-player .fd-headshot-empty {
+      width: 28px; height: 28px; flex: 0 0 28px;
+    }
+    .lt-player-meta { min-width: 0; }
+    .lt-player-name {
+      font-weight: 600; font-size: 11px; line-height: 1.2;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .lt-player-chips { display: flex; flex-wrap: nowrap; gap: 3px; margin-top: 2px; }
+    .lt-player-chips .fd-team-chip, .lt-player-chips .fd-pos-chip {
+      font-size: 8px; padding: 2px 4px;
+    }
+    .lt-player-vorp {
+      text-align: right; font-weight: 700; font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+    .lt-below-cut { opacity: 0.55; }
+    .lt-cut {
+      display: flex; align-items: center; gap: 8px; margin: 4px 8px;
+      color: #c62828; font-size: 10px; font-weight: 700; letter-spacing: 0.02em;
+    }
+    .lt-cut::before, .lt-cut::after {
+      content: ''; flex: 1 1 auto; height: 2px; background: #c62828; border-radius: 1px;
+    }
     #futures-settings {
       margin: 12px 0 8px; border: 1px solid #e2e2e2; border-radius: 4px; background: #fafafa;
     }
@@ -637,7 +693,7 @@ Bench
 </label>
 <label>
 Keepers
-<input id="cfg-keepers" type="number" min="0" max="40" value="20" title="Shareable league setting; not used in V1 VORP"/>
+<input id="cfg-keepers" type="number" min="0" max="40" value="20" title="Keeper slots — used for the red cut line on team boards"/>
 </label>
 <label>
 Through
@@ -656,6 +712,10 @@ View
 <label style="flex-direction: row; align-items: center; gap: 6px; font-weight: 600;">
 <input id="cfg-byYear" type="checkbox"/>
 By year
+</label>
+<label style="flex-direction: row; align-items: center; gap: 6px; font-weight: 600;" title="On while lists are still open / keepers not locked. Defaults on when the model still has upcoming draft picks (e.g. PICK_2027_*).">
+<input id="cfg-keeperCut" type="checkbox"/>
+Keeper cut
 </label>
 <div class="futures-import-row">
 <label class="keeper-import-label">

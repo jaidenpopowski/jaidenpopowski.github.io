@@ -16,6 +16,8 @@
     slots: { DEF: 5, MID: 7, RUC: 1, FWD: 5 },
     bench: 12,
     keeperCount: 20,
+    /** Draw red cut after Keepers when true (pre-keeper / list-management mode). */
+    keeperCut: null, // null → auto from upcoming draft picks in payload
     endSeason: null,
     view: "value",
     byYear: false,
@@ -144,6 +146,9 @@
     if (q.has("end")) cfg.endSeason = parseInt(q.get("end"), 10) || null;
     if (q.has("view")) cfg.view = q.get("view") || "value";
     if (q.has("byYear")) cfg.byYear = q.get("byYear") === "1" || q.get("byYear") === "true";
+    if (q.has("cut")) {
+      cfg.keeperCut = q.get("cut") === "1" || q.get("cut") === "true";
+    }
     if (q.has("pos")) cfg.posFilter = q.get("pos") || "ALL";
     if (q.has("q")) cfg.search = q.get("q") || "";
     return cfg;
@@ -158,10 +163,29 @@
     if (cfg.endSeason) q.set("end", String(cfg.endSeason));
     q.set("view", cfg.view);
     if (cfg.byYear) q.set("byYear", "1");
+    if (cfg.keeperCut) q.set("cut", "1");
+    else if (cfg.keeperCut === false) q.set("cut", "0");
     if (cfg.posFilter && cfg.posFilter !== "ALL") q.set("pos", cfg.posFilter);
     if (cfg.search) q.set("q", cfg.search);
     const url = window.location.pathname + "?" + q.toString();
     window.history.replaceState({}, "", url);
+  }
+
+  /** True when model still has draft picks for the first horizon season (e.g. PICK_2027_01). */
+  function hasUpcomingDraftPicks(data, seasons) {
+    if (!data || !data.assets || !seasons || !seasons.length) return false;
+    const y = Number(seasons[0]);
+    if (!Number.isFinite(y)) return false;
+    const prefix = "PICK_" + y + "_";
+    return data.assets.some(
+      (a) => a && (a.type === "pick" || String(a.id || "").indexOf("PICK_") === 0) &&
+        String(a.id || "").indexOf(prefix) === 0
+    );
+  }
+
+  function resolveKeeperCut(cfg, data, seasons) {
+    if (cfg.keeperCut === true || cfg.keeperCut === false) return cfg.keeperCut;
+    return hasUpcomingDraftPicks(data, seasons);
   }
 
   function clampInt(v, lo, hi, fallback) {
@@ -991,7 +1015,39 @@
     return lines.join("");
   }
 
-  function renderTeamRatings(rows, league) {
+  function teamPlayerRowHtml(r, belowCut) {
+    const abbr = r.teamAbbr || r.club || "";
+    const teamChip = abbr
+      ? '<span class="fd-team-chip fd-team-' +
+        escapeHtml(abbr) +
+        '">' +
+        escapeHtml(abbr) +
+        "</span>"
+      : "";
+    return (
+      '<div class="lt-player' +
+      (belowCut ? " lt-below-cut" : "") +
+      '">' +
+      headshotHtml(r) +
+      '<div class="lt-player-meta">' +
+      '<div class="lt-player-name" title="' +
+      escapeHtml(r.name || "") +
+      '">' +
+      escapeHtml(r.name || "") +
+      "</div>" +
+      '<div class="lt-player-chips">' +
+      teamChip +
+      posChipsHtml(r.fantasyPos) +
+      "</div>" +
+      "</div>" +
+      '<div class="lt-player-vorp">' +
+      fmtInt(r.vorp) +
+      "</div>" +
+      "</div>"
+    );
+  }
+
+  function renderTeamRatings(rows, league, cfg) {
     const el = document.getElementById("team-ratings");
     if (!el) return;
     if (!league || !league.owners || !league.owners.length) {
@@ -999,22 +1055,45 @@
       el.innerHTML = "";
       return;
     }
+
+    const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
+    const cutN = Math.max(0, Number(cfg.keeperCount) || 0);
+
     const byOwner = Object.create(null);
     league.owners.forEach((o) => {
-      byOwner[o] = { owner: o, vorp: 0, n: 0 };
+      byOwner[o] = { owner: o, vorp: 0, keeperVorp: 0, n: 0, players: [] };
     });
     rows.forEach((r) => {
       const o = r.owner;
       if (!o || !byOwner[o]) return;
-      byOwner[o].vorp += Number(r.vorp) || 0;
-      byOwner[o].n += 1;
+      byOwner[o].players.push(r);
     });
+    league.owners.forEach((o) => {
+      const t = byOwner[o];
+      t.players.sort(
+        (a, b) => (b.vorp || 0) - (a.vorp || 0) || (a.name || "").localeCompare(b.name || "")
+      );
+      t.n = t.players.length;
+      t.vorp = t.players.reduce((s, p) => s + (Number(p.vorp) || 0), 0);
+      t.keeperVorp = t.players
+        .slice(0, cutOn ? cutN : t.players.length)
+        .reduce((s, p) => s + (Number(p.vorp) || 0), 0);
+    });
+
     const ranked = league.owners
       .map((o) => byOwner[o])
       .sort((a, b) => b.vorp - a.vorp || a.owner.localeCompare(b.owner));
 
-    const lis = ranked
+    const ratingLis = ranked
       .map((t, i) => {
+        const sub =
+          cutOn && cutN > 0
+            ? '<span class="tr-keeper muted" title="VORP of top ' +
+              cutN +
+              ' (projected keepers)">' +
+              fmtInt(t.keeperVorp) +
+              "k</span>"
+            : "";
         return (
           "<li>" +
           '<span class="tr-rank">' +
@@ -1028,6 +1107,7 @@
           '<span class="tr-n muted">' +
           t.n +
           "p</span>" +
+          sub +
           '<span class="tr-vorp">' +
           fmtInt(t.vorp) +
           "</span>" +
@@ -1036,13 +1116,79 @@
       })
       .join("");
 
+    const boards = ranked
+      .map((t, i) => {
+        const body = [];
+        t.players.forEach((p, idx) => {
+          if (cutOn && cutN > 0 && idx === cutN) {
+            body.push(
+              '<div class="lt-cut" role="separator" title="Keeper cut (top ' +
+                cutN +
+                ')">' +
+                "<span>Keeper cut · " +
+                cutN +
+                "</span>" +
+                "</div>"
+            );
+          }
+          body.push(teamPlayerRowHtml(p, cutOn && cutN > 0 && idx >= cutN));
+        });
+        return (
+          '<article class="lt-board">' +
+          '<header class="lt-board-head">' +
+          '<div class="lt-board-title">' +
+          '<span class="lt-board-rank">#' +
+          (i + 1) +
+          "</span> " +
+          '<span class="lt-board-name" title="' +
+          escapeHtml(t.owner) +
+          '">' +
+          escapeHtml(t.owner) +
+          "</span>" +
+          "</div>" +
+          '<div class="lt-board-stats">' +
+          (cutOn && cutN > 0
+            ? '<span class="lt-stat" title="Top ' +
+              cutN +
+              ' VORP">' +
+              fmtInt(t.keeperVorp) +
+              " keep</span>"
+            : "") +
+          '<span class="lt-stat lt-stat-total">' +
+          fmtInt(t.vorp) +
+          " VORP</span>" +
+          "</div>" +
+          "</header>" +
+          '<div class="lt-board-body">' +
+          (body.join("") || '<p class="muted">No matched players</p>') +
+          "</div>" +
+          "</article>"
+        );
+      })
+      .join("");
+
+    const cutNote = cutOn
+      ? " Red line marks Keepers (" +
+        cutN +
+        ") — players below are likely cut when the new season activates."
+      : " Keeper cut line is off (post-keeper / drafted mode).";
+
     el.style.display = "block";
     el.innerHTML =
       "<h3>Team ratings</h3>" +
-      "<p class='muted'>Sum of player VORP under current league settings (Free Agent excluded).</p>" +
-      "<ol class='team-ratings-list'>" +
-      lis +
-      "</ol>";
+      "<p class='muted'>Sum of player VORP under current league settings (Free Agent excluded)." +
+      cutNote +
+      "</p>" +
+      "<ol class='team-ratings-list" +
+      (cutOn && cutN > 0 ? " has-keeper" : "") +
+      "'>" +
+      ratingLis +
+      "</ol>" +
+      "<h3 class='lt-boards-heading'>Teams</h3>" +
+      "<p class='muted'>Players sorted by VORP.</p>" +
+      "<div class='lt-boards'>" +
+      boards +
+      "</div>";
   }
 
   function renderMoversPanel(rows, cfg, data) {
@@ -1157,7 +1303,7 @@
     const columns = buildColumnDefs(state.seasons, cfg.view, cfg.byYear);
     return ensureTable(columns, filtered).then(function () {
       renderMoversPanel(all, cfg, state.data);
-      renderTeamRatings(all, state.league);
+      renderTeamRatings(all, state.league, cfg);
       const meta = document.getElementById("futures-meta");
       if (meta && state.data.meta) {
         meta.textContent =
@@ -1199,6 +1345,8 @@
     setVal("cfg-view", cfg.view);
     const by = document.getElementById("cfg-byYear");
     if (by) by.checked = !!cfg.byYear;
+    const cut = document.getElementById("cfg-keeperCut");
+    if (cut) cut.checked = !!resolveKeeperCut(cfg, state.data, seasons);
     setVal("cfg-search", cfg.search || "");
     document.querySelectorAll(".pos-filter-btn").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.pos === (cfg.posFilter || "ALL"));
@@ -1223,6 +1371,8 @@
     if (view) cfg.view = view.value;
     const by = document.getElementById("cfg-byYear");
     if (by) cfg.byYear = by.checked;
+    const cut = document.getElementById("cfg-keeperCut");
+    if (cut) cfg.keeperCut = cut.checked;
     const search = document.getElementById("cfg-search");
     if (search) cfg.search = search.value.trim();
     return cfg;
@@ -1240,6 +1390,7 @@
       "cfg-endSeason",
       "cfg-view",
       "cfg-byYear",
+      "cfg-keeperCut",
       "cfg-search"
     ];
     ids.forEach((id) => {
