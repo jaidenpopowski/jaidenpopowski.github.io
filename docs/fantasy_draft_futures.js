@@ -980,8 +980,7 @@
         .map((x) => {
           const pct = (100 * x.v) / sum;
           if (pct < 0.5) return "";
-          const label =
-            pct >= 18 ? x.p : pct >= 10 ? POS_BAR_SHORT[x.p] : "";
+          const label = pct >= 22 ? POS_BAR_SHORT[x.p] : "";
           return (
             '<div class="fd-pos-bar-seg fd-pos-' +
             x.p +
@@ -1061,10 +1060,11 @@
         formatter: (c) => fmtInt(c.getValue())
       },
       {
-        title: "Position",
+        title: "Pos",
         field: "pDEF",
-        width: 110,
-        minWidth: 90,
+        width: 72,
+        minWidth: 64,
+        maxWidth: 80,
         headerSort: false,
         formatter: (c) => posShareBarHtml(c.getRow().getData())
       }
@@ -1139,10 +1139,7 @@
     const a = row._asset;
     const seasons = state.seasons;
     const lines = [
-      "<div class='futures-detail'>",
-      "<div class='muted' style='margin:0 0 6px;font-weight:600;'>" +
-        escapeHtml(row.name || "") +
-        "</div>"
+      "<div class='futures-detail'>"
     ];
     lines.push("<table><thead><tr><th></th>");
     seasons.forEach((y) => lines.push("<th>" + y + "</th>"));
@@ -2178,23 +2175,48 @@
 
   // ── Tabulator ──────────────────────────────────────────────────────────────
 
-  function clearPoolRowDetail() {
-    const hold = document.getElementById("pool-row-detail");
-    if (hold) hold.innerHTML = "";
-    state.detailId = null;
-  }
-
   function bindTableRowClick(table) {
     table.on("rowClick", function (e, row) {
-      const d = row.getData();
-      const hold = document.getElementById("pool-row-detail");
-      if (!hold) return;
-      if (state.detailId && state.detailId === d.id) {
-        clearPoolRowDetail();
+      const el = row.getElement();
+      const existing = el.querySelector(".futures-detail");
+      if (existing) {
+        existing.remove();
+        el.style.height = "";
+        try {
+          row.normalizeHeight();
+        } catch (err) {
+          /* ignore */
+        }
+        state.detailId = null;
         return;
       }
-      state.detailId = d.id;
-      hold.innerHTML = detailHtml(d);
+      // Close any other open in-row detail (keeps virtual scroll sane)
+      table.getRows("active").forEach((r) => {
+        const node = r.getElement && r.getElement();
+        if (!node) return;
+        const d = node.querySelector(".futures-detail");
+        if (d) {
+          d.remove();
+          node.style.height = "";
+          try {
+            r.normalizeHeight();
+          } catch (err2) {
+            /* ignore */
+          }
+        }
+      });
+      const wrap = document.createElement("div");
+      wrap.innerHTML = detailHtml(row.getData());
+      const detail = wrap.firstChild;
+      detail.addEventListener("click", (ev) => ev.stopPropagation());
+      el.appendChild(detail);
+      el.style.height = "";
+      try {
+        row.normalizeHeight();
+      } catch (err3) {
+        /* ignore */
+      }
+      state.detailId = row.getData().id;
     });
   }
 
@@ -2215,17 +2237,16 @@
       const table = new Tabulator("#futures-table", {
         data: data || [],
         columns,
-        layout: "fitDataStretch",
+        // fitData (not Stretch) — Position stays compact; leftover gap is empty
+        layout: "fitData",
         height: "640px",
-        rowHeight: 48,
         renderVertical: "virtual",
         renderVerticalBuffer: 300,
         placeholder: "No assets match these filters",
         initialSort: [{ column: "vorp", dir: "desc" }],
         columnHeaderVertAlign: "bottom",
         columnDefaults: {
-          resizable: false,
-          variableHeight: false
+          resizable: false
         },
         rowFormatter: function (row) {
           const d = row.getData();
@@ -2257,12 +2278,7 @@
       renderMoversPanel(all, cfg, state.data);
       renderTeamRatings(all, state.league, cfg);
       renderTradeCalculator(all, state.league, cfg);
-      if (state.detailId) {
-        const still = filtered.find((r) => r.id === state.detailId);
-        const hold = document.getElementById("pool-row-detail");
-        if (still && hold) hold.innerHTML = detailHtml(still);
-        else clearPoolRowDetail();
-      }
+      state.detailId = null;
       const asof = document.getElementById("futures-asof");
       if (asof && state.data.meta && state.data.meta.asOf) {
         asof.textContent = "As of " + state.data.meta.asOf;
