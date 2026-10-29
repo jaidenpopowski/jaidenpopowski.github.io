@@ -28,8 +28,12 @@
     includeOwned: true,
     /** Fantasy team name from Keeper CSV (highlight). */
     myTeam: "",
-    search: ""
+    search: "",
+    /** Hub subheader tab: pool | movers | teams | trades | league | import */
+    tab: "pool"
   };
+
+  const FD_TABS = ["pool", "movers", "teams", "trades", "league", "import"];
 
   const CLUB_FILTER_ORDER = [
     "ADEL",
@@ -162,7 +166,6 @@
     seasons: [],
     rows: [],
     table: null,
-    hadQueryOnLoad: false,
     /** @type {null | {source:string, fileName:string, ownership:Object.<string,string>, owners:string[], unmatchedOwned:Array, matchedOwned:number, totalOwned:number}} */
     league: null,
     /** Trade calculator selections (player ids / PICK:n keys). */
@@ -205,6 +208,7 @@
     }
     if (q.has("me")) cfg.myTeam = q.get("me") || "";
     if (q.has("q")) cfg.search = q.get("q") || "";
+    if (q.has("tab") && FD_TABS.indexOf(q.get("tab")) >= 0) cfg.tab = q.get("tab");
     return cfg;
   }
 
@@ -224,8 +228,30 @@
     if (cfg.clubs && cfg.clubs.length) q.set("clubs", cfg.clubs.join(","));
     if (cfg.myTeam) q.set("me", cfg.myTeam);
     if (cfg.search) q.set("q", cfg.search);
+    if (cfg.tab && cfg.tab !== "pool") q.set("tab", cfg.tab);
     const url = window.location.pathname + "?" + q.toString();
     window.history.replaceState({}, "", url);
+  }
+
+  function setActiveTab(tab) {
+    const next = FD_TABS.indexOf(tab) >= 0 ? tab : "pool";
+    state.cfg.tab = next;
+    document.querySelectorAll(".fd-tab-btn").forEach((btn) => {
+      btn.classList.toggle("active", btn.getAttribute("data-tab") === next);
+    });
+    document.querySelectorAll(".fd-tab-panel").forEach((panel) => {
+      const on = panel.id === "fd-tab-" + next;
+      panel.classList.toggle("is-active", on);
+      panel.hidden = !on;
+    });
+    writeCfgToUrl(state.cfg);
+    if (next === "pool" && state.table) {
+      try {
+        state.table.redraw(true);
+      } catch (e) {
+        /* ignore */
+      }
+    }
   }
 
   /** True when model still has draft picks for the first horizon season (e.g. PICK_2027_01). */
@@ -507,12 +533,12 @@
     const sel = document.getElementById("cfg-myTeam");
     syncOwnedFilterVisibility(league);
     if (!wrap || !sel) return;
-    if (!league || !league.owners || !league.owners.length) {
-      wrap.style.display = "none";
+    const hasLeague = !!(league && league.owners && league.owners.length);
+    wrap.classList.toggle("is-visible", hasLeague);
+    if (!hasLeague) {
       sel.innerHTML = "";
       return;
     }
-    wrap.style.display = "";
     const cur = cfg.myTeam && league.owners.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : "";
     if (cfg.myTeam && !cur) cfg.myTeam = "";
     sel.innerHTML =
@@ -1171,27 +1197,204 @@
     return out;
   }
 
-  /** Players not kept after cuts: free agents + rostered players outside each team's top Keepers. */
+  // ── Keeper cut: Plackett–Luce + positional needs ───────────────────────────
+
+  function hashStr(s) {
+    let h = 2166136261;
+    const str = String(s || "");
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function playerPosKeys(row) {
+    return String(row.fantasyPos || "")
+      .split("/")
+      .map((p) => p.trim())
+      .filter((p) => POS_KEYS.indexOf(p) >= 0);
+  }
+
+  /** Scale formation (+ bench) into keeperCount positional quotas. */
+  function allocateKeeperTargets(cfg) {
+    const K = Math.max(0, Number(cfg.keeperCount) || 0);
+    const targets = { DEF: 0, MID: 0, RUC: 0, FWD: 0 };
+    if (K <= 0) return targets;
+    const benchSlots = allocateBenchSlots(cfg.slots, cfg.bench);
+    const depth = {};
+    let total = 0;
+    POS_KEYS.forEach((p) => {
+      depth[p] = (cfg.slots[p] || 0) + (benchSlots[p] || 0);
+      total += depth[p];
+    });
+    if (total <= 0) {
+      targets.MID = K;
+      return targets;
+    }
+    let assigned = 0;
+    const exact = POS_KEYS.map((p) => ({
+      p,
+      v: (K * depth[p]) / total,
+      depth: depth[p]
+    }));
+    exact.forEach((e) => {
+      targets[e.p] = Math.floor(e.v);
+      assigned += targets[e.p];
+    });
+    let rem = K - assigned;
+    exact
+      .slice()
+      .sort(
+        (a, b) =>
+          b.v - Math.floor(b.v) - (a.v - Math.floor(a.v)) || b.depth - a.depth
+      )
+      .forEach((e) => {
+        if (rem > 0) {
+          targets[e.p] += 1;
+          rem -= 1;
+        }
+      });
+    return targets;
+  }
+
+  /** Softplus-ish positive worth from VORP for Plackett–Luce weights. */
+  function vorpWorth(vorp) {
+    const v = Number(vorp);
+    if (!Number.isFinite(v)) return 1e-6;
+    // Scale so typical VORP gaps (~100–1000) still move probabilities
+    return Math.exp(v / 400) + 1e-9;
+  }
+
+  /**
+   * Select keepers within one roster via Plackett–Luce (exponential clocks)
+   * then walk the ranking filling formation-based positional quotas.
+   * Deterministic for a given owner + roster + settings.
+   */
+  function selectKeepersPlackettLuce(players, cfg, owner) {
+    const K = Math.max(0, Number(cfg.keeperCount) || 0);
+    if (!players || !players.length || K <= 0) return [];
+    if (players.length <= K) return players.slice();
+
+    const targets = allocateKeeperTargets(cfg);
+    const remaining = { DEF: targets.DEF, MID: targets.MID, RUC: targets.RUC, FWD: targets.FWD };
+
+    const seed = hashStr(
+      [
+        owner || "",
+        K,
+        cfg.slots.DEF,
+        cfg.slots.MID,
+        cfg.slots.RUC,
+        cfg.slots.FWD,
+        cfg.bench,
+        players
+          .map((p) => p.id)
+          .slice()
+          .sort()
+          .join(",")
+      ].join("|")
+    );
+    const rand = mulberry32(seed);
+
+    // Exponential clocks: T_i ~ Exp(α_i) ≡ -ln(U)/α ; smaller T = higher rank
+    const ranked = players
+      .map((p) => {
+        const alpha = vorpWorth(p.vorp);
+        const u = Math.max(1e-12, rand());
+        const t = -Math.log(u) / alpha;
+        return { p, t };
+      })
+      .sort((a, b) => a.t - b.t || (b.p.vorp || 0) - (a.p.vorp || 0));
+
+    const kept = [];
+    const keptIds = new Set();
+
+    function tryAssign(p) {
+      const posOpts = playerPosKeys(p);
+      if (!posOpts.length) {
+        // No fantasy pos — take any leftover quota slot
+        const open = POS_KEYS.filter((pos) => remaining[pos] > 0).sort(
+          (a, b) => remaining[b] - remaining[a]
+        );
+        if (!open.length) return false;
+        remaining[open[0]] -= 1;
+        return true;
+      }
+      // Prefer the eligible position with the most remaining need
+      const open = posOpts
+        .filter((pos) => remaining[pos] > 0)
+        .sort((a, b) => remaining[b] - remaining[a] || a.localeCompare(b));
+      if (!open.length) return false;
+      remaining[open[0]] -= 1;
+      return true;
+    }
+
+    ranked.forEach(({ p }) => {
+      if (kept.length >= K) return;
+      if (tryAssign(p)) {
+        kept.push(p);
+        keptIds.add(p.id);
+      }
+    });
+
+    // If quotas blocked filling K (weird roster), backfill by PL order ignoring pos
+    if (kept.length < K) {
+      ranked.forEach(({ p }) => {
+        if (kept.length >= K || keptIds.has(p.id)) return;
+        kept.push(p);
+        keptIds.add(p.id);
+      });
+    }
+
+    return kept;
+  }
+
+  function splitRosterByKeepers(players, cfg, owner, cutOn) {
+    const sorted = (players || []).slice().sort(
+      (a, b) => (b.vorp || 0) - (a.vorp || 0) || (a.name || "").localeCompare(b.name || "")
+    );
+    const cutN = Math.max(0, Number(cfg.keeperCount) || 0);
+    if (!cutOn || cutN <= 0) {
+      return { kept: sorted.slice(), cut: [], keptSet: new Set(sorted.map((p) => p.id)) };
+    }
+    const kept = selectKeepersPlackettLuce(sorted, cfg, owner);
+    const keptSet = new Set(kept.map((p) => p.id));
+    const keptSorted = kept
+      .slice()
+      .sort(
+        (a, b) => (b.vorp || 0) - (a.vorp || 0) || (a.name || "").localeCompare(b.name || "")
+      );
+    const cut = sorted.filter((p) => !keptSet.has(p.id));
+    return { kept: keptSorted, cut, keptSet };
+  }
+
+  /** Players not kept after cuts: free agents + rostered players outside PL keepers. */
   function unownedAfterCuts(rows, league, cfg) {
     const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
-    const cutN = Math.max(0, Number(cfg.keeperCount) || 0);
     const kept = new Set();
-    if (league && league.owners && cutOn && cutN > 0) {
-      league.owners.forEach((owner) => {
-        rows
-          .filter((r) => r.owner === owner)
-          .slice()
-          .sort(
-            (a, b) =>
-              (b.vorp || 0) - (a.vorp || 0) || (a.name || "").localeCompare(b.name || "")
-          )
-          .slice(0, cutN)
-          .forEach((r) => kept.add(r.id));
-      });
-    } else if (league && league.owners && !cutOn) {
-      rows.forEach((r) => {
-        if (r.owner) kept.add(r.id);
-      });
+    if (league && league.owners) {
+      if (cutOn) {
+        league.owners.forEach((owner) => {
+          const roster = rows.filter((r) => r.owner === owner);
+          selectKeepersPlackettLuce(roster, cfg, owner).forEach((r) => kept.add(r.id));
+        });
+      } else {
+        rows.forEach((r) => {
+          if (r.owner) kept.add(r.id);
+        });
+      }
     }
     return rows
       .filter((r) => r.type !== "pick" && r.id && String(r.id).indexOf("CD_I") === 0)
@@ -1219,18 +1422,12 @@
   /** Per-team kept roster + year xPoints / VORP (same rules as ladder). */
   function buildTeamStandings(rows, league, cfg) {
     const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
-    const cutN = Math.max(0, Number(cfg.keeperCount) || 0);
     const h = horizonLen(state.seasons, cfg.endSeason);
     const yearSeasons = state.seasons.slice(0, h);
     return (league.owners || []).map((owner) => {
-      const players = rows
-        .filter((r) => r.owner === owner)
-        .slice()
-        .sort(
-          (a, b) =>
-            (b.vorp || 0) - (a.vorp || 0) || (a.name || "").localeCompare(b.name || "")
-        );
-      const counted = cutOn && cutN > 0 ? players.slice(0, cutN) : players.slice();
+      const players = rows.filter((r) => r.owner === owner);
+      const split = splitRosterByKeepers(players, cfg, owner, cutOn);
+      const counted = split.kept;
       const yearPts = yearSeasons.map(() => 0);
       counted.forEach((p) => {
         const yp = yearPointsForRow(p, yearSeasons.length);
@@ -1239,7 +1436,7 @@
         });
       });
       const vorp = counted.reduce((s, p) => s + (Number(p.vorp) || 0), 0);
-      return { owner, players, counted, yearPts, vorp };
+      return { owner, players: split.kept.concat(split.cut), counted, yearPts, vorp, split };
     });
   }
 
@@ -1359,8 +1556,9 @@
     const el = document.getElementById("trade-calculator");
     if (!el) return;
     if (!league || !league.owners || !league.owners.length) {
-      el.style.display = "none";
-      el.innerHTML = "";
+      el.style.display = "block";
+      el.innerHTML =
+        "<p class='muted'>Upload a Keeper Fantasy CSV in <b>Import</b> to use the trade calculator.</p>";
       return;
     }
 
@@ -1585,7 +1783,7 @@
       " ladder" +
       (worst ? " — R1 starts with " + worst : "") +
       ". Pick values ≈ ranked unowned after" +
-      (cutOn ? " cuts" : " treating rostered as kept") +
+      (cutOn ? " Plackett–Luce keeper cuts" : " treating rostered as kept") +
       ". Year cells ±xPoints; VORP through " +
       (cfg.endSeason || "end") +
       ".";
@@ -1696,10 +1894,25 @@
 
   function renderTeamRatings(rows, league, cfg) {
     const el = document.getElementById("team-ratings");
-    if (!el) return;
+    const ladderEl = document.getElementById("league-ladder") || el;
+    const boardsEl = document.getElementById("teams-boards");
+    if (!ladderEl && !boardsEl) return;
+
     if (!league || !league.owners || !league.owners.length) {
-      el.style.display = "none";
-      el.innerHTML = "";
+      if (ladderEl) {
+        ladderEl.style.display = "block";
+        ladderEl.innerHTML =
+          "<p class='muted'>Upload a Keeper Fantasy CSV in <b>Import</b> to see the ladder.</p>";
+      }
+      if (boardsEl) {
+        boardsEl.style.display = "block";
+        boardsEl.innerHTML =
+          "<p class='muted'>Upload a Keeper Fantasy CSV in <b>Import</b> to see team boards.</p>";
+      }
+      if (el && el !== ladderEl) {
+        el.style.display = "none";
+        el.innerHTML = "";
+      }
       return;
     }
 
@@ -1708,38 +1921,18 @@
     const h = horizonLen(state.seasons, cfg.endSeason);
     const yearSeasons = state.seasons.slice(0, h);
     const myTeam = cfg.myTeam || "";
-
+    const standings = buildTeamStandings(rows, league, cfg);
     const byOwner = Object.create(null);
-    league.owners.forEach((o) => {
-      byOwner[o] = {
-        owner: o,
-        vorp: 0,
-        n: 0,
-        players: [],
-        counted: [],
-        yearPts: yearSeasons.map(() => 0)
+    standings.forEach((t) => {
+      byOwner[t.owner] = {
+        owner: t.owner,
+        vorp: t.vorp,
+        n: t.players.length,
+        players: t.players,
+        counted: t.counted,
+        cut: t.split ? t.split.cut : [],
+        yearPts: t.yearPts
       };
-    });
-    rows.forEach((r) => {
-      const o = r.owner;
-      if (!o || !byOwner[o]) return;
-      byOwner[o].players.push(r);
-    });
-    league.owners.forEach((o) => {
-      const t = byOwner[o];
-      t.players.sort(
-        (a, b) => (b.vorp || 0) - (a.vorp || 0) || (a.name || "").localeCompare(b.name || "")
-      );
-      t.n = t.players.length;
-      // Keeper cut on: ladder / year cols use top N by total VORP through current end
-      t.counted = cutOn && cutN > 0 ? t.players.slice(0, cutN) : t.players.slice();
-      t.vorp = t.counted.reduce((s, p) => s + (Number(p.vorp) || 0), 0);
-      t.counted.forEach((p) => {
-        const xp = p._asset && p._asset.xPoints;
-        yearSeasons.forEach((_, i) => {
-          t.yearPts[i] += Number(numAt(xp, i)) || 0;
-        });
-      });
     });
 
     const ranked = league.owners
@@ -1794,20 +1987,25 @@
       .map((t, i) => {
         const mine = myTeam && t.owner === myTeam;
         const body = [];
-        t.players.forEach((p, idx) => {
-          if (cutOn && cutN > 0 && idx === cutN) {
-            body.push(
-              '<div class="lt-cut" role="separator" title="Keeper cut (top ' +
-                cutN +
-                ')">' +
-                "<span>Keeper cut · " +
-                cutN +
-                "</span>" +
-                "</div>"
-            );
-          }
-          body.push(teamPlayerRowHtml(p, cutOn && cutN > 0 && idx >= cutN));
-        });
+        const keptList = t.counted || [];
+        const cutList = t.cut || [];
+        keptList.forEach((p) => body.push(teamPlayerRowHtml(p, false)));
+        if (cutOn && cutN > 0 && cutList.length) {
+          body.push(
+            '<div class="lt-cut" role="separator" title="Keeper cut (Plackett–Luce + formation quotas, n=' +
+              cutN +
+              ')">' +
+              "<span>Keeper cut · " +
+              keptList.length +
+              "/" +
+              cutN +
+              "</span>" +
+              "</div>"
+          );
+          cutList.forEach((p) => body.push(teamPlayerRowHtml(p, true)));
+        } else if (!cutOn) {
+          // already showing full roster in counted
+        }
         return (
           '<article class="lt-board' +
           (mine ? " lt-mine-board" : "") +
@@ -1839,29 +2037,37 @@
       .join("");
 
     const cutNote = cutOn
-      ? " Year columns and VORP use each team's top " +
+      ? " Year columns and VORP use each team's " +
         cutN +
-        " by total VORP through " +
-        (cfg.endSeason || "end") +
-        ". Red line on boards marks the keeper cut."
+        " keepers (Plackett–Luce clocks on VORP, filling DEF/MID/RUC/FWD quotas from formation). Red line marks cuts."
       : " Year columns sum xPoints; VORP is full-roster total under current settings.";
 
-    el.style.display = "block";
-    el.innerHTML =
-      "<h3>Ladder</h3>" +
-      "<p class='muted'>Gold / silver / bronze mark the top 3 in each column." +
-      cutNote +
-      "</p>" +
-      "<div class='lt-ladder-wrap'><table class='lt-ladder'><thead>" +
-      ladderHead +
-      "</thead><tbody>" +
-      ladderBody +
-      "</tbody></table></div>" +
-      "<h3 class='lt-boards-heading'>Teams</h3>" +
-      "<p class='muted'>Players sorted by VORP.</p>" +
-      "<div class='lt-boards'>" +
-      boards +
-      "</div>";
+    if (ladderEl) {
+      ladderEl.style.display = "block";
+      ladderEl.innerHTML =
+        "<h3>Ladder</h3>" +
+        "<p class='muted'>Gold / silver / bronze mark the top 3 in each column." +
+        cutNote +
+        "</p>" +
+        "<div class='lt-ladder-wrap'><table class='lt-ladder'><thead>" +
+        ladderHead +
+        "</thead><tbody>" +
+        ladderBody +
+        "</tbody></table></div>";
+    }
+    if (boardsEl) {
+      boardsEl.style.display = "block";
+      boardsEl.innerHTML =
+        "<h3>Teams</h3>" +
+        "<p class='muted'>Players sorted by VORP within kept / cut groups.</p>" +
+        "<div class='lt-boards'>" +
+        boards +
+        "</div>";
+    }
+    if (el && el !== ladderEl) {
+      el.style.display = "none";
+      el.innerHTML = "";
+    }
   }
 
   function renderMoversPanel(rows, cfg, data) {
@@ -1998,12 +2204,6 @@
   }
 
   // ── Controls wiring ────────────────────────────────────────────────────────
-
-  function applySettingsOpenState() {
-    const details = document.getElementById("futures-settings");
-    if (!details) return;
-    details.open = !state.hadQueryOnLoad;
-  }
 
   function syncControlsToDom(cfg, seasons) {
     const setVal = (id, v) => {
@@ -2151,6 +2351,12 @@
       });
     });
 
+    document.querySelectorAll(".fd-tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        setActiveTab(btn.getAttribute("data-tab") || "pool");
+      });
+    });
+
     bindTradeCalculator();
     ensureClubDropdownBuilt();
     const clubBtn = document.getElementById("club-dropdown-btn");
@@ -2186,10 +2392,9 @@
   // ── Boot ───────────────────────────────────────────────────────────────────
 
   async function init() {
-    state.hadQueryOnLoad = window.location.search.length > 1;
     state.cfg = readCfgFromUrl();
-    applySettingsOpenState();
     bindControls();
+    setActiveTab(state.cfg.tab || "pool");
 
     const loading = document.getElementById("loading-state");
     const err = document.getElementById("futures-error");
@@ -2206,6 +2411,7 @@
         state.cfg.endSeason = state.seasons[state.seasons.length - 1];
       }
       syncControlsToDom(state.cfg, state.seasons);
+      setActiveTab(state.cfg.tab || "pool");
       if (loading) loading.style.display = "none";
       if (shell) {
         shell.style.display = "block";
@@ -2213,6 +2419,13 @@
         void shell.offsetHeight;
       }
       await refresh();
+      if (state.cfg.tab === "pool" && state.table) {
+        try {
+          state.table.redraw(true);
+        } catch (e2) {
+          /* ignore */
+        }
+      }
     } catch (e) {
       console.error(e);
       if (loading) loading.style.display = "none";
