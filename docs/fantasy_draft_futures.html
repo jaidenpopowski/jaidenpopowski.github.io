@@ -3844,33 +3844,35 @@ Keeper cut
   /** Min year-1 share to claim a positional keeper slot. */
   const KEEPER_POS_MIN_P = 0.05;
 
-  /** Scale formation (+ bench) into keeperCount positional quotas. */
+  /**
+   * Soft positional targets from on-field formation only (bench is flex).
+   * Sum of targets ≤ min(K, on-field slots) so leftover keeper slots stay
+   * pure VORP — avoids forcing negative-VORP positional fillers.
+   */
   function allocateKeeperTargets(cfg) {
     const K = Math.max(0, Number(cfg.keeperCount) || 0);
     const targets = { DEF: 0, MID: 0, RUC: 0, FWD: 0 };
     if (K <= 0) return targets;
-    const benchSlots = allocateBenchSlots(cfg.slots, cfg.bench);
     const depth = {};
-    let total = 0;
+    let onField = 0;
     POS_KEYS.forEach((p) => {
-      depth[p] = (cfg.slots[p] || 0) + (benchSlots[p] || 0);
-      total += depth[p];
+      depth[p] = cfg.slots[p] || 0;
+      onField += depth[p];
     });
-    if (total <= 0) {
-      targets.MID = K;
-      return targets;
-    }
+    if (onField <= 0) return targets;
+    // Only reserve on-field shape; remaining keepers are VORP flex
+    const quotaN = Math.min(K, onField);
     let assigned = 0;
     const exact = POS_KEYS.map((p) => ({
       p,
-      v: (K * depth[p]) / total,
+      v: (quotaN * depth[p]) / onField,
       depth: depth[p]
     }));
     exact.forEach((e) => {
       targets[e.p] = Math.floor(e.v);
       assigned += targets[e.p];
     });
-    let rem = K - assigned;
+    let rem = quotaN - assigned;
     exact
       .slice()
       .sort(
@@ -3887,8 +3889,10 @@ Keeper cut
   }
 
   /**
-   * Select keepers: walk roster by VORP desc, fill formation-scaled quotas
-   * using year-1 (JSON season[0]) positional probabilities — not fantasy labels.
+   * Select keepers:
+   *  1) Fill soft on-field quotas with VORP > 0 players (year-1 pos probs)
+   *  2) Backfill remaining slots by pure VORP (ignores position)
+   * Negative VORP never takes a positional slot — FAs are better by definition.
    */
   function selectKeepersByVorpQuotas(players, cfg) {
     const K = Math.max(0, Number(cfg.keeperCount) || 0);
@@ -3913,7 +3917,8 @@ Keeper cut
     const kept = [];
     const keptIds = new Set();
 
-    function tryAssign(p) {
+    function tryAssignPositive(p) {
+      if (!(Number(p.vorp) > 0)) return false;
       const y1 = year1PosProbs(p);
       const open = POS_KEYS.filter(
         (pos) => remaining[pos] > 0 && (y1[pos] || 0) >= KEEPER_POS_MIN_P
@@ -3928,15 +3933,16 @@ Keeper cut
       return true;
     }
 
+    // Phase 1 — positional shape from positive-VORP players only
     ranked.forEach((p) => {
       if (kept.length >= K) return;
-      if (tryAssign(p)) {
+      if (tryAssignPositive(p)) {
         kept.push(p);
         keptIds.add(p.id);
       }
     });
 
-    // Quotas blocked filling K (weird roster) — backfill by VORP, ignore pos
+    // Phase 2 — flex: best remaining VORP (Young over ANB)
     if (kept.length < K) {
       ranked.forEach((p) => {
         if (kept.length >= K || keptIds.has(p.id)) return;
@@ -4581,7 +4587,7 @@ Keeper cut
         keptList.forEach((p) => body.push(teamPlayerRowHtml(p, false)));
         if (cutOn && cutN > 0 && cutList.length) {
           body.push(
-            '<div class="lt-cut" role="separator" title="Keeper cut (VORP + year-1 pos probs + formation quotas, n=' +
+            '<div class="lt-cut" role="separator" title="Keeper cut (VORP&gt;0 fill on-field shape, then VORP flex; n=' +
               cutN +
               ')">' +
               "<span>Keeper cut · " +
@@ -4628,7 +4634,7 @@ Keeper cut
     const cutNote = cutOn
       ? " Year columns and VORP use each team's " +
         cutN +
-        " keepers (best VORP first; DEF/MID/RUC/FWD quotas use year-1 position probs, ≥5%). Red line marks cuts."
+        " keepers (on-field shape from VORP&gt;0 + year-1 pos; remaining slots pure VORP — negatives never block elites). Red line marks cuts."
       : " Year columns sum xPoints; VORP is full-roster total under current settings.";
 
     if (ladderEl) {
