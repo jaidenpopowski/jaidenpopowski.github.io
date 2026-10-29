@@ -33,7 +33,7 @@
     tab: "pool"
   };
 
-  const FD_TABS = ["pool", "movers", "teams", "trades", "league", "import"];
+  const FD_TABS = ["pool", "teams", "trades", "ladder", "import"];
 
   const CLUB_FILTER_ORDER = [
     "ADEL",
@@ -166,7 +166,7 @@
     seasons: [],
     rows: [],
     table: null,
-    /** @type {null | {source:string, fileName:string, ownership:Object.<string,string>, owners:string[], unmatchedOwned:Array, matchedOwned:number, totalOwned:number}} */
+    /** @type {null | {source:string, fileName:string, ownership:Object.<string,string>, positions:Object.<string,string>, owners:string[], unmatchedOwned:Array, matchedOwned:number, totalOwned:number}} */
     league: null,
     /** Trade calculator selections (player ids / PICK:n keys). */
     trade: {
@@ -208,7 +208,12 @@
     }
     if (q.has("me")) cfg.myTeam = q.get("me") || "";
     if (q.has("q")) cfg.search = q.get("q") || "";
-    if (q.has("tab") && FD_TABS.indexOf(q.get("tab")) >= 0) cfg.tab = q.get("tab");
+    if (q.has("tab")) {
+      let tab = q.get("tab");
+      if (tab === "movers") tab = "pool";
+      if (tab === "league") tab = "ladder";
+      if (FD_TABS.indexOf(tab) >= 0) cfg.tab = tab;
+    }
     return cfg;
   }
 
@@ -442,9 +447,28 @@
     return m.values().next().value;
   }
 
+  /** Normalize Keeper CSV position labels for chip display (e.g. D/M → DEF/MID). */
+  function normalizeKeeperPos(raw) {
+    const parts = String(raw || "")
+      .split(/[/,+|]+/)
+      .map((p) => p.trim())
+      .filter(Boolean)
+      .map((p) => {
+        const u = p.toUpperCase();
+        if (u === "D" || u === "DEF") return "DEF";
+        if (u === "M" || u === "MID") return "MID";
+        if (u === "R" || u === "RUC" || u === "RUCK") return "RUC";
+        if (u === "F" || u === "FWD" || u === "FORWARD") return "FWD";
+        return u;
+      })
+      .filter((p) => POS_KEYS.indexOf(p) >= 0);
+    return parts.length ? Array.from(new Set(parts)).join("/") : "";
+  }
+
   function matchKeeperPlayers(csvRows, assets) {
     const index = buildPlayerIndex(assets);
     const ownership = Object.create(null);
+    const positions = Object.create(null);
     const unmatchedOwned = [];
     const unmatchedAll = [];
     let matchedOwned = 0;
@@ -455,6 +479,7 @@
       const name = r.name || r.Player || r.player || "";
       const owner = r.owner || r.Owner || "";
       const team = r.team || r.Team || "";
+      const posRaw = r.position || r.Position || r.pos || "";
       if (!name) return;
       const isFa = !owner || /^free\s*agent$/i.test(owner);
       if (!isFa) {
@@ -475,6 +500,8 @@
         }
       }
       if (hit) {
+        const posNorm = normalizeKeeperPos(posRaw);
+        if (posNorm) positions[hit.id] = posNorm;
         if (!isFa) {
           ownership[hit.id] = owner;
           matchedOwned++;
@@ -488,6 +515,7 @@
 
     return {
       ownership,
+      positions,
       owners: Array.from(ownersSet).sort((a, b) => a.localeCompare(b)),
       unmatchedOwned,
       unmatchedAll,
@@ -500,13 +528,21 @@
     if (!league || !league.ownership) {
       rows.forEach((r) => {
         r.owner = null;
+        r.keeperPos = null;
       });
       return rows;
     }
     rows.forEach((r) => {
       r.owner = league.ownership[r.id] || null;
+      r.keeperPos =
+        (league.positions && league.positions[r.id]) || null;
     });
     return rows;
+  }
+
+  /** Display position: Keeper CSV when imported, else model fantasyPos. */
+  function displayPos(row) {
+    return (row && (row.keeperPos || row.fantasyPos)) || "";
   }
 
   function setLeagueStatus(msg, isError) {
@@ -596,6 +632,7 @@
           source: "keeper",
           fileName: file.name || "players.csv",
           ownership: matched.ownership,
+          positions: matched.positions,
           owners: matched.owners,
           unmatchedOwned: matched.unmatchedOwned,
           unmatchedAll: matched.unmatchedAll,
@@ -862,6 +899,21 @@
       .join("");
   }
 
+  /** Map model delta.driver → display reason (Contract / Scoring / Games). */
+  function driverLabel(driver) {
+    const d = String(driver || "").toLowerCase();
+    if (d === "problisted" || d === "contract") return "Contract";
+    if (d === "xavg" || d === "scoring") return "Scoring";
+    if (d === "xgames" || d === "games") return "Games";
+    return driver ? String(driver) : "";
+  }
+
+  function signedInt(v) {
+    if (v == null || !Number.isFinite(Number(v))) return "—";
+    const n = Math.round(Number(v));
+    return (n > 0 ? "+" : "") + String(n);
+  }
+
   function nameCellHtml(cell) {
     const row = cell.getRow().getData();
     const abbr = row.teamAbbr || row.club || "";
@@ -883,7 +935,7 @@
       "</div>" +
       '<div class="fd-name-bottom">' +
       teamChip +
-      posChipsHtml(row.fantasyPos) +
+      posChipsHtml(displayPos(row)) +
       "</div>" +
       "</div>" +
       "</div>"
@@ -963,12 +1015,17 @@
       dxPoints: {
         title: "Δ xPts",
         field: "dxPoints",
-        width: 80,
+        width: 72,
         hozAlign: "right",
         sorter: "number",
-        formatter: (c) => fmt1(c.getValue())
+        formatter: (c) => signedInt(c.getValue())
       },
-      driver: { title: "Driver", field: "driver", width: 90 },
+      driver: {
+        title: "Reason",
+        field: "driver",
+        width: 88,
+        formatter: (c) => escapeHtml(driverLabel(c.getValue()) || "—")
+      },
       event: { title: "Event", field: "event", width: 120 },
       pDEF: {
         title: "pDEF",
@@ -1005,7 +1062,7 @@
       lists: ["name", "age", "contract"],
       scoring: ["name"],
       positions: ["name", "pDEF", "pMID", "pRUC", "pFWD"],
-      movers: ["name", "vorp", "dxPoints", "driver", "event"]
+      movers: ["name", "vorp", "dxPoints", "driver"]
     };
 
     let keys = views[view] || views.value;
@@ -1178,11 +1235,49 @@
       "</div>" +
       '<div class="lt-player-chips">' +
       teamChip +
-      posChipsHtml(r.fantasyPos) +
+      posChipsHtml(displayPos(r)) +
       "</div>" +
       "</div>" +
       '<div class="lt-player-vorp">' +
       fmtInt(r.vorp) +
+      "</div>" +
+      "</div>"
+    );
+  }
+
+  /** Movers sidebar row — same layout as Teams, with reason + rounded Δ xPts. */
+  function moverPlayerRowHtml(r, rising) {
+    const abbr = r.teamAbbr || r.club || "";
+    const teamChip = abbr
+      ? '<span class="fd-team-chip fd-team-' +
+        escapeHtml(abbr) +
+        '">' +
+        escapeHtml(abbr) +
+        "</span>"
+      : "";
+    const reason = driverLabel(r.driver);
+    const dxCls = rising ? "up" : "down";
+    return (
+      '<div class="lt-player">' +
+      headshotHtml(r) +
+      '<div class="lt-player-meta">' +
+      '<div class="lt-player-name" title="' +
+      escapeHtml(r.name || "") +
+      '">' +
+      escapeHtml(r.name || "") +
+      "</div>" +
+      '<div class="lt-player-chips">' +
+      teamChip +
+      posChipsHtml(displayPos(r)) +
+      (reason
+        ? '<span class="lt-player-reason">' + escapeHtml(reason) + "</span>"
+        : "") +
+      "</div>" +
+      "</div>" +
+      '<div class="lt-player-dx ' +
+      dxCls +
+      '">' +
+      signedInt(r.dxPoints) +
       "</div>" +
       "</div>"
     );
@@ -1197,14 +1292,41 @@
     return out;
   }
 
-  // ── Keeper cut: VORP order + positional quotas ─────────────────────────────
+  // ── Keeper cut: VORP order + year-1 pos probs + quotas ─────────────────────
 
-  function playerPosKeys(row) {
+  /** Fantasy eligibility labels (chips) — fallback only when year-1 pos missing. */
+  function playerFantasyPosKeys(row) {
     return String(row.fantasyPos || "")
       .split("/")
       .map((p) => p.trim())
       .filter((p) => POS_KEYS.indexOf(p) >= 0);
   }
+
+  /**
+   * Season-1 positional probabilities from JSON (index 0 = first horizon year,
+   * currently 2027). Falls back to fantasyPos one-hot when pos[] is missing.
+   */
+  function year1PosProbs(row) {
+    const out = { DEF: 0, MID: 0, RUC: 0, FWD: 0 };
+    const a = row && row._asset;
+    let any = false;
+    POS_KEYS.forEach((p) => {
+      const arr = a && a.pos && a.pos[p];
+      const v = arr && arr.length ? Number(arr[0]) : NaN;
+      if (Number.isFinite(v) && v > 0) {
+        out[p] = v;
+        any = true;
+      }
+    });
+    if (any) return out;
+    playerFantasyPosKeys(row).forEach((p) => {
+      out[p] = 1;
+    });
+    return out;
+  }
+
+  /** Min year-1 share to claim a positional keeper slot. */
+  const KEEPER_POS_MIN_P = 0.05;
 
   /** Scale formation (+ bench) into keeperCount positional quotas. */
   function allocateKeeperTargets(cfg) {
@@ -1249,9 +1371,8 @@
   }
 
   /**
-   * Select keepers: walk roster by VORP desc, filling formation-scaled
-   * positional quotas. Deterministic — no random clocks (a single PL draw
-   * could keep a −500 RUC over a +200 RUC).
+   * Select keepers: walk roster by VORP desc, fill formation-scaled quotas
+   * using year-1 (JSON season[0]) positional probabilities — not fantasy labels.
    */
   function selectKeepersByVorpQuotas(players, cfg) {
     const K = Math.max(0, Number(cfg.keeperCount) || 0);
@@ -1277,18 +1398,15 @@
     const keptIds = new Set();
 
     function tryAssign(p) {
-      const posOpts = playerPosKeys(p);
-      if (!posOpts.length) {
-        const open = POS_KEYS.filter((pos) => remaining[pos] > 0).sort(
-          (a, b) => remaining[b] - remaining[a]
-        );
-        if (!open.length) return false;
-        remaining[open[0]] -= 1;
-        return true;
-      }
-      const open = posOpts
-        .filter((pos) => remaining[pos] > 0)
-        .sort((a, b) => remaining[b] - remaining[a] || a.localeCompare(b));
+      const y1 = year1PosProbs(p);
+      const open = POS_KEYS.filter(
+        (pos) => remaining[pos] > 0 && (y1[pos] || 0) >= KEEPER_POS_MIN_P
+      ).sort(
+        (a, b) =>
+          (y1[b] || 0) - (y1[a] || 0) ||
+          remaining[b] - remaining[a] ||
+          a.localeCompare(b)
+      );
       if (!open.length) return false;
       remaining[open[0]] -= 1;
       return true;
@@ -1592,6 +1710,8 @@
             escapeHtml(p.name) +
             '">' +
             escapeHtml(p.name) +
+            " " +
+            posChipsHtml(displayPos(p)) +
             "</span>" +
             '<span class="tc-asset-vorp">' +
             fmtInt(p.vorp) +
@@ -1736,7 +1856,7 @@
       " ladder" +
       (worst ? " — R1 starts with " + worst : "") +
       ". Pick values ≈ ranked unowned after" +
-      (cutOn ? " VORP + positional keeper cuts" : " treating rostered as kept") +
+      (cutOn ? " VORP + year-1 pos keeper cuts" : " treating rostered as kept") +
       ". Year cells ±xPoints; VORP through " +
       (cfg.endSeason || "end") +
       ".";
@@ -1945,7 +2065,7 @@
         keptList.forEach((p) => body.push(teamPlayerRowHtml(p, false)));
         if (cutOn && cutN > 0 && cutList.length) {
           body.push(
-            '<div class="lt-cut" role="separator" title="Keeper cut (VORP order + formation quotas, n=' +
+            '<div class="lt-cut" role="separator" title="Keeper cut (VORP + year-1 pos probs + formation quotas, n=' +
               cutN +
               ')">' +
               "<span>Keeper cut · " +
@@ -1992,7 +2112,7 @@
     const cutNote = cutOn
       ? " Year columns and VORP use each team's " +
         cutN +
-        " keepers (best VORP first, filling DEF/MID/RUC/FWD quotas from formation). Red line marks cuts."
+        " keepers (best VORP first; DEF/MID/RUC/FWD quotas use year-1 position probs, ≥5%). Red line marks cuts."
       : " Year columns sum xPoints; VORP is full-roster total under current settings.";
 
     if (ladderEl) {
@@ -2028,15 +2148,45 @@
     if (!el) return;
     const h = horizonLen(state.seasons, cfg.endSeason);
     const defaultH = (data.meta && data.meta.defaultHorizon) || state.seasons.length;
+    const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
     let rising;
     let falling;
     if (h === defaultH && data.movers) {
-      const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
       rising = (data.movers.rising || [])
-        .map((m) => ({ ...m, name: (byId[m.id] && byId[m.id].name) || m.id }))
+        .map((m) => {
+          const row = byId[m.id];
+          if (!row) {
+            return {
+              id: m.id,
+              name: m.id,
+              dxPoints: m.dxPoints,
+              driver: m.driver
+            };
+          }
+          return {
+            ...row,
+            dxPoints: m.dxPoints != null ? m.dxPoints : row.dxPoints,
+            driver: m.driver || row.driver
+          };
+        })
         .slice(0, 10);
       falling = (data.movers.falling || [])
-        .map((m) => ({ ...m, name: (byId[m.id] && byId[m.id].name) || m.id }))
+        .map((m) => {
+          const row = byId[m.id];
+          if (!row) {
+            return {
+              id: m.id,
+              name: m.id,
+              dxPoints: m.dxPoints,
+              driver: m.driver
+            };
+          }
+          return {
+            ...row,
+            dxPoints: m.dxPoints != null ? m.dxPoints : row.dxPoints,
+            driver: m.driver || row.driver
+          };
+        })
         .slice(0, 10);
     } else {
       const withDx = rows
@@ -2049,25 +2199,18 @@
         .sort((a, b) => a.dxPoints - b.dxPoints)
         .slice(0, 10);
     }
-    function list(title, items, pos) {
-      const lis = items
-        .map(
-          (m) =>
-            "<li><span>" +
-            escapeHtml(m.name || m.id) +
-            "</span> <span class='" +
-            (pos ? "up" : "down") +
-            "'>" +
-            fmt1(m.dxPoints) +
-            "</span></li>"
-        )
-        .join("");
-      return "<div><h4>" + title + "</h4><ul>" + (lis || "<li class='muted'>None</li>") + "</ul></div>";
+    function block(title, items, risingFlag) {
+      const body = items.length
+        ? items.map((m) => moverPlayerRowHtml(m, risingFlag)).join("")
+        : '<p class="muted" style="margin:0 8px;">None</p>';
+      return (
+        '<div class="movers-block"><h4>' + title + "</h4>" + body + "</div>"
+      );
     }
     el.innerHTML =
-      "<div class='movers-grid'>" +
-      list("Rising", rising, true) +
-      list("Falling", falling, false) +
+      "<div class='movers-stack'>" +
+      block("Rising", rising, true) +
+      block("Falling", falling, false) +
       "</div>";
   }
 
@@ -2143,15 +2286,11 @@
       renderMoversPanel(all, cfg, state.data);
       renderTeamRatings(all, state.league, cfg);
       renderTradeCalculator(all, state.league, cfg);
-      const meta = document.getElementById("futures-meta");
-      if (meta && state.data.meta) {
-        meta.textContent =
-          "As of " +
-          state.data.meta.asOf +
-          " · " +
-          state.data.assets.length +
-          " assets · model " +
-          (state.data.meta.modelVersion || "");
+      const asof = document.getElementById("futures-asof");
+      if (asof && state.data.meta && state.data.meta.asOf) {
+        asof.textContent = "As of " + state.data.meta.asOf;
+      } else if (asof) {
+        asof.textContent = "";
       }
     });
   }
