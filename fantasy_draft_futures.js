@@ -170,6 +170,7 @@
     seasons: [],
     rows: [],
     table: null,
+    detailId: null,
     /** @type {null | {source:string, fileName:string, ownership:Object.<string,string>, positions:Object.<string,string>, owners:string[], unmatchedOwned:Array, matchedOwned:number, totalOwned:number}} */
     league: null,
     /** Trade calculator selections (player ids / PICK:n keys). */
@@ -996,72 +997,6 @@
     );
   }
 
-  function sparklineSvg(values, opts) {
-    const o = opts || {};
-    const w = o.w || 120;
-    const h = o.h || 36;
-    const pad = 2;
-    const nums = (values || []).map((v) =>
-      v == null || !Number.isFinite(Number(v)) ? null : Number(v)
-    );
-    const finite = nums.filter((v) => v != null);
-    if (finite.length < 2) {
-      return (
-        '<svg class="fd-spark" viewBox="0 0 ' +
-        w +
-        " " +
-        h +
-        '" width="' +
-        w +
-        '" height="' +
-        h +
-        '" aria-hidden="true"></svg>'
-      );
-    }
-    let min = Math.min.apply(null, finite);
-    let max = Math.max.apply(null, finite);
-    if (min === max) {
-      min -= 1;
-      max += 1;
-    }
-    const n = nums.length;
-    const pts = [];
-    nums.forEach((v, i) => {
-      if (v == null) return;
-      const x = pad + (i * (w - pad * 2)) / Math.max(1, n - 1);
-      const y = h - pad - ((v - min) / (max - min)) * (h - pad * 2);
-      pts.push(x.toFixed(1) + "," + y.toFixed(1));
-    });
-    const stroke = o.stroke || "#1a73e8";
-    const last = finite[finite.length - 1];
-    const first = finite[0];
-    const up = last >= first;
-    return (
-      '<svg class="fd-spark" viewBox="0 0 ' +
-      w +
-      " " +
-      h +
-      '" width="' +
-      w +
-      '" height="' +
-      h +
-      '" aria-hidden="true">' +
-      '<polyline fill="none" stroke="' +
-      (up ? stroke : "#c62828") +
-      '" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" points="' +
-      pts.join(" ") +
-      '"/>' +
-      "</svg>"
-    );
-  }
-
-  function seriesFromAsset(arr, seasons, mode, plArr) {
-    return seasons.map((_, i) => {
-      if (mode === "xGamesListed") return xGamesListedAt(arr, plArr, i);
-      return numAt(arr, i);
-    });
-  }
-
   function buildColumnDefs() {
     return [
       {
@@ -1072,8 +1007,7 @@
         minWidth: 220,
         maxWidth: 220,
         headerFilter: false,
-        formatter: nameCellHtml,
-        variableHeight: true
+        formatter: nameCellHtml
       },
       {
         title: "Age",
@@ -1133,21 +1067,6 @@
         minWidth: 90,
         headerSort: false,
         formatter: (c) => posShareBarHtml(c.getRow().getData())
-      },
-      {
-        title: "xPts",
-        field: "dxPoints",
-        width: 84,
-        headerSort: false,
-        hozAlign: "center",
-        tooltip: "xPoints trajectory across the horizon (click row for detail)",
-        formatter: (c) => {
-          const row = c.getRow().getData();
-          const a = row._asset;
-          if (!a || !a.xPoints) return "";
-          const vals = (state.seasons || []).map((_, i) => numAt(a.xPoints, i));
-          return sparklineSvg(vals, { w: 72, h: 28 });
-        }
       }
     ];
   }
@@ -1219,68 +1138,34 @@
   function detailHtml(row) {
     const a = row._asset;
     const seasons = state.seasons;
-    const series = [
-      {
-        lab: "pListed",
-        vals: seriesFromAsset(a.probListed, seasons, "raw"),
-        fmt: fmtPct
-      },
-      {
-        lab: "xGames",
-        vals: seriesFromAsset(a.xGames, seasons, "xGamesListed", a.probListed),
-        fmt: fmt1
-      },
-      {
-        lab: "xAvg",
-        vals: seriesFromAsset(a.xAvg, seasons, "raw"),
-        fmt: fmt1
-      },
-      {
-        lab: "xPoints",
-        vals: seriesFromAsset(a.xPoints, seasons, "raw"),
-        fmt: fmt1
-      }
+    const lines = [
+      "<div class='futures-detail'>",
+      "<div class='muted' style='margin:0 0 6px;font-weight:600;'>" +
+        escapeHtml(row.name || "") +
+        "</div>"
     ];
-    const sparks = series
-      .map((s) => {
-        const last = s.vals.filter((v) => v != null).slice(-1)[0];
-        return (
-          '<div class="fd-spark-row">' +
-          '<span class="lab">' +
-          escapeHtml(s.lab) +
-          "</span>" +
-          sparklineSvg(s.vals, { w: 160, h: 36 }) +
-          '<span class="end">' +
-          s.fmt(last) +
-          "</span>" +
-          "</div>"
-        );
-      })
-      .join("");
-
-    const lines = ["<div class='futures-detail'><div class='futures-detail-grid'>"];
-    lines.push('<div class="futures-detail-sparks">' + sparks + "</div>");
-    lines.push("<div>");
     lines.push("<table><thead><tr><th></th>");
     seasons.forEach((y) => lines.push("<th>" + y + "</th>"));
     lines.push("</tr></thead><tbody>");
-    series.forEach((s) => {
-      lines.push("<tr><td>" + escapeHtml(s.lab) + "</td>");
-      s.vals.forEach((v) => lines.push("<td>" + s.fmt(v) + "</td>"));
+    [
+      ["pListed", a.probListed, fmtPct, "raw"],
+      ["xGames", a.xGames, fmt1, "xGamesListed"],
+      ["xAvg", a.xAvg, fmt1, "raw"],
+      ["xValue", a.xPoints, fmt1, "raw"]
+    ].forEach(([lab, arr, fmt, mode]) => {
+      lines.push("<tr><td>" + lab + "</td>");
+      seasons.forEach((_, i) => {
+        let v;
+        if (mode === "xGamesListed") {
+          v = xGamesListedAt(arr, a.probListed, i);
+        } else {
+          v = numAt(arr, i);
+        }
+        lines.push("<td>" + fmt(v) + "</td>");
+      });
       lines.push("</tr>");
     });
-    lines.push("</tbody></table>");
-    if (a.delta) {
-      const reason = driverLabel(a.delta.driver);
-      lines.push(
-        "<p style='margin:8px 0 0'>Δ " +
-          signedInt(row.dxPoints) +
-          (reason ? " · <b>" + escapeHtml(reason) + "</b>" : "") +
-          (a.delta.event ? " · " + escapeHtml(a.delta.event) : "") +
-          "</p>"
-      );
-    }
-    lines.push("</div></div></div>");
+    lines.push("</tbody></table></div>");
     return lines.join("");
   }
 
@@ -2293,17 +2178,23 @@
 
   // ── Tabulator ──────────────────────────────────────────────────────────────
 
+  function clearPoolRowDetail() {
+    const hold = document.getElementById("pool-row-detail");
+    if (hold) hold.innerHTML = "";
+    state.detailId = null;
+  }
+
   function bindTableRowClick(table) {
     table.on("rowClick", function (e, row) {
       const d = row.getData();
-      const existing = row.getElement().querySelector(".futures-detail");
-      if (existing) {
-        existing.remove();
+      const hold = document.getElementById("pool-row-detail");
+      if (!hold) return;
+      if (state.detailId && state.detailId === d.id) {
+        clearPoolRowDetail();
         return;
       }
-      const div = document.createElement("div");
-      div.innerHTML = detailHtml(d);
-      row.getElement().appendChild(div.firstChild);
+      state.detailId = d.id;
+      hold.innerHTML = detailHtml(d);
     });
   }
 
@@ -2314,7 +2205,7 @@
     if (!hold) return Promise.resolve(null);
 
     if (state.table) {
-      state.table.setColumns(columns);
+      // Avoid setColumns on every refresh — it forces a full rebuild and janks scroll.
       return Promise.resolve(state.table.replaceData(data)).then(function () {
         return state.table;
       });
@@ -2324,14 +2215,17 @@
       const table = new Tabulator("#futures-table", {
         data: data || [],
         columns,
-        layout: "fitData",
+        layout: "fitDataStretch",
         height: "640px",
         rowHeight: 48,
+        renderVertical: "virtual",
+        renderVerticalBuffer: 300,
         placeholder: "No assets match these filters",
         initialSort: [{ column: "vorp", dir: "desc" }],
         columnHeaderVertAlign: "bottom",
         columnDefaults: {
-          resizable: false
+          resizable: false,
+          variableHeight: false
         },
         rowFormatter: function (row) {
           const d = row.getData();
@@ -2360,8 +2254,15 @@
     const filtered = filterRows(all, cfg).map((r) => flattenRow(r, state.seasons));
     const columns = buildColumnDefs();
     return ensureTable(columns, filtered).then(function () {
+      renderMoversPanel(all, cfg, state.data);
       renderTeamRatings(all, state.league, cfg);
       renderTradeCalculator(all, state.league, cfg);
+      if (state.detailId) {
+        const still = filtered.find((r) => r.id === state.detailId);
+        const hold = document.getElementById("pool-row-detail");
+        if (still && hold) hold.innerHTML = detailHtml(still);
+        else clearPoolRowDetail();
+      }
       const asof = document.getElementById("futures-asof");
       if (asof && state.data.meta && state.data.meta.asOf) {
         asof.textContent = "As of " + state.data.meta.asOf;
