@@ -11,6 +11,8 @@
   const HEADSHOT_BASE =
     "https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/";
 
+  const OWNER_FA = "__FA__";
+
   const DEFAULT_CFG = {
     teams: 10,
     slots: { DEF: 5, MID: 7, RUC: 1, FWD: 5 },
@@ -19,17 +21,18 @@
     /** Draw red cut after Keepers when true (pre-keeper / list-management mode). */
     keeperCut: null, // null → auto from upcoming draft picks in payload
     endSeason: null,
-    view: "value",
-    byYear: false,
     posFilter: "ALL",
     /** Empty = all clubs. Values are futures club abbrs (ADEL, GEEL, …). */
     clubs: [],
-    /** When false, table shows only unowned / free-agent players. */
-    includeOwned: true,
+    /**
+     * Fantasy-team owner multi-select. Empty = all players.
+     * Special value OWNER_FA = Free Agents; otherwise Keeper team names.
+     */
+    owners: [],
     /** Fantasy team name from Keeper CSV (highlight). */
     myTeam: "",
     search: "",
-    /** Hub subheader tab: pool | movers | teams | trades | league | import */
+    /** Hub subheader tab: pool | teams | trades | ladder | import */
     tab: "pool"
   };
 
@@ -156,7 +159,8 @@
     return {
       ...src,
       slots: { ...src.slots },
-      clubs: Array.isArray(src.clubs) ? src.clubs.slice() : []
+      clubs: Array.isArray(src.clubs) ? src.clubs.slice() : [],
+      owners: Array.isArray(src.owners) ? src.owners.slice() : []
     };
   }
 
@@ -191,20 +195,25 @@
       if (q.has(key)) cfg.slots[k] = clampInt(q.get(key), 0, 20, cfg.slots[k]);
     });
     if (q.has("end")) cfg.endSeason = parseInt(q.get("end"), 10) || null;
-    if (q.has("view")) cfg.view = q.get("view") || "value";
-    if (q.has("byYear")) cfg.byYear = q.get("byYear") === "1" || q.get("byYear") === "true";
     if (q.has("cut")) {
       cfg.keeperCut = q.get("cut") === "1" || q.get("cut") === "true";
     }
     if (q.has("pos")) cfg.posFilter = q.get("pos") || "ALL";
-    if (q.has("owned")) {
-      cfg.includeOwned = !(q.get("owned") === "0" || q.get("owned") === "false");
-    }
     if (q.has("clubs")) {
       cfg.clubs = String(q.get("clubs") || "")
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
+    }
+    if (q.has("owners")) {
+      cfg.owners = String(q.get("owners") || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => (s === "FA" || s === OWNER_FA ? OWNER_FA : s));
+    } else if (q.get("owned") === "0" || q.get("owned") === "false") {
+      // Legacy: owned=0 → Free Agents only
+      cfg.owners = [OWNER_FA];
     }
     if (q.has("me")) cfg.myTeam = q.get("me") || "";
     if (q.has("q")) cfg.search = q.get("q") || "";
@@ -224,13 +233,16 @@
     q.set("keepers", String(cfg.keeperCount));
     POS_KEYS.forEach((k) => q.set(k.toLowerCase(), String(cfg.slots[k])));
     if (cfg.endSeason) q.set("end", String(cfg.endSeason));
-    q.set("view", cfg.view);
-    if (cfg.byYear) q.set("byYear", "1");
     if (cfg.keeperCut) q.set("cut", "1");
     else if (cfg.keeperCut === false) q.set("cut", "0");
     if (cfg.posFilter && cfg.posFilter !== "ALL") q.set("pos", cfg.posFilter);
-    if (!cfg.includeOwned) q.set("owned", "0");
     if (cfg.clubs && cfg.clubs.length) q.set("clubs", cfg.clubs.join(","));
+    if (cfg.owners && cfg.owners.length) {
+      q.set(
+        "owners",
+        cfg.owners.map((o) => (o === OWNER_FA ? "FA" : o)).join(",")
+      );
+    }
     if (cfg.myTeam) q.set("me", cfg.myTeam);
     if (cfg.search) q.set("q", cfg.search);
     if (cfg.tab && cfg.tab !== "pool") q.set("tab", cfg.tab);
@@ -552,22 +564,22 @@
     el.classList.toggle("is-error", !!isError);
   }
 
-  function syncOwnedFilterVisibility(league) {
-    const label = document.querySelector(".owned-filter-label");
-    if (!label) return;
+  function syncOwnerDropdownVisibility(league) {
+    const wrap = document.getElementById("owner-dropdown");
+    if (!wrap) return;
     const hasLeague = !!(league && league.owners && league.owners.length);
-    label.classList.toggle("is-visible", hasLeague);
+    wrap.classList.toggle("is-visible", hasLeague);
     if (!hasLeague) {
-      state.cfg.includeOwned = true;
-      const cb = document.getElementById("cfg-includeOwned");
-      if (cb) cb.checked = true;
+      state.cfg.owners = [];
+      updateOwnerDropdownLabel(state.cfg);
     }
   }
 
   function syncMyTeamSelect(league, cfg) {
     const wrap = document.getElementById("my-team-wrap");
     const sel = document.getElementById("cfg-myTeam");
-    syncOwnedFilterVisibility(league);
+    syncOwnerDropdownVisibility(league);
+    rebuildOwnerDropdown(league, cfg);
     if (!wrap || !sel) return;
     const hasLeague = !!(league && league.owners && league.owners.length);
     wrap.classList.toggle("is-visible", hasLeague);
@@ -596,6 +608,7 @@
   function clearKeeperLeague() {
     state.league = null;
     state.cfg.myTeam = "";
+    state.cfg.owners = [];
     state.trade.sideA = "";
     state.trade.sideB = "";
     state.trade.give = [];
@@ -942,40 +955,134 @@
     );
   }
 
-  // ── Columns / views ────────────────────────────────────────────────────────
+  // ── Columns ────────────────────────────────────────────────────────────────
 
-  function buildColumnDefs(seasons, view, byYear) {
-    const baseName = {
-      title: "Name",
-      field: "name",
-      frozen: true,
-      width: 220,
-      minWidth: 220,
-      maxWidth: 220,
-      headerFilter: false,
-      formatter: nameCellHtml,
-      variableHeight: true
-    };
-    const cols = {
-      name: baseName,
-      type: { title: "Type", field: "type", width: 70 },
-      club: { title: "Club", field: "club", width: 70 },
-      teamAbbr: { title: "Team", field: "teamAbbr", width: 70 },
-      age: {
+  const POS_BAR_SHORT = { DEF: "D", MID: "M", RUC: "R", FWD: "F" };
+
+  function posShareBarHtml(row) {
+    const parts = POS_KEYS.map((p) => ({
+      p,
+      v: Math.max(0, Number(row["p" + p]) || 0)
+    }));
+    const sum = parts.reduce((s, x) => s + x.v, 0);
+    if (sum <= 0) {
+      return '<div class="fd-pos-bar" title="No position share"></div>';
+    }
+    const tip = parts
+      .map((x) => x.p + " " + Math.round((100 * x.v) / sum) + "%")
+      .join(" · ");
+    return (
+      '<div class="fd-pos-bar" title="' +
+      escapeHtml(tip) +
+      '">' +
+      parts
+        .map((x) => {
+          const pct = (100 * x.v) / sum;
+          if (pct < 0.5) return "";
+          const label =
+            pct >= 18 ? x.p : pct >= 10 ? POS_BAR_SHORT[x.p] : "";
+          return (
+            '<div class="fd-pos-bar-seg fd-pos-' +
+            x.p +
+            '" style="width:' +
+            pct.toFixed(2) +
+            '%">' +
+            escapeHtml(label) +
+            "</div>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
+  function sparklineSvg(values, opts) {
+    const o = opts || {};
+    const w = o.w || 120;
+    const h = o.h || 36;
+    const pad = 2;
+    const nums = (values || []).map((v) =>
+      v == null || !Number.isFinite(Number(v)) ? null : Number(v)
+    );
+    const finite = nums.filter((v) => v != null);
+    if (finite.length < 2) {
+      return (
+        '<svg class="fd-spark" viewBox="0 0 ' +
+        w +
+        " " +
+        h +
+        '" width="' +
+        w +
+        '" height="' +
+        h +
+        '" aria-hidden="true"></svg>'
+      );
+    }
+    let min = Math.min.apply(null, finite);
+    let max = Math.max.apply(null, finite);
+    if (min === max) {
+      min -= 1;
+      max += 1;
+    }
+    const n = nums.length;
+    const pts = [];
+    nums.forEach((v, i) => {
+      if (v == null) return;
+      const x = pad + (i * (w - pad * 2)) / Math.max(1, n - 1);
+      const y = h - pad - ((v - min) / (max - min)) * (h - pad * 2);
+      pts.push(x.toFixed(1) + "," + y.toFixed(1));
+    });
+    const stroke = o.stroke || "#1a73e8";
+    const last = finite[finite.length - 1];
+    const first = finite[0];
+    const up = last >= first;
+    return (
+      '<svg class="fd-spark" viewBox="0 0 ' +
+      w +
+      " " +
+      h +
+      '" width="' +
+      w +
+      '" height="' +
+      h +
+      '" aria-hidden="true">' +
+      '<polyline fill="none" stroke="' +
+      (up ? stroke : "#c62828") +
+      '" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" points="' +
+      pts.join(" ") +
+      '"/>' +
+      "</svg>"
+    );
+  }
+
+  function seriesFromAsset(arr, seasons, mode, plArr) {
+    return seasons.map((_, i) => {
+      if (mode === "xGamesListed") return xGamesListedAt(arr, plArr, i);
+      return numAt(arr, i);
+    });
+  }
+
+  function buildColumnDefs() {
+    return [
+      {
+        title: "Player",
+        field: "name",
+        frozen: true,
+        width: 220,
+        minWidth: 220,
+        maxWidth: 220,
+        headerFilter: false,
+        formatter: nameCellHtml,
+        variableHeight: true
+      },
+      {
         title: "Age",
         field: "age",
         width: 52,
         hozAlign: "right",
         formatter: (c) => fmtInt(c.getValue())
       },
-      contract: {
-        title: "Contract",
-        field: "contract",
-        width: 80,
-        hozAlign: "right",
-        formatter: (c) => fmtInt(c.getValue())
-      },
-      vorp: {
+      {
         title: "VORP",
         field: "vorp",
         width: 72,
@@ -983,7 +1090,7 @@
         sorter: "number",
         formatter: (c) => fmtInt(c.getValue())
       },
-      xValue: {
+      {
         title: "xValue",
         field: "value",
         width: 80,
@@ -991,126 +1098,58 @@
         sorter: "number",
         formatter: (c) => fmtInt(c.getValue())
       },
-      xAvg: {
+      {
         title: "xAvg",
         field: "xAvg",
         width: 64,
         hozAlign: "right",
         formatter: (c) => fmt1(c.getValue())
       },
-      xGames: {
+      {
         title: "xGames",
         field: "xGames",
         width: 72,
         hozAlign: "right",
         formatter: (c) => fmt1(c.getValue())
       },
-      pListed: {
+      {
         title: "pListed",
         field: "pListed",
         width: 72,
         hozAlign: "right",
         formatter: (c) => fmtPct(c.getValue())
       },
-      dxPoints: {
-        title: "Δ xPts",
-        field: "dxPoints",
-        width: 72,
+      {
+        title: "Contract",
+        field: "contract",
+        width: 80,
         hozAlign: "right",
-        sorter: "number",
-        formatter: (c) => signedInt(c.getValue())
+        formatter: (c) => fmtInt(c.getValue())
       },
-      driver: {
-        title: "Reason",
-        field: "driver",
-        width: 88,
-        formatter: (c) => escapeHtml(driverLabel(c.getValue()) || "—")
-      },
-      event: { title: "Event", field: "event", width: 120 },
-      pDEF: {
-        title: "pDEF",
+      {
+        title: "Position",
         field: "pDEF",
-        width: 64,
-        hozAlign: "right",
-        formatter: (c) => fmtPct(c.getValue())
+        width: 110,
+        minWidth: 90,
+        headerSort: false,
+        formatter: (c) => posShareBarHtml(c.getRow().getData())
       },
-      pMID: {
-        title: "pMID",
-        field: "pMID",
-        width: 64,
-        hozAlign: "right",
-        formatter: (c) => fmtPct(c.getValue())
-      },
-      pRUC: {
-        title: "pRUC",
-        field: "pRUC",
-        width: 64,
-        hozAlign: "right",
-        formatter: (c) => fmtPct(c.getValue())
-      },
-      pFWD: {
-        title: "pFWD",
-        field: "pFWD",
-        width: 64,
-        hozAlign: "right",
-        formatter: (c) => fmtPct(c.getValue())
+      {
+        title: "xPts",
+        field: "dxPoints",
+        width: 84,
+        headerSort: false,
+        hozAlign: "center",
+        tooltip: "xPoints trajectory across the horizon (click row for detail)",
+        formatter: (c) => {
+          const row = c.getRow().getData();
+          const a = row._asset;
+          if (!a || !a.xPoints) return "";
+          const vals = (state.seasons || []).map((_, i) => numAt(a.xPoints, i));
+          return sparklineSvg(vals, { w: 72, h: 28 });
+        }
       }
-    };
-
-    const views = {
-      value: ["name", "age", "vorp", "xValue", "xAvg", "xGames", "pListed"],
-      lists: ["name", "age", "contract"],
-      scoring: ["name"],
-      positions: ["name", "pDEF", "pMID", "pRUC", "pFWD"],
-      movers: ["name", "vorp", "dxPoints", "driver"]
-    };
-
-    let keys = views[view] || views.value;
-    let out = keys.map((k) => cols[k]).filter(Boolean);
-
-    if (view === "lists" || (byYear && view === "value")) {
-      seasons.forEach((y, i) => {
-        out.push({
-          title: "pListed " + y,
-          field: "pListed_Y" + (i + 1),
-          width: 88,
-          hozAlign: "right",
-          sorter: "number",
-          formatter: (c) => fmtPct(c.getValue())
-        });
-      });
-    }
-    if (view === "scoring" || (byYear && view === "scoring")) {
-      seasons.forEach((y, i) => {
-        out.push({
-          title: "xAvg " + y,
-          field: "xAvg_Y" + (i + 1),
-          width: 80,
-          hozAlign: "right",
-          formatter: (c) => fmt1(c.getValue())
-        });
-        out.push({
-          title: "xGames " + y,
-          field: "xGames_Y" + (i + 1),
-          width: 88,
-          hozAlign: "right",
-          formatter: (c) => fmt1(c.getValue())
-        });
-      });
-    }
-    if (byYear && view === "value") {
-      seasons.forEach((y, i) => {
-        out.push({
-          title: "xPts " + y,
-          field: "xPoints_Y" + (i + 1),
-          width: 80,
-          hozAlign: "right",
-          formatter: (c) => fmt1(c.getValue())
-        });
-      });
-    }
-
-    return out;
+    ];
   }
 
   function flattenRow(row, seasons) {
@@ -1128,9 +1167,11 @@
   function filterRows(rows, cfg) {
     const clubSet =
       cfg.clubs && cfg.clubs.length ? new Set(cfg.clubs.map(String)) : null;
+    const ownerSet =
+      cfg.owners && cfg.owners.length ? new Set(cfg.owners) : null;
     return rows.filter((r) => {
       if (cfg.posFilter && cfg.posFilter !== "ALL") {
-        const fp = r.fantasyPos || "";
+        const fp = displayPos(r) || r.fantasyPos || "";
         if (r.type === "pick") {
           const scores = {
             DEF: r.pDEF,
@@ -1144,7 +1185,13 @@
           return false;
         }
       }
-      if (!cfg.includeOwned && r.owner) return false;
+      if (ownerSet) {
+        if (r.owner) {
+          if (!ownerSet.has(r.owner)) return false;
+        } else if (!ownerSet.has(OWNER_FA)) {
+          return false;
+        }
+      }
       if (clubSet) {
         const club = r.teamAbbr || r.club || "";
         if (!club || !clubSet.has(club)) return false;
@@ -1172,44 +1219,68 @@
   function detailHtml(row) {
     const a = row._asset;
     const seasons = state.seasons;
-    const lines = ["<div class='futures-detail'>"];
+    const series = [
+      {
+        lab: "pListed",
+        vals: seriesFromAsset(a.probListed, seasons, "raw"),
+        fmt: fmtPct
+      },
+      {
+        lab: "xGames",
+        vals: seriesFromAsset(a.xGames, seasons, "xGamesListed", a.probListed),
+        fmt: fmt1
+      },
+      {
+        lab: "xAvg",
+        vals: seriesFromAsset(a.xAvg, seasons, "raw"),
+        fmt: fmt1
+      },
+      {
+        lab: "xPoints",
+        vals: seriesFromAsset(a.xPoints, seasons, "raw"),
+        fmt: fmt1
+      }
+    ];
+    const sparks = series
+      .map((s) => {
+        const last = s.vals.filter((v) => v != null).slice(-1)[0];
+        return (
+          '<div class="fd-spark-row">' +
+          '<span class="lab">' +
+          escapeHtml(s.lab) +
+          "</span>" +
+          sparklineSvg(s.vals, { w: 160, h: 36 }) +
+          '<span class="end">' +
+          s.fmt(last) +
+          "</span>" +
+          "</div>"
+        );
+      })
+      .join("");
+
+    const lines = ["<div class='futures-detail'><div class='futures-detail-grid'>"];
+    lines.push('<div class="futures-detail-sparks">' + sparks + "</div>");
+    lines.push("<div>");
     lines.push("<table><thead><tr><th></th>");
     seasons.forEach((y) => lines.push("<th>" + y + "</th>"));
     lines.push("</tr></thead><tbody>");
-    [
-      ["pListed", a.probListed, fmtPct, "raw"],
-      ["xGames", a.xGames, fmt1, "xGamesListed"],
-      ["xAvg", a.xAvg, fmt1, "raw"],
-      ["xPoints", a.xPoints, fmt1, "raw"]
-    ].forEach(([lab, arr, fmt, mode]) => {
-      lines.push("<tr><td>" + lab + "</td>");
-      seasons.forEach((_, i) => {
-        let v;
-        if (mode === "xGamesListed") {
-          v = xGamesListedAt(arr, a.probListed, i);
-        } else {
-          v = numAt(arr, i);
-        }
-        lines.push("<td>" + fmt(v) + "</td>");
-      });
+    series.forEach((s) => {
+      lines.push("<tr><td>" + escapeHtml(s.lab) + "</td>");
+      s.vals.forEach((v) => lines.push("<td>" + s.fmt(v) + "</td>"));
       lines.push("</tr>");
     });
     lines.push("</tbody></table>");
-    if (a.band) {
-      lines.push(
-        "<p class='muted'>Band p10/p90: precomputed cumulative quantiles (null until MC layer).</p>"
-      );
-    }
     if (a.delta) {
+      const reason = driverLabel(a.delta.driver);
       lines.push(
-        "<p>Δ driver: <b>" +
-          (a.delta.driver || "—") +
-          "</b> · event: " +
-          (a.delta.event || "—") +
+        "<p style='margin:8px 0 0'>Δ " +
+          signedInt(row.dxPoints) +
+          (reason ? " · <b>" + escapeHtml(reason) + "</b>" : "") +
+          (a.delta.event ? " · " + escapeHtml(a.delta.event) : "") +
           "</p>"
       );
     }
-    lines.push("</div>");
+    lines.push("</div></div></div>");
     return lines.join("");
   }
 
@@ -2287,9 +2358,8 @@
     );
     state.rows = all;
     const filtered = filterRows(all, cfg).map((r) => flattenRow(r, state.seasons));
-    const columns = buildColumnDefs(state.seasons, cfg.view, cfg.byYear);
+    const columns = buildColumnDefs();
     return ensureTable(columns, filtered).then(function () {
-      renderMoversPanel(all, cfg, state.data);
       renderTeamRatings(all, state.league, cfg);
       renderTradeCalculator(all, state.league, cfg);
       const asof = document.getElementById("futures-asof");
@@ -2320,13 +2390,8 @@
       cfg.endSeason = cfg.endSeason || seasons[seasons.length - 1];
       endSel.value = String(cfg.endSeason);
     }
-    setVal("cfg-view", cfg.view);
-    const by = document.getElementById("cfg-byYear");
-    if (by) by.checked = !!cfg.byYear;
     const cut = document.getElementById("cfg-keeperCut");
     if (cut) cut.checked = !!resolveKeeperCut(cfg, state.data, seasons);
-    const owned = document.getElementById("cfg-includeOwned");
-    if (owned) owned.checked = cfg.includeOwned !== false;
     setVal("cfg-search", cfg.search || "");
     document.querySelectorAll(".pos-filter-btn").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.pos === (cfg.posFilter || "ALL"));
@@ -2379,6 +2444,69 @@
     });
   }
 
+  function updateOwnerDropdownLabel(cfg) {
+    const btn = document.getElementById("owner-dropdown-btn");
+    if (!btn) return;
+    const owners = cfg.owners || [];
+    if (!owners.length) {
+      btn.textContent = "All Players";
+      return;
+    }
+    const labels = owners.map((o) => (o === OWNER_FA ? "Free Agents" : o));
+    if (labels.length <= 2) btn.textContent = labels.join(", ");
+    else btn.textContent = labels.length + " Teams";
+  }
+
+  function rebuildOwnerDropdown(league, cfg) {
+    const panel = document.getElementById("owner-dropdown-panel");
+    if (!panel) return;
+    if (!league || !league.owners || !league.owners.length) {
+      panel.innerHTML = "";
+      panel.dataset.built = "0";
+      updateOwnerDropdownLabel(cfg);
+      return;
+    }
+    const my =
+      cfg.myTeam && league.owners.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : "";
+    const others = league.owners
+      .filter((o) => o !== my)
+      .slice()
+      .sort((a, b) => a.localeCompare(b));
+    const entries = [{ value: OWNER_FA, label: "Free Agents" }];
+    if (my) entries.push({ value: my, label: my + " (you)" });
+    others.forEach((o) => entries.push({ value: o, label: o }));
+
+    if (cfg.owners && cfg.owners.length) {
+      const allowed = new Set(entries.map((e) => e.value));
+      cfg.owners = cfg.owners.filter((o) => allowed.has(o));
+    }
+
+    panel.innerHTML = entries
+      .map(
+        (e) =>
+          '<label class="team-option">' +
+          '<input type="checkbox" value="' +
+          escapeHtml(e.value) +
+          '" class="owner-checkbox"/>' +
+          escapeHtml(e.label) +
+          "</label>"
+      )
+      .join("");
+    panel.dataset.built = "1";
+    const selected = new Set(cfg.owners || []);
+    panel.querySelectorAll(".owner-checkbox").forEach((cb) => {
+      cb.checked = selected.has(cb.value);
+      cb.addEventListener("change", () => {
+        state.cfg.owners = Array.from(
+          panel.querySelectorAll(".owner-checkbox:checked")
+        ).map((el) => el.value);
+        updateOwnerDropdownLabel(state.cfg);
+        refresh();
+      });
+    });
+    updateOwnerDropdownLabel(cfg);
+  }
+
   function readControlsFromDom() {
     const cfg = state.cfg;
     const num = (id, fb) => {
@@ -2393,14 +2521,8 @@
     });
     const endSel = document.getElementById("cfg-endSeason");
     if (endSel) cfg.endSeason = parseInt(endSel.value, 10);
-    const view = document.getElementById("cfg-view");
-    if (view) cfg.view = view.value;
-    const by = document.getElementById("cfg-byYear");
-    if (by) cfg.byYear = by.checked;
     const cut = document.getElementById("cfg-keeperCut");
     if (cut) cfg.keeperCut = cut.checked;
-    const owned = document.getElementById("cfg-includeOwned");
-    if (owned) cfg.includeOwned = owned.checked;
     const my = document.getElementById("cfg-myTeam");
     if (my) cfg.myTeam = my.value || "";
     const search = document.getElementById("cfg-search");
@@ -2418,10 +2540,7 @@
       "cfg-ruc",
       "cfg-fwd",
       "cfg-endSeason",
-      "cfg-view",
-      "cfg-byYear",
       "cfg-keeperCut",
-      "cfg-includeOwned",
       "cfg-myTeam",
       "cfg-search"
     ];
@@ -2430,6 +2549,7 @@
       if (!el) return;
       el.addEventListener("change", () => {
         readControlsFromDom();
+        if (id === "cfg-myTeam") rebuildOwnerDropdown(state.league, state.cfg);
         refresh();
       });
       if (id === "cfg-search") {
@@ -2457,22 +2577,35 @@
 
     bindTradeCalculator();
     ensureClubDropdownBuilt();
-    const clubBtn = document.getElementById("club-dropdown-btn");
-    if (clubBtn) {
-      clubBtn.addEventListener("click", (e) => {
+
+    function bindDropdownToggle(btnId, panelId, rootId) {
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+      btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        const panel = document.getElementById("club-dropdown-panel");
+        const panel = document.getElementById(panelId);
         if (!panel) return;
-        panel.style.display = panel.style.display === "none" ? "grid" : "none";
+        panel.style.display =
+          panel.style.display === "none" ? "grid" : "none";
+      });
+      document.addEventListener("click", (e) => {
+        const root = document.getElementById(rootId);
+        const panel = document.getElementById(panelId);
+        if (root && panel && !root.contains(e.target)) {
+          panel.style.display = "none";
+        }
       });
     }
-    document.addEventListener("click", (e) => {
-      const dropdown = document.getElementById("club-dropdown");
-      const panel = document.getElementById("club-dropdown-panel");
-      if (dropdown && panel && !dropdown.contains(e.target)) {
-        panel.style.display = "none";
-      }
-    });
+    bindDropdownToggle(
+      "club-dropdown-btn",
+      "club-dropdown-panel",
+      "club-dropdown"
+    );
+    bindDropdownToggle(
+      "owner-dropdown-btn",
+      "owner-dropdown-panel",
+      "owner-dropdown"
+    );
 
     const keeperInput = document.getElementById("keeper-csv-input");
     if (keeperInput) {
