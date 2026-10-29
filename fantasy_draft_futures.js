@@ -1197,28 +1197,7 @@
     return out;
   }
 
-  // ── Keeper cut: Plackett–Luce + positional needs ───────────────────────────
-
-  function hashStr(s) {
-    let h = 2166136261;
-    const str = String(s || "");
-    for (let i = 0; i < str.length; i++) {
-      h ^= str.charCodeAt(i);
-      h = Math.imul(h, 16777619);
-    }
-    return h >>> 0;
-  }
-
-  function mulberry32(seed) {
-    let a = seed >>> 0;
-    return function () {
-      a = (a + 0x6d2b79f5) >>> 0;
-      let t = a;
-      t = Math.imul(t ^ (t >>> 15), t | 1);
-      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
+  // ── Keeper cut: VORP order + positional quotas ─────────────────────────────
 
   function playerPosKeys(row) {
     return String(row.fantasyPos || "")
@@ -1269,54 +1248,30 @@
     return targets;
   }
 
-  /** Softplus-ish positive worth from VORP for Plackett–Luce weights. */
-  function vorpWorth(vorp) {
-    const v = Number(vorp);
-    if (!Number.isFinite(v)) return 1e-6;
-    // Scale so typical VORP gaps (~100–1000) still move probabilities
-    return Math.exp(v / 400) + 1e-9;
-  }
-
   /**
-   * Select keepers within one roster via Plackett–Luce (exponential clocks)
-   * then walk the ranking filling formation-based positional quotas.
-   * Deterministic for a given owner + roster + settings.
+   * Select keepers: walk roster by VORP desc, filling formation-scaled
+   * positional quotas. Deterministic — no random clocks (a single PL draw
+   * could keep a −500 RUC over a +200 RUC).
    */
-  function selectKeepersPlackettLuce(players, cfg, owner) {
+  function selectKeepersByVorpQuotas(players, cfg) {
     const K = Math.max(0, Number(cfg.keeperCount) || 0);
     if (!players || !players.length || K <= 0) return [];
     if (players.length <= K) return players.slice();
 
     const targets = allocateKeeperTargets(cfg);
-    const remaining = { DEF: targets.DEF, MID: targets.MID, RUC: targets.RUC, FWD: targets.FWD };
+    const remaining = {
+      DEF: targets.DEF,
+      MID: targets.MID,
+      RUC: targets.RUC,
+      FWD: targets.FWD
+    };
 
-    const seed = hashStr(
-      [
-        owner || "",
-        K,
-        cfg.slots.DEF,
-        cfg.slots.MID,
-        cfg.slots.RUC,
-        cfg.slots.FWD,
-        cfg.bench,
-        players
-          .map((p) => p.id)
-          .slice()
-          .sort()
-          .join(",")
-      ].join("|")
+    const ranked = players.slice().sort(
+      (a, b) =>
+        (b.vorp || 0) - (a.vorp || 0) ||
+        (a.name || "").localeCompare(b.name || "") ||
+        String(a.id).localeCompare(String(b.id))
     );
-    const rand = mulberry32(seed);
-
-    // Exponential clocks: T_i ~ Exp(α_i) ≡ -ln(U)/α ; smaller T = higher rank
-    const ranked = players
-      .map((p) => {
-        const alpha = vorpWorth(p.vorp);
-        const u = Math.max(1e-12, rand());
-        const t = -Math.log(u) / alpha;
-        return { p, t };
-      })
-      .sort((a, b) => a.t - b.t || (b.p.vorp || 0) - (a.p.vorp || 0));
 
     const kept = [];
     const keptIds = new Set();
@@ -1324,7 +1279,6 @@
     function tryAssign(p) {
       const posOpts = playerPosKeys(p);
       if (!posOpts.length) {
-        // No fantasy pos — take any leftover quota slot
         const open = POS_KEYS.filter((pos) => remaining[pos] > 0).sort(
           (a, b) => remaining[b] - remaining[a]
         );
@@ -1332,7 +1286,6 @@
         remaining[open[0]] -= 1;
         return true;
       }
-      // Prefer the eligible position with the most remaining need
       const open = posOpts
         .filter((pos) => remaining[pos] > 0)
         .sort((a, b) => remaining[b] - remaining[a] || a.localeCompare(b));
@@ -1341,7 +1294,7 @@
       return true;
     }
 
-    ranked.forEach(({ p }) => {
+    ranked.forEach((p) => {
       if (kept.length >= K) return;
       if (tryAssign(p)) {
         kept.push(p);
@@ -1349,9 +1302,9 @@
       }
     });
 
-    // If quotas blocked filling K (weird roster), backfill by PL order ignoring pos
+    // Quotas blocked filling K (weird roster) — backfill by VORP, ignore pos
     if (kept.length < K) {
-      ranked.forEach(({ p }) => {
+      ranked.forEach((p) => {
         if (kept.length >= K || keptIds.has(p.id)) return;
         kept.push(p);
         keptIds.add(p.id);
@@ -1369,7 +1322,7 @@
     if (!cutOn || cutN <= 0) {
       return { kept: sorted.slice(), cut: [], keptSet: new Set(sorted.map((p) => p.id)) };
     }
-    const kept = selectKeepersPlackettLuce(sorted, cfg, owner);
+    const kept = selectKeepersByVorpQuotas(sorted, cfg);
     const keptSet = new Set(kept.map((p) => p.id));
     const keptSorted = kept
       .slice()
@@ -1380,7 +1333,7 @@
     return { kept: keptSorted, cut, keptSet };
   }
 
-  /** Players not kept after cuts: free agents + rostered players outside PL keepers. */
+  /** Players not kept after cuts: free agents + rostered players outside keeper set. */
   function unownedAfterCuts(rows, league, cfg) {
     const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
     const kept = new Set();
@@ -1388,7 +1341,7 @@
       if (cutOn) {
         league.owners.forEach((owner) => {
           const roster = rows.filter((r) => r.owner === owner);
-          selectKeepersPlackettLuce(roster, cfg, owner).forEach((r) => kept.add(r.id));
+          selectKeepersByVorpQuotas(roster, cfg).forEach((r) => kept.add(r.id));
         });
       } else {
         rows.forEach((r) => {
@@ -1783,7 +1736,7 @@
       " ladder" +
       (worst ? " — R1 starts with " + worst : "") +
       ". Pick values ≈ ranked unowned after" +
-      (cutOn ? " Plackett–Luce keeper cuts" : " treating rostered as kept") +
+      (cutOn ? " VORP + positional keeper cuts" : " treating rostered as kept") +
       ". Year cells ±xPoints; VORP through " +
       (cfg.endSeason || "end") +
       ".";
@@ -1992,7 +1945,7 @@
         keptList.forEach((p) => body.push(teamPlayerRowHtml(p, false)));
         if (cutOn && cutN > 0 && cutList.length) {
           body.push(
-            '<div class="lt-cut" role="separator" title="Keeper cut (Plackett–Luce + formation quotas, n=' +
+            '<div class="lt-cut" role="separator" title="Keeper cut (VORP order + formation quotas, n=' +
               cutN +
               ')">' +
               "<span>Keeper cut · " +
@@ -2039,7 +1992,7 @@
     const cutNote = cutOn
       ? " Year columns and VORP use each team's " +
         cutN +
-        " keepers (Plackett–Luce clocks on VORP, filling DEF/MID/RUC/FWD quotas from formation). Red line marks cuts."
+        " keepers (best VORP first, filling DEF/MID/RUC/FWD quotas from formation). Red line marks cuts."
       : " Year columns sum xPoints; VORP is full-roster total under current settings.";
 
     if (ladderEl) {
