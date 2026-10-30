@@ -27,7 +27,7 @@
     tab: "pool"
   };
 
-  const FD_TABS = ["pool", "planner", "teams", "trades", "ladder", "import"];
+  const FD_TABS = ["pool", "planner", "teams", "trades", "ladder", "import", "help"];
 
   const CLUB_FILTER_ORDER = [
     "ADEL",
@@ -1893,6 +1893,27 @@
     );
   }
 
+  function ordinalRank(n) {
+    const num = Number(n) || 0;
+    const v = Math.abs(num) % 100;
+    const d = Math.abs(num) % 10;
+    const s =
+      v >= 11 && v <= 13 ? "th" : d === 1 ? "st" : d === 2 ? "nd" : d === 3 ? "rd" : "th";
+    return num + s;
+  }
+
+  /** League ladder place for owner in season index (1 = best by yearPts). */
+  function ladderRankForOwner(standings, owner, yearIdx) {
+    const ranked = (standings || []).slice().sort(
+      (a, b) =>
+        ((b.yearPts && b.yearPts[yearIdx]) || 0) -
+          ((a.yearPts && a.yearPts[yearIdx]) || 0) ||
+        String(a.owner).localeCompare(String(b.owner))
+    );
+    const i = ranked.findIndex((t) => t.owner === owner);
+    return i < 0 ? null : i + 1;
+  }
+
   function renderTeamPlanner(rows, league, cfg) {
     const el = document.getElementById("team-planner");
     if (!el) return;
@@ -1913,26 +1934,41 @@
 
     const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
     const cutN = Math.max(0, Number(cfg.keeperCount) || 0);
+    // Keepers follow Through (endSeason) via VORP in computeRows / selectKeepers*
     const roster = rows.filter((r) => r.owner === myTeam && r.type !== "pick");
     const split = splitRosterByKeepers(roster, cfg, myTeam, cutOn);
     const keepers = split.kept;
     const cutList = split.cut || [];
 
-    const h = horizonLen(state.seasons, cfg.endSeason);
-    const yearSeasons = state.seasons.slice(0, h);
+    const yearSeasons = state.seasons.slice();
     if (!yearSeasons.length) {
       el.innerHTML = "<p class='muted'>No seasons available.</p>";
       return;
     }
 
+    const standings = buildTeamStandings(rows, league, cfg);
+
     const boards = yearSeasons.map((year, yi) => {
       const lineup = buildSeasonLineup(keepers, cfg, yi);
-      return { year, yi, lineup, isFirst: yi === 0 };
+      const rank = ladderRankForOwner(standings, myTeam, yi);
+      const yearPts =
+        ((standings.find((t) => t.owner === myTeam) || {}).yearPts || [])[yi] ||
+        0;
+      return { year, yi, lineup, isFirst: yi === 0, rank, yearPts };
     });
 
     let bestIdx = 0;
     boards.forEach((b, i) => {
-      if (b.lineup.onFieldTotal > boards[bestIdx].lineup.onFieldTotal) bestIdx = i;
+      const br = boards[bestIdx].rank;
+      const r = b.rank;
+      if (r == null) return;
+      if (
+        br == null ||
+        r < br ||
+        (r === br && b.yearPts > boards[bestIdx].yearPts)
+      ) {
+        bestIdx = i;
+      }
     });
     const bestYear = boards[bestIdx].year;
 
@@ -1990,6 +2026,8 @@
             );
           });
         }
+        const projLabel =
+          b.rank != null ? "Proj " + ordinalRank(b.rank) : "Proj —";
         return (
           '<article class="fp-season' +
           (isBest ? " is-best" : "") +
@@ -2004,8 +2042,8 @@
           (b.isFirst ? "Current team · keepers" : "Best lineup") +
           "</div>" +
           "</div>" +
-          '<div class="fp-season-total" title="On-field xPts">' +
-          fmtInt(lineup.onFieldTotal) +
+          '<div class="fp-season-total" title="Projected ladder place">' +
+          escapeHtml(projLabel) +
           "</div>" +
           "</header>" +
           '<div class="fp-season-body">' +

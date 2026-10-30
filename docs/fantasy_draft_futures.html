@@ -2248,15 +2248,21 @@ padding: 8px 12px; background: #fafafa; border-top: 1px solid #ddd; font-size: 1
 padding: 3px 8px; border: 1px solid #e0e0e0; text-align: right;
 }
 .futures-detail td:first-child, .futures-detail th:first-child { text-align: left; }
-#league-ladder, #teams-boards, #trade-calculator, #team-planner {
+#league-ladder, #teams-boards, #trade-calculator, #team-planner, #futures-help {
 display: block; margin-top: 8px;
 }
-#league-ladder > h3, #teams-boards > h3, #trade-calculator > h3, #team-planner > h3 {
+#league-ladder > h3, #teams-boards > h3, #trade-calculator > h3, #team-planner > h3, #futures-help > h3 {
 margin: 0 0 4px; font-size: 13px;
 }
 #league-ladder > .muted, #teams-boards > .muted, #trade-calculator > .muted, #team-planner > .muted {
 margin: 0 0 8px; font-size: 11px;
 }
+.fd-help {
+font-size: 12px; line-height: 1.45; color: #444; max-width: 720px;
+}
+.fd-help p { margin: 0 0 0.75em; }
+.fd-help ul { margin: 0.4em 0 0; padding-left: 1.2em; }
+.fd-help li { margin: 0 0 0.45em; }
 .fp-head {
 display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline;
 margin: 0 0 10px;
@@ -2491,6 +2497,7 @@ flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
 <button class="fd-tab-btn" type="button" data-tab="trades">Trades</button>
 <button class="fd-tab-btn" type="button" data-tab="ladder">Ladder</button>
 <button class="fd-tab-btn" type="button" data-tab="import">Import</button>
+<button class="fd-tab-btn" type="button" data-tab="help">Help</button>
 </nav>
 <div id="fd-tab-pool" class="fd-tab-panel is-active">
 <div class="futures-pool-layout">
@@ -2585,6 +2592,62 @@ Yet to finalise keepers
 </div>
 </div>
 </div>
+<div id="fd-tab-help" class="fd-tab-panel" hidden>
+<div id="futures-help" class="fd-help">
+<h3>Statistical modelling</h3>
+<p>
+Jaiden has built models to estimate player value over for the next 5 seasons. This is designed for use in AFL Fantasy keeper leagues or dynasty leagues. You can customise the season to find the ideal players based on how you think your 
+<em>premiership window</em>
+ feels. If you are in &#39;win-now&#39; mode, you can choose the current season. If you are rebuilding, perhaps 5 years from now is your target.
+</p>
+<p>For SuperCoach players, I intend to add its scoring layer at some point, but all metrics related to contracts &amp; expected games are still relevant.</p>
+<p>
+All models are based on over a decade of data that is collected from public sources. I do not own any of the data presented. Player data, weekly injury lists, and player images are collected from 
+<a>the AFL website</a>
+. Fantasy positions are sourced from 
+<a href="https://fantasy.afl.com.au">the official AFL Fantasy platform</a>
+. Contract updates come from the AFL website and its affiliated club websites. List updates come from 
+<a href="https://www.draftguru.com.au/">Draftguru</a>
+.
+</p>
+<ul>
+<li>
+<b>pListed</b>
+ is the probability that this player is still on an AFL list as-of the chosen season.
+</li>
+<li>
+<b>xGames</b>
+ is the number of games the player is expected to play up to the end of the chosen season.
+</li>
+<li>
+<b>xAvg</b>
+ is the predicted Fantasy average for this player in the chosen season.
+</li>
+<li>
+<b>xValue</b>
+ is the expected total fantasy points this player will score up to the end of the chosen season. You can see movers in the Rising &amp; Falling section.
+</li>
+<li>
+<b>VORP</b>
+ is &quot;value over replacement player&quot; based on your imported league squad size &amp; number of teams. This compares the scarcity of each position in your league. For example, a keeper league with 2 ruck spots requires more rucks to be listed, so a replacement from free agents might not even be playing.
+</li>
+<li>
+<b>Age</b>
+ is the player&#39;s current age.
+</li>
+<li>
+<b>Contract</b>
+ is the player&#39;s current contract. I update these manually, so 
+<a href="privacy">email me</a>
+ if you find something outdated. Third-party websites have a lot of errors, so I prefer official AFL articles.
+</li>
+<li>
+<b>Pos</b>
+ column is the player&#39;s positional future for fantasy perspective. It is modelled separately and used to calculate VORP for each future horizon. For example, when viewing many years into the future, the position splits represent the proportion of those seasons with DEF, MID, RUC, FWD status respectively. For current season, it will be the player&#39;s current position(s) plus the chance of gaining a new one. It is assumed that players can be assigned up to 3 unique positions at one time as per the official AFL Fantasy platform.
+</li>
+</ul>
+</div>
+</div>
 </div>
 <script>/**
  * AFL Fantasy draft futures
@@ -2615,7 +2678,7 @@ Yet to finalise keepers
     tab: "pool"
   };
 
-  const FD_TABS = ["pool", "planner", "teams", "trades", "ladder", "import"];
+  const FD_TABS = ["pool", "planner", "teams", "trades", "ladder", "import", "help"];
 
   const CLUB_FILTER_ORDER = [
     "ADEL",
@@ -4481,6 +4544,27 @@ Yet to finalise keepers
     );
   }
 
+  function ordinalRank(n) {
+    const num = Number(n) || 0;
+    const v = Math.abs(num) % 100;
+    const d = Math.abs(num) % 10;
+    const s =
+      v >= 11 && v <= 13 ? "th" : d === 1 ? "st" : d === 2 ? "nd" : d === 3 ? "rd" : "th";
+    return num + s;
+  }
+
+  /** League ladder place for owner in season index (1 = best by yearPts). */
+  function ladderRankForOwner(standings, owner, yearIdx) {
+    const ranked = (standings || []).slice().sort(
+      (a, b) =>
+        ((b.yearPts && b.yearPts[yearIdx]) || 0) -
+          ((a.yearPts && a.yearPts[yearIdx]) || 0) ||
+        String(a.owner).localeCompare(String(b.owner))
+    );
+    const i = ranked.findIndex((t) => t.owner === owner);
+    return i < 0 ? null : i + 1;
+  }
+
   function renderTeamPlanner(rows, league, cfg) {
     const el = document.getElementById("team-planner");
     if (!el) return;
@@ -4501,26 +4585,41 @@ Yet to finalise keepers
 
     const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
     const cutN = Math.max(0, Number(cfg.keeperCount) || 0);
+    // Keepers follow Through (endSeason) via VORP in computeRows / selectKeepers*
     const roster = rows.filter((r) => r.owner === myTeam && r.type !== "pick");
     const split = splitRosterByKeepers(roster, cfg, myTeam, cutOn);
     const keepers = split.kept;
     const cutList = split.cut || [];
 
-    const h = horizonLen(state.seasons, cfg.endSeason);
-    const yearSeasons = state.seasons.slice(0, h);
+    const yearSeasons = state.seasons.slice();
     if (!yearSeasons.length) {
       el.innerHTML = "<p class='muted'>No seasons available.</p>";
       return;
     }
 
+    const standings = buildTeamStandings(rows, league, cfg);
+
     const boards = yearSeasons.map((year, yi) => {
       const lineup = buildSeasonLineup(keepers, cfg, yi);
-      return { year, yi, lineup, isFirst: yi === 0 };
+      const rank = ladderRankForOwner(standings, myTeam, yi);
+      const yearPts =
+        ((standings.find((t) => t.owner === myTeam) || {}).yearPts || [])[yi] ||
+        0;
+      return { year, yi, lineup, isFirst: yi === 0, rank, yearPts };
     });
 
     let bestIdx = 0;
     boards.forEach((b, i) => {
-      if (b.lineup.onFieldTotal > boards[bestIdx].lineup.onFieldTotal) bestIdx = i;
+      const br = boards[bestIdx].rank;
+      const r = b.rank;
+      if (r == null) return;
+      if (
+        br == null ||
+        r < br ||
+        (r === br && b.yearPts > boards[bestIdx].yearPts)
+      ) {
+        bestIdx = i;
+      }
     });
     const bestYear = boards[bestIdx].year;
 
@@ -4578,6 +4677,8 @@ Yet to finalise keepers
             );
           });
         }
+        const projLabel =
+          b.rank != null ? "Proj " + ordinalRank(b.rank) : "Proj —";
         return (
           '<article class="fp-season' +
           (isBest ? " is-best" : "") +
@@ -4592,8 +4693,8 @@ Yet to finalise keepers
           (b.isFirst ? "Current team · keepers" : "Best lineup") +
           "</div>" +
           "</div>" +
-          '<div class="fp-season-total" title="On-field xPts">' +
-          fmtInt(lineup.onFieldTotal) +
+          '<div class="fp-season-total" title="Projected ladder place">' +
+          escapeHtml(projLabel) +
           "</div>" +
           "</header>" +
           '<div class="fp-season-body">' +
@@ -6112,57 +6213,6 @@ document.addEventListener("DOMContentLoaded", function () {
   if (window.FantasyDraftFutures) window.FantasyDraftFutures.init();
 });
 </script>
-<div id="statistical-modelling" class="section level3">
-<h3>Statistical modelling</h3>
-<div style="font-size: 12px; line-height: 1.4;">
-<p>Jaiden has built models to estimate player value over for the next 5
-seasons. This is designed for use in AFL Fantasy keeper leagues or
-dynasty leagues. You can customise the season to find the ideal players
-based on how you think your <em>premiership window</em> feels. If you
-are in ‘win-now’ mode, you can choose the current season. If you are
-rebuilding, perhaps 5 years from now is your target.</p>
-<p>For SuperCoach players, I intend to add its scoring layer at some
-point, but all metrics related to contracts &amp; expected games are
-still relevant.</p>
-<p>All models are based on over a decade of data that is collected from
-public sources. I do not own any of the data presented. Player data,
-weekly injury lists, and player images are collected from <a>the AFL
-website</a>. Fantasy positions are sourced from
-<a href="https://fantasy.afl.com.au">the official AFL Fantasy
-platform</a>. Contract updates come from the AFL website and its
-affiliated club websites. List updates come from
-<a href="https://www.draftguru.com.au/">Draftguru</a>.</p>
-<ul>
-<li><p><b>pListed</b> is the probability that this player is still on an
-AFL list as-of the chosen season.</p></li>
-<li><p><b>xGames</b> is the number of games the player is expected to
-play up to the end of the chosen season.</p></li>
-<li><p><b>xAvg</b> is the predicted Fantasy average for this player in
-the chosen season.</p></li>
-<li><p><b>xValue</b> is the expected total fantasy points this player
-will score up to the end of the chosen season. You can see movers in the
-Rising &amp; Falling section.</p></li>
-<li><p><b>VORP</b> is “value over replacement player” based on your
-imported league squad size &amp; number of teams. This compares the
-scarcity of each position in your league. For example, a keeper league
-with 2 ruck spots requires more rucks to be listed, so a replacement
-from free agents might not even be playing.</p></li>
-<li><p><b>Age</b> is the player’s current age.</p></li>
-<li><p><b>Contract</b> is the player’s current contract. I update these
-manually, so <a href="privacy">email me</a> if you find something
-outdated. Third-party websites have a lot of errors, so I prefer
-official AFL articles.</p></li>
-<li><p><b>Pos</b> column is the player’s positional future for fantasy
-perspective. It is modelled separately and used to calculate VORP for
-each future horizon. For example, when viewing many years into the
-future, the position splits represent the proportion of those seasons
-with DEF, MID, RUC, FWD status respectively. For current season, it will
-be the player’s current position(s) plus the chance of gaining a new
-one. It is assumed that players can be assigned up to 3 unique positions
-at one time as per the official AFL Fantasy platform.</p></li>
-</ul>
-</div>
-</div>
 
 <hr>
 
