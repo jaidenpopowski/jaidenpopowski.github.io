@@ -1949,15 +1949,74 @@
     return out;
   }
 
-  function scoreTradePackage(sim) {
+  /** Absolute |Σ give VORP − Σ get VORP| must be ≤ this (package fairness). */
+  const TRADE_VORP_GAP_MAX = 90;
+
+  /** Soft buckets for plan-tag trade chemistry (bonus only). */
+  const PLAN_TRADE_SIDE = {
+    SUSTAINED_ELITE: "contend",
+    UPPER_MID: "contend",
+    PEAK_WINDOW: "contend",
+    CLIFF: "sell",
+    FADING: "sell",
+    PAPER_TIGER: "sell",
+    RISING: "buy",
+    RISING_ELITE: "buy",
+    BOTTOM: "buy",
+    HIDDEN_DEPTH: "buy",
+    VOLATILE: "mid",
+    TREADMILL: "mid"
+  };
+
+  function planCategory(owner) {
+    const lab = state.teamLabels && state.teamLabels[owner];
+    return (lab && lab.category) || "TREADMILL";
+  }
+
+  function planTradeAffinity(ownerA, ownerB) {
+    const a = PLAN_TRADE_SIDE[planCategory(ownerA)] || "mid";
+    const b = PLAN_TRADE_SIDE[planCategory(ownerB)] || "mid";
+    if ((a === "sell" && b === "buy") || (a === "buy" && b === "sell")) return 28;
+    if (a === "contend" && b === "buy") return 10;
+    if (a === "buy" && b === "contend") return 10;
+    if (a === b && a !== "mid") return 4;
+    return 0;
+  }
+
+  function sumAssetVorp(keys, assetMap) {
+    let s = 0;
+    (keys || []).forEach((k) => {
+      const a = assetMap[k];
+      if (a) s += Number(a.vorp) || 0;
+    });
+    return s;
+  }
+
+  function scoreTradePackage(sim, giveKeys, getKeys, assetMap, myTeam, other) {
     const myVorp = sim.a.vorp;
     const theirVorp = sim.b.vorp;
     const myYears = sim.a.yearPts.reduce((s, v) => s + v, 0);
     const theirYears = sim.b.yearPts.reduce((s, v) => s + v, 0);
-    // Soft fairness: crush deals that nuke the other side relative to our gain
-    if (myVorp > 20 && theirVorp < -1.75 * myVorp) return -1e9;
-    if (myVorp < -5) return -1e9;
-    return myVorp * 1.2 + myYears * 0.002 + theirVorp * 0.35 + theirYears * 0.0005;
+    const assetGap = Math.abs(
+      sumAssetVorp(giveKeys, assetMap) - sumAssetVorp(getKeys, assetMap)
+    );
+    if (assetGap > TRADE_VORP_GAP_MAX) return -1e9;
+    // Soft fairness on post-cut roster impact — prefer win-win, don't require it
+    if (myVorp < -25) return -1e9;
+    if (theirVorp < -80 && myVorp > 40) return -1e9;
+
+    let score =
+      myVorp * 1.1 +
+      myYears * 0.002 +
+      theirVorp * 0.45 +
+      theirYears * 0.0007 -
+      assetGap * 0.15;
+
+    if (myVorp >= -5 && theirVorp >= -5) score += 35;
+    else if (myVorp >= 0 && theirVorp >= -25) score += 18;
+
+    score += planTradeAffinity(myTeam, other);
+    return score;
   }
 
   function packageSignature(giveKeys, getKeys) {
@@ -1978,9 +2037,9 @@
       picks,
       limit
     } = opts;
-    const maxN = Math.min(5, limit || 5);
-    const poolCap = 8;
-    const maxAssets = 3;
+    const maxN = Math.min(1, limit || 1);
+    const poolCap = 10;
+    const maxAssets = 2;
     if (!myTeam || !seedKey || !assetMap[seedKey]) return [];
 
     const seed = assetMap[seedKey];
@@ -1989,19 +2048,19 @@
       .filter((a) => a.owner === myTeam);
     const others = (league.owners || []).filter((o) => o !== myTeam);
 
-    /** Players + picks by VORP — everything on the table. */
-    function rankByVorp(list) {
-      return list
+    /** Prefer assets near a target VORP (fair packages), mix in picks. */
+    function takeNearVorpPool(list, targetVorp, cap) {
+      const ranked = list
         .slice()
-        .sort(
-          (a, b) =>
-            (b.vorp || 0) - (a.vorp || 0) || a.name.localeCompare(b.name)
-        );
-    }
-
-    /** Cap pool but always leave room for top picks. */
-    function takeTradePool(list, cap) {
-      const ranked = rankByVorp(list);
+        .sort((a, b) => {
+          const da = Math.abs((a.vorp || 0) - targetVorp);
+          const db = Math.abs((b.vorp || 0) - targetVorp);
+          return (
+            da - db ||
+            (b.vorp || 0) - (a.vorp || 0) ||
+            a.name.localeCompare(b.name)
+          );
+        });
       const pickList = ranked.filter((a) => a.kind === "pick");
       const playerList = ranked.filter((a) => a.kind !== "pick");
       const pickSlots = Math.min(3, pickList.length, Math.max(2, Math.floor(cap / 3)));
@@ -2047,21 +2106,31 @@
       );
     });
 
+    const seedVorp = Number(seed.vorp) || 0;
+
     others.forEach((other) => {
-      let theirAssets = Object.keys(assetMap)
+      const theirAssets = Object.keys(assetMap)
         .map((k) => assetMap[k])
         .filter((a) => a.owner === other);
-      let myPool = myAssets.filter((a) => a.key !== seedKey);
-      let theirPool = theirAssets.filter((a) => a.key !== seedKey);
+      let myPool;
+      let theirPool;
 
       if (mode === "offer") {
         if (seed.owner !== myTeam) return;
-        myPool = takeTradePool(myPool, poolCap);
-        theirPool = takeTradePool(theirAssets, poolCap);
+        myPool = takeNearVorpPool(
+          myAssets.filter((a) => a.key !== seedKey),
+          seedVorp * 0.35,
+          poolCap
+        );
+        theirPool = takeNearVorpPool(theirAssets, seedVorp, poolCap);
       } else {
         if (seed.owner === myTeam || seed.owner !== other) return;
-        theirPool = takeTradePool(theirPool, poolCap);
-        myPool = takeTradePool(myAssets, poolCap);
+        theirPool = takeNearVorpPool(
+          theirAssets.filter((a) => a.key !== seedKey),
+          seedVorp * 0.35,
+          poolCap
+        );
+        myPool = takeNearVorpPool(myAssets, seedVorp, poolCap);
       }
 
       const myKeys = myPool.map((a) => a.key);
@@ -2070,6 +2139,10 @@
       function consider(giveKeys, getKeys) {
         if (!giveKeys.length || !getKeys.length) return;
         if (giveKeys.length > maxAssets || getKeys.length > maxAssets) return;
+        const assetGap = Math.abs(
+          sumAssetVorp(giveKeys, assetMap) - sumAssetVorp(getKeys, assetMap)
+        );
+        if (assetGap > TRADE_VORP_GAP_MAX) return;
         const sig = packageSignature(giveKeys, getKeys) + "|" + other;
         if (seen.has(sig)) return;
         seen.add(sig);
@@ -2084,7 +2157,14 @@
           picks,
           preCache
         );
-        const score = scoreTradePackage(sim);
+        const score = scoreTradePackage(
+          sim,
+          giveKeys,
+          getKeys,
+          assetMap,
+          myTeam,
+          other
+        );
         if (score <= -1e8) return;
         candidates.push({
           other,
@@ -2096,24 +2176,30 @@
       }
 
       if (mode === "offer") {
-        // give = [seed] + 0..2 fillers; get = 1..3 of theirs
+        // give = [seed] + 0..1 filler; get = 1..2 near seed value
         for (let mg = 0; mg <= maxAssets - 1; mg++) {
           combinations(myKeys, mg).forEach((extras) => {
             const giveKeys = [seedKey].concat(extras);
+            const giveV = sumAssetVorp(giveKeys, assetMap);
+            const matched = takeNearVorpPool(theirPool, giveV, poolCap);
+            const tKeys = matched.map((a) => a.key);
             for (let tg = 1; tg <= maxAssets; tg++) {
-              combinations(theirKeys, tg).forEach((getKeys) => {
+              combinations(tKeys, tg).forEach((getKeys) => {
                 consider(giveKeys, getKeys);
               });
             }
           });
         }
       } else {
-        // get = [seed] + 0..2 of theirs; give = 1..3 of mine
+        // get = [seed] + 0..1 of theirs; give = 1..2 of mine near get value
         for (let tg = 0; tg <= maxAssets - 1; tg++) {
           combinations(theirKeys, tg).forEach((extras) => {
             const getKeys = [seedKey].concat(extras);
+            const getV = sumAssetVorp(getKeys, assetMap);
+            const matched = takeNearVorpPool(myPool, getV, poolCap);
+            const gKeys = matched.map((a) => a.key);
             for (let mg = 1; mg <= maxAssets; mg++) {
-              combinations(myKeys, mg).forEach((giveKeys) => {
+              combinations(gKeys, mg).forEach((giveKeys) => {
                 consider(giveKeys, getKeys);
               });
             }
@@ -2337,7 +2423,7 @@
         seedKey: state.trade.offerKey,
         assetMap,
         picks,
-        limit: 5
+        limit: 1
       });
     }
     if (myTeam && state.trade.targetKey) {
@@ -2350,7 +2436,7 @@
         seedKey: state.trade.targetKey,
         assetMap,
         picks,
-        limit: 5
+        limit: 1
       });
     }
 
@@ -2377,7 +2463,9 @@
     }
 
     function suggestionsHtml(list) {
-      if (!list.length) return '<p class="muted">No packages found.</p>';
+      if (!list.length) {
+        return '<p class="muted">No fair package within VORP gap.</p>';
+      }
       return list.map((p) => tradeSuggestionCardHtml(p, assetMap, yearSeasons)).join("");
     }
 
