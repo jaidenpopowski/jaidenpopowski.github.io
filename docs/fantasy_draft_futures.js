@@ -174,12 +174,10 @@
   const TRAJECTORY_CFG = {
     sustainedEliteAvg: 0.6,
     sustainedEliteMin: 0.5,
-    sustainedEliteVorp: 0.8,
     cliffEarly: 0.6,
     cliffSlope: -0.5,
     risingEliteSlope: 0.3,
     risingEliteLate: 0.75,
-    risingEliteVorp: 0.8,
     risingSlope: 0.3,
     bottomAvg: 0.3,
     bottomMax: 0.55,
@@ -190,21 +188,20 @@
     paperTigerGap: -0.3,
     upperMidAvg: 0.5,
     spillover: ["II", "Jr"],
+    /** Fixed labels; only TREADMILL has two for uniqueness within that bucket. */
     pools: {
-      SUSTAINED_ELITE_HIGH: ["Dynasty Machine", "Evergreen"],
-      SUSTAINED_ELITE_LOW: ["Perennial Threat", "Steady Contender"],
-      CLIFF: ["Cliff Diver", "Mortgaged Future", "Boom Then Bust"],
-      RISING_ELITE_HIGH: ["Next Dynasty"],
-      RISING_ELITE_LOW: ["Late Bloomer", "Slow Burn", "Sleeping Giant"],
-      RISING: ["Up and Comer", "Ascending", "Youth Movement"],
-      BOTTOM: ["Full Teardown", "Cellar Dweller", "Zombie Team", "Tank Commander"],
-      FADING: ["Fading Star", "Window Closing", "Sell Now", "Sunset Squad"],
-      PEAK_WINDOW: ["Peak Window", "Mid-Run Spike"],
-      VOLATILE: ["Boom or Bust", "Rollercoaster", "Wildcard"],
-      HIDDEN_DEPTH: ["Hidden Depth", "Sleeper Cell"],
-      PAPER_TIGER: ["Paper Tiger", "House of Cards"],
-      UPPER_MID: ["Quiet Contender", "Fringe Threat"],
-      TREADMILL: ["Treadmill", "Purgatory", "Middle Child", "Mediocrity Loop"]
+      SUSTAINED_ELITE: ["Evergreen"],
+      CLIFF: ["Cliff Diver"],
+      RISING_ELITE: ["Slow Burn"],
+      RISING: ["Up and Comer"],
+      BOTTOM: ["Cellar Dweller"],
+      FADING: ["Window Closing"],
+      PEAK_WINDOW: ["Peak Window"],
+      VOLATILE: ["Rollercoaster"],
+      HIDDEN_DEPTH: ["Sneaky Chance"],
+      PAPER_TIGER: ["House of Cards"],
+      UPPER_MID: ["Quiet Contender"],
+      TREADMILL: ["Treadmill", "Middle Child"]
     }
   };
 
@@ -1547,25 +1544,13 @@
   function trajectoryCategory(feat, cfg) {
     const c = cfg || TRAJECTORY_CFG;
     if (feat.avg >= c.sustainedEliteAvg && feat.min_s >= c.sustainedEliteMin) {
-      return {
-        id: "SUSTAINED_ELITE",
-        pool:
-          feat.vorp_s >= c.sustainedEliteVorp
-            ? c.pools.SUSTAINED_ELITE_HIGH
-            : c.pools.SUSTAINED_ELITE_LOW
-      };
+      return { id: "SUSTAINED_ELITE", pool: c.pools.SUSTAINED_ELITE };
     }
     if (feat.early >= c.cliffEarly && feat.slope <= c.cliffSlope) {
       return { id: "CLIFF", pool: c.pools.CLIFF };
     }
     if (feat.slope >= c.risingEliteSlope && feat.late >= c.risingEliteLate) {
-      return {
-        id: "RISING_ELITE",
-        pool:
-          feat.vorp_s >= c.risingEliteVorp
-            ? c.pools.RISING_ELITE_HIGH
-            : c.pools.RISING_ELITE_LOW
-      };
+      return { id: "RISING_ELITE", pool: c.pools.RISING_ELITE };
     }
     if (feat.slope >= c.risingSlope) {
       return { id: "RISING", pool: c.pools.RISING };
@@ -1620,7 +1605,7 @@
     if (n < 4) {
       teams.forEach((t) => {
         out[t.owner] = {
-          label: "Wildcard",
+          label: "Rollercoaster",
           category: "VOLATILE",
           features: null
         };
@@ -1699,27 +1684,32 @@
         (a, b) =>
           b.sortKey - a.sortKey || String(a.owner).localeCompare(String(b.owner))
       );
+      // Single-label categories share the same tag. TREADMILL (2 labels) gets unique assignment.
+      const unique = group[0] && group[0].pool.length > 1;
       const used = new Set();
       group.forEach((c) => {
-        let label = null;
-        for (let i = 0; i < c.pool.length; i++) {
-          if (!used.has(c.pool[i])) {
-            label = c.pool[i];
-            break;
-          }
-        }
-        if (!label) {
-          const base = c.pool[c.pool.length - 1] || "Treadmill";
-          for (let i = 0; i < TRAJECTORY_CFG.spillover.length; i++) {
-            const cand = (base + " " + TRAJECTORY_CFG.spillover[i]).slice(0, 16);
-            if (!used.has(cand)) {
-              label = cand;
+        let label = c.pool[0] || "Treadmill";
+        if (unique) {
+          label = null;
+          for (let i = 0; i < c.pool.length; i++) {
+            if (!used.has(c.pool[i])) {
+              label = c.pool[i];
               break;
             }
           }
-          if (!label) label = base;
+          if (!label) {
+            const base = c.pool[c.pool.length - 1] || "Treadmill";
+            for (let i = 0; i < TRAJECTORY_CFG.spillover.length; i++) {
+              const cand = (base + " " + TRAJECTORY_CFG.spillover[i]).slice(0, 16);
+              if (!used.has(cand)) {
+                label = cand;
+                break;
+              }
+            }
+            if (!label) label = base;
+          }
+          used.add(label);
         }
-        used.add(label);
         out[c.owner] = {
           label,
           category: c.category,
@@ -1959,7 +1949,7 @@
     return out;
   }
 
-  function scoreTradePackage(sim, giveKeys, getKeys, assetMap) {
+  function scoreTradePackage(sim) {
     const myVorp = sim.a.vorp;
     const theirVorp = sim.b.vorp;
     const myYears = sim.a.yearPts.reduce((s, v) => s + v, 0);
@@ -1967,17 +1957,7 @@
     // Soft fairness: crush deals that nuke the other side relative to our gain
     if (myVorp > 20 && theirVorp < -1.75 * myVorp) return -1e9;
     if (myVorp < -5) return -1e9;
-    let cutBonus = 0;
-    (giveKeys || []).forEach((k) => {
-      const a = assetMap[k];
-      if (a && a.belowCut) cutBonus += 8;
-    });
-    (getKeys || []).forEach((k) => {
-      const a = assetMap[k];
-      if (a && !a.belowCut) cutBonus += 4;
-      if (a && a.belowCut) cutBonus -= 2;
-    });
-    return myVorp * 1.2 + myYears * 0.002 + theirVorp * 0.35 + theirYears * 0.0005 + cutBonus;
+    return myVorp * 1.2 + myYears * 0.002 + theirVorp * 0.35 + theirYears * 0.0005;
   }
 
   function packageSignature(giveKeys, getKeys) {
@@ -1999,7 +1979,7 @@
       limit
     } = opts;
     const maxN = Math.min(5, limit || 5);
-    const poolCap = 6;
+    const poolCap = 8;
     const maxAssets = 3;
     if (!myTeam || !seedKey || !assetMap[seedKey]) return [];
 
@@ -2009,26 +1989,41 @@
       .filter((a) => a.owner === myTeam);
     const others = (league.owners || []).filter((o) => o !== myTeam);
 
-    function rankMyFillers(list) {
-      return list
-        .slice()
-        .sort((a, b) => {
-          const ac = a.belowCut ? 1 : 0;
-          const bc = b.belowCut ? 1 : 0;
-          if (ac !== bc) return bc - ac;
-          return (a.vorp || 0) - (b.vorp || 0) || a.name.localeCompare(b.name);
-        });
-    }
-
-    function rankTheirTargets(list) {
+    /** Players + picks by VORP — everything on the table. */
+    function rankByVorp(list) {
       return list
         .slice()
         .sort(
           (a, b) =>
-            (a.belowCut ? 0 : 1) - (b.belowCut ? 0 : 1) ||
-            (b.vorp || 0) - (a.vorp || 0) ||
-            a.name.localeCompare(b.name)
+            (b.vorp || 0) - (a.vorp || 0) || a.name.localeCompare(b.name)
         );
+    }
+
+    /** Cap pool but always leave room for top picks. */
+    function takeTradePool(list, cap) {
+      const ranked = rankByVorp(list);
+      const pickList = ranked.filter((a) => a.kind === "pick");
+      const playerList = ranked.filter((a) => a.kind !== "pick");
+      const pickSlots = Math.min(3, pickList.length, Math.max(2, Math.floor(cap / 3)));
+      const out = [];
+      const used = new Set();
+      pickList.slice(0, pickSlots).forEach((a) => {
+        out.push(a);
+        used.add(a.key);
+      });
+      playerList.forEach((a) => {
+        if (out.length >= cap) return;
+        if (used.has(a.key)) return;
+        out.push(a);
+        used.add(a.key);
+      });
+      pickList.forEach((a) => {
+        if (out.length >= cap) return;
+        if (used.has(a.key)) return;
+        out.push(a);
+        used.add(a.key);
+      });
+      return out;
     }
 
     const candidates = [];
@@ -2061,12 +2056,12 @@
 
       if (mode === "offer") {
         if (seed.owner !== myTeam) return;
-        myPool = rankMyFillers(myPool).slice(0, poolCap);
-        theirPool = rankTheirTargets(theirAssets).slice(0, poolCap);
+        myPool = takeTradePool(myPool, poolCap);
+        theirPool = takeTradePool(theirAssets, poolCap);
       } else {
         if (seed.owner === myTeam || seed.owner !== other) return;
-        theirPool = rankTheirTargets(theirPool).slice(0, poolCap);
-        myPool = rankMyFillers(myAssets).slice(0, poolCap);
+        theirPool = takeTradePool(theirPool, poolCap);
+        myPool = takeTradePool(myAssets, poolCap);
       }
 
       const myKeys = myPool.map((a) => a.key);
@@ -2089,7 +2084,7 @@
           picks,
           preCache
         );
-        const score = scoreTradePackage(sim, giveKeys, getKeys, assetMap);
+        const score = scoreTradePackage(sim);
         if (score <= -1e8) return;
         candidates.push({
           other,
