@@ -1,6 +1,5 @@
 /**
- * AFL Fantasy draft futures — client-side VORP + Tabulator views.
- * League-dependent math lives here; R owns model components in the JSON.
+ * AFL Fantasy draft futures
  */
 (function (global) {
   "use strict";
@@ -18,21 +17,13 @@
     slots: { DEF: 5, MID: 7, RUC: 1, FWD: 5 },
     bench: 12,
     keeperCount: 20,
-    /** Draw red cut after Keepers when true (pre-keeper / list-management mode). */
-    keeperCut: null, // null → auto from upcoming draft picks in payload
-    endSeason: null,
+    keeperCut: null,
+    endSeason: 2029,
     posFilter: "ALL",
-    /** Empty = all clubs. Values are futures club abbrs (ADEL, GEEL, …). */
     clubs: [],
-    /**
-     * Fantasy-team owner multi-select. Empty = all players.
-     * Special value OWNER_FA = Free Agents; otherwise Keeper team names.
-     */
     owners: [],
-    /** Fantasy team name from Keeper CSV (highlight). */
     myTeam: "",
     search: "",
-    /** Hub subheader tab: pool | teams | trades | ladder | import */
     tab: "pool"
   };
 
@@ -59,7 +50,6 @@
     "WB"
   ];
 
-  /** Keeper Fantasy CSV club codes → AFL / futures JSON abbreviations. */
   const KEEPER_TEAM_MAP = {
     ADE: "ADEL",
     BRL: "BL",
@@ -81,7 +71,6 @@
     WCE: "WCE"
   };
 
-  /** Given-name aliases (already normalised) — subset of Keeper playerNameHelpers.R. */
   const GIVEN_ALIASES = [
     ["matt", "matthew"],
     ["matty", "matthew"],
@@ -146,7 +135,6 @@
     ["jordon", "jordan"]
   ];
 
-  /** Stubborn full-name remaps (normalised on use). */
   const FULL_NAME_OVERRIDES = [
     ["bobby hill", "ian hill"],
     ["ian hill", "bobby hill"],
@@ -173,17 +161,64 @@
     detailId: null,
     /** @type {null | {source:string, fileName:string, ownership:Object.<string,string>, positions:Object.<string,string>, owners:string[], unmatchedOwned:Array, matchedOwned:number, totalOwned:number}} */
     league: null,
-    /** Trade calculator selections (player ids / PICK:n keys). */
     trade: {
-      sideA: "",
-      sideB: "",
-      give: [],
-      get: [],
+      offerKey: "",
+      targetKey: "",
       bound: false
+    },
+    /** @type {Object.<string,string>} */
+    teamLabels: Object.create(null)
+  };
+
+  /** Tunable thresholds for team trajectory labels (see teamRatingSpec.txt). */
+  const TRAJECTORY_CFG = {
+    sustainedEliteAvg: 0.6,
+    sustainedEliteMin: 0.5,
+    sustainedEliteVorp: 0.8,
+    cliffEarly: 0.6,
+    cliffSlope: -0.5,
+    risingEliteSlope: 0.3,
+    risingEliteLate: 0.75,
+    risingEliteVorp: 0.8,
+    risingSlope: 0.3,
+    bottomAvg: 0.3,
+    bottomMax: 0.55,
+    fadingSlope: -0.25,
+    peakMid: 0.2,
+    volatileVol: 0.25,
+    hiddenDepthGap: 0.3,
+    paperTigerGap: -0.3,
+    upperMidAvg: 0.5,
+    spillover: ["II", "Jr"],
+    pools: {
+      SUSTAINED_ELITE_HIGH: ["Dynasty Machine", "Evergreen"],
+      SUSTAINED_ELITE_LOW: ["Perennial Threat", "Steady Contender"],
+      CLIFF: ["Cliff Diver", "Mortgaged Future", "Boom Then Bust"],
+      RISING_ELITE_HIGH: ["Next Dynasty"],
+      RISING_ELITE_LOW: ["Late Bloomer", "Slow Burn", "Sleeping Giant"],
+      RISING: ["Up and Comer", "Ascending", "Youth Movement"],
+      BOTTOM: ["Full Teardown", "Cellar Dweller", "Zombie Team", "Tank Commander"],
+      FADING: ["Fading Star", "Window Closing", "Sell Now", "Sunset Squad"],
+      PEAK_WINDOW: ["Peak Window", "Mid-Run Spike"],
+      VOLATILE: ["Boom or Bust", "Rollercoaster", "Wildcard"],
+      HIDDEN_DEPTH: ["Hidden Depth", "Sleeper Cell"],
+      PAPER_TIGER: ["Paper Tiger", "House of Cards"],
+      UPPER_MID: ["Quiet Contender", "Fringe Threat"],
+      TREADMILL: ["Treadmill", "Purgatory", "Middle Child", "Mediocrity Loop"]
     }
   };
 
-  // ── URL config ─────────────────────────────────────────────────────────────
+  (function assertTrajectoryPools() {
+    Object.keys(TRAJECTORY_CFG.pools).forEach((k) => {
+      TRAJECTORY_CFG.pools[k].forEach((lab) => {
+        if (String(lab).length > 16) {
+          throw new Error("Trajectory label too long: " + lab);
+        }
+      });
+    });
+  })();
+
+  // URL setup
 
   function readCfgFromUrl() {
     const q = new URLSearchParams(window.location.search);
@@ -213,7 +248,6 @@
         .filter(Boolean)
         .map((s) => (s === "FA" || s === OWNER_FA ? OWNER_FA : s));
     } else if (q.get("owned") === "0" || q.get("owned") === "false") {
-      // Legacy: owned=0 → Free Agents only
       cfg.owners = [OWNER_FA];
     }
     if (q.has("me")) cfg.myTeam = q.get("me") || "";
@@ -295,14 +329,13 @@
     return Math.max(lo, Math.min(hi, n));
   }
 
-  // ── Keeper Fantasy CSV import / name matching ───────────────────────────────
+  // Match names to keeper fantasy import
 
   function normName(x) {
     let s = String(x == null ? "" : x);
     s = s.replace(/\*/g, "");
     s = s.replace(/[\u2018\u2019\u201A\u201B\u2032\u0060\u00B4']/g, "");
     s = s.toLowerCase();
-    // Strip combining marks after a light ASCII fold for common Latin accents
     try {
       s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     } catch (e) {
@@ -353,7 +386,7 @@
     };
 
     Array.from(out).forEach(addGivenSwap);
-    // Second pass so alias↔alias chains (zac↔zach↔zachary) expand once more
+    // Second pass for secondary alias zac to zach to zachary merrett
     Array.from(out).forEach(addGivenSwap);
     return out;
   }
@@ -432,7 +465,7 @@
   }
 
   function buildPlayerIndex(assets) {
-    const byClub = new Map(); // key "norm|club" → Map(id → asset)
+    const byClub = new Map();
     const byName = new Map();
     function add(map, key, asset) {
       if (!key) return;
@@ -553,7 +586,7 @@
     return rows;
   }
 
-  /** Display position: Keeper CSV when imported, else model fantasyPos. */
+  /** Display position: Keeper CSV when imported, else fantasy position. */
   function displayPos(row) {
     return (row && (row.keeperPos || row.fantasyPos)) || "";
   }
@@ -610,10 +643,9 @@
     state.league = null;
     state.cfg.myTeam = "";
     state.cfg.owners = [];
-    state.trade.sideA = "";
-    state.trade.sideB = "";
-    state.trade.give = [];
-    state.trade.get = [];
+    state.trade.offerKey = "";
+    state.trade.targetKey = "";
+    state.teamLabels = Object.create(null);
     const input = document.getElementById("keeper-csv-input");
     if (input) input.value = "";
     setLeagueStatus("");
@@ -1449,18 +1481,18 @@
     return Math.max(0, rosterSize(cfg) - (Number(cfg.keeperCount) || 0));
   }
 
-  /** Per-team kept roster + year xPoints / VORP (same rules as ladder). */
+  /** Per-team kept roster + year xPoints / VORP. Year columns always use all seasons. */
   function buildTeamStandings(rows, league, cfg) {
     const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
-    const h = horizonLen(state.seasons, cfg.endSeason);
-    const yearSeasons = state.seasons.slice(0, h);
+    const yearSeasons = state.seasons.slice();
+    const yLen = yearSeasons.length;
     return (league.owners || []).map((owner) => {
       const players = rows.filter((r) => r.owner === owner);
       const split = splitRosterByKeepers(players, cfg, owner, cutOn);
       const counted = split.kept;
       const yearPts = yearSeasons.map(() => 0);
       counted.forEach((p) => {
-        const yp = yearPointsForRow(p, yearSeasons.length);
+        const yp = yearPointsForRow(p, yLen);
         yp.forEach((v, i) => {
           yearPts[i] += v;
         });
@@ -1468,6 +1500,246 @@
       const vorp = counted.reduce((s, p) => s + (Number(p.vorp) || 0), 0);
       return { owner, players: split.kept.concat(split.cut), counted, yearPts, vorp, split };
     });
+  }
+
+  function meanNums(arr) {
+    if (!arr || !arr.length) return 0;
+    let s = 0;
+    for (let i = 0; i < arr.length; i++) s += arr[i];
+    return s / arr.length;
+  }
+
+  function popStd(arr) {
+    if (!arr || !arr.length) return 0;
+    const m = meanNums(arr);
+    let s = 0;
+    for (let i = 0; i < arr.length; i++) {
+      const d = arr[i] - m;
+      s += d * d;
+    }
+    return Math.sqrt(s / arr.length);
+  }
+
+  /** Average ranks for ties; higher value → better (rank 1). */
+  function rankDescending(items, valueFn, nameFn) {
+    const sorted = items.slice().sort(
+      (a, b) =>
+        valueFn(b) - valueFn(a) || String(nameFn(a)).localeCompare(String(nameFn(b)))
+    );
+    const ranks = Object.create(null);
+    let i = 0;
+    while (i < sorted.length) {
+      let j = i;
+      const v = valueFn(sorted[i]);
+      while (j < sorted.length && valueFn(sorted[j]) === v) j++;
+      const avgRank = (i + 1 + j) / 2;
+      for (let k = i; k < j; k++) ranks[nameFn(sorted[k])] = avgRank;
+      i = j;
+    }
+    return ranks;
+  }
+
+  function strengthFromRank(rank, n) {
+    if (n <= 1) return 1;
+    return 1 - (rank - 1) / (n - 1);
+  }
+
+  function trajectoryCategory(feat, cfg) {
+    const c = cfg || TRAJECTORY_CFG;
+    if (feat.avg >= c.sustainedEliteAvg && feat.min_s >= c.sustainedEliteMin) {
+      return {
+        id: "SUSTAINED_ELITE",
+        pool:
+          feat.vorp_s >= c.sustainedEliteVorp
+            ? c.pools.SUSTAINED_ELITE_HIGH
+            : c.pools.SUSTAINED_ELITE_LOW
+      };
+    }
+    if (feat.early >= c.cliffEarly && feat.slope <= c.cliffSlope) {
+      return { id: "CLIFF", pool: c.pools.CLIFF };
+    }
+    if (feat.slope >= c.risingEliteSlope && feat.late >= c.risingEliteLate) {
+      return {
+        id: "RISING_ELITE",
+        pool:
+          feat.vorp_s >= c.risingEliteVorp
+            ? c.pools.RISING_ELITE_HIGH
+            : c.pools.RISING_ELITE_LOW
+      };
+    }
+    if (feat.slope >= c.risingSlope) {
+      return { id: "RISING", pool: c.pools.RISING };
+    }
+    if (feat.avg <= c.bottomAvg && feat.max_s <= c.bottomMax) {
+      return { id: "BOTTOM", pool: c.pools.BOTTOM };
+    }
+    if (feat.slope <= c.fadingSlope) {
+      return { id: "FADING", pool: c.pools.FADING };
+    }
+    if (feat.peak_mid >= c.peakMid) {
+      return { id: "PEAK_WINDOW", pool: c.pools.PEAK_WINDOW };
+    }
+    if (feat.vol >= c.volatileVol) {
+      return { id: "VOLATILE", pool: c.pools.VOLATILE };
+    }
+    if (feat.vorp_gap >= c.hiddenDepthGap) {
+      return { id: "HIDDEN_DEPTH", pool: c.pools.HIDDEN_DEPTH };
+    }
+    if (feat.vorp_gap <= c.paperTigerGap) {
+      return { id: "PAPER_TIGER", pool: c.pools.PAPER_TIGER };
+    }
+    if (feat.avg >= c.upperMidAvg) {
+      return { id: "UPPER_MID", pool: c.pools.UPPER_MID };
+    }
+    return { id: "TREADMILL", pool: c.pools.TREADMILL };
+  }
+
+  function trajectorySortKey(categoryId, feat) {
+    if (
+      categoryId === "SUSTAINED_ELITE" ||
+      categoryId === "UPPER_MID" ||
+      categoryId === "TREADMILL" ||
+      categoryId === "HIDDEN_DEPTH"
+    ) {
+      return feat.avg;
+    }
+    if (categoryId === "RISING" || categoryId === "RISING_ELITE") return feat.late;
+    if (categoryId === "CLIFF" || categoryId === "FADING") return feat.early;
+    if (categoryId === "BOTTOM") return -feat.avg;
+    return feat.avg;
+  }
+
+  /**
+   * Assign 1–2 word trajectory labels from rank-derived features only.
+   * @returns {Object.<string,{label:string,category:string,features:Object}>}
+   */
+  function assignTeamTrajectoryLabels(standings) {
+    const teams = (standings || []).slice();
+    const n = teams.length;
+    const out = Object.create(null);
+    if (n < 4) {
+      teams.forEach((t) => {
+        out[t.owner] = {
+          label: "Wildcard",
+          category: "VOLATILE",
+          features: null
+        };
+      });
+      return out;
+    }
+
+    const yLen = Math.max.apply(
+      null,
+      teams.map((t) => (t.yearPts && t.yearPts.length) || 0).concat([0])
+    );
+    const yearRanks = [];
+    for (let y = 0; y < yLen; y++) {
+      yearRanks.push(
+        rankDescending(
+          teams,
+          (t) => (t.yearPts && t.yearPts[y]) || 0,
+          (t) => t.owner
+        )
+      );
+    }
+    const vorpRanks = rankDescending(
+      teams,
+      (t) => Number(t.vorp) || 0,
+      (t) => t.owner
+    );
+
+    const classified = teams.map((t) => {
+      const s = [];
+      for (let y = 0; y < yLen; y++) {
+        s.push(strengthFromRank(yearRanks[y][t.owner], n));
+      }
+      while (s.length < 5) s.push(s.length ? s[s.length - 1] : 0.5);
+      const vorp_s = strengthFromRank(vorpRanks[t.owner], n);
+      const early = meanNums([s[0], s[1]]);
+      const mid = s[2];
+      const late = meanNums([s[3], s[4]]);
+      const avg = meanNums(s.slice(0, 5));
+      const min_s = Math.min.apply(null, s.slice(0, 5));
+      const max_s = Math.max.apply(null, s.slice(0, 5));
+      const slope = late - early;
+      const vol = popStd(s.slice(0, 5));
+      const vorp_gap = vorp_s - avg;
+      const peak_mid = mid - Math.max(early, late);
+      const features = {
+        early,
+        mid,
+        late,
+        avg,
+        min_s,
+        max_s,
+        slope,
+        vol,
+        vorp_gap,
+        peak_mid,
+        vorp_s
+      };
+      const cat = trajectoryCategory(features, TRAJECTORY_CFG);
+      return {
+        owner: t.owner,
+        category: cat.id,
+        pool: cat.pool.slice(),
+        features,
+        sortKey: trajectorySortKey(cat.id, features)
+      };
+    });
+
+    const byCat = Object.create(null);
+    classified.forEach((c) => {
+      if (!byCat[c.category]) byCat[c.category] = [];
+      byCat[c.category].push(c);
+    });
+
+    Object.keys(byCat).forEach((catId) => {
+      const group = byCat[catId].sort(
+        (a, b) =>
+          b.sortKey - a.sortKey || String(a.owner).localeCompare(String(b.owner))
+      );
+      const used = new Set();
+      group.forEach((c) => {
+        let label = null;
+        for (let i = 0; i < c.pool.length; i++) {
+          if (!used.has(c.pool[i])) {
+            label = c.pool[i];
+            break;
+          }
+        }
+        if (!label) {
+          const base = c.pool[c.pool.length - 1] || "Treadmill";
+          for (let i = 0; i < TRAJECTORY_CFG.spillover.length; i++) {
+            const cand = (base + " " + TRAJECTORY_CFG.spillover[i]).slice(0, 16);
+            if (!used.has(cand)) {
+              label = cand;
+              break;
+            }
+          }
+          if (!label) label = base;
+        }
+        used.add(label);
+        out[c.owner] = {
+          label,
+          category: c.category,
+          features: c.features
+        };
+      });
+    });
+    return out;
+  }
+
+  function teamPlanLabelHtml(owner) {
+    const lab = state.teamLabels && state.teamLabels[owner];
+    if (!lab || !lab.label) return "";
+    return (
+      '<div class="lt-team-plan" title="' +
+      escapeHtml(lab.category || "") +
+      '">' +
+      escapeHtml(lab.label) +
+      "</div>"
+    );
   }
 
   /**
@@ -1501,8 +1773,7 @@
   }
 
   function buildKeeperDraftPicks(unowned, cfg, seasons, rows, league) {
-    const h = horizonLen(seasons, cfg.endSeason);
-    const yearSeasons = seasons.slice(0, h);
+    const yearSeasons = seasons.slice();
     const draftYear = yearSeasons[0] || seasons[0] || "";
     const perTeam = keeperDraftPicksPerTeam(cfg);
     const ladder = projectedLadderBestToWorst(rows, league, cfg);
@@ -1528,58 +1799,460 @@
     });
   }
 
-  function tradeAssetMap(rows, picks) {
-    const yLen =
-      (picks[0] && picks[0].yearPts && picks[0].yearPts.length) ||
-      horizonLen(state.seasons, state.cfg.endSeason);
+  function fmtSigned(v) {
+    if (v == null || !Number.isFinite(v)) return "—";
+    const n = Math.round(v);
+    return (n > 0 ? "+" : "") + String(n);
+  }
+
+  function tradeAssetMap(rows, picks, keptSets) {
+    const yLen = state.seasons.length;
     const map = Object.create(null);
     rows.forEach((r) => {
-      if (!r.id) return;
+      if (!r.id || !r.owner) return;
+      const kept = keptSets && keptSets[r.owner] ? keptSets[r.owner].has(r.id) : true;
       map[r.id] = {
         key: r.id,
         kind: "player",
         name: r.name,
         vorp: Number(r.vorp) || 0,
         yearPts: yearPointsForRow(r, yLen),
-        owner: r.owner || null
+        owner: r.owner,
+        belowCut: !kept,
+        row: r
       };
     });
-    picks.forEach((p) => {
+    (picks || []).forEach((p) => {
       map[p.key] = {
         key: p.key,
         kind: "pick",
         name: p.name,
         vorp: p.vorp,
-        yearPts: p.yearPts.slice(),
+        yearPts: (p.yearPts || []).slice(),
         proxyName: p.proxyName,
         pick: p.pick,
         round: p.round,
-        owner: p.owner
+        owner: p.owner,
+        belowCut: false,
+        row: null
       };
     });
     return map;
   }
 
-  function sumTradeKeys(keys, assetMap, yearCount) {
-    const out = {
-      vorp: 0,
-      yearPts: Array.from({ length: yearCount }, () => 0),
-      items: []
-    };
-    (keys || []).forEach((k) => {
-      const a = assetMap[k];
-      if (!a) return;
-      out.vorp += a.vorp;
-      for (let i = 0; i < yearCount; i++) out.yearPts[i] += a.yearPts[i] || 0;
-      out.items.push(a);
+  function buildKeptSets(rows, league, cfg) {
+    const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
+    const out = Object.create(null);
+    (league.owners || []).forEach((owner) => {
+      const players = rows.filter((r) => r.owner === owner);
+      out[owner] = splitRosterByKeepers(players, cfg, owner, cutOn).keptSet;
     });
     return out;
   }
 
-  function fmtSigned(v) {
-    if (v == null || !Number.isFinite(v)) return "—";
-    const n = Math.round(v);
-    return (n > 0 ? "+" : "") + String(n);
+  /** Kept-player totals + owned pick proxy values. */
+  function teamTradeTotals(rows, owner, cfg, pickOwnerByKey, picksByKey) {
+    const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
+    const yLen = state.seasons.length;
+    const players = rows.filter((r) => r.owner === owner);
+    const split = splitRosterByKeepers(players, cfg, owner, cutOn);
+    const yearPts = Array.from({ length: yLen }, () => 0);
+    let vorp = 0;
+    split.kept.forEach((p) => {
+      const yp = yearPointsForRow(p, yLen);
+      yp.forEach((v, i) => {
+        yearPts[i] += v;
+      });
+      vorp += Number(p.vorp) || 0;
+    });
+    Object.keys(pickOwnerByKey || {}).forEach((k) => {
+      if (pickOwnerByKey[k] !== owner) return;
+      const pk = picksByKey[k];
+      if (!pk) return;
+      vorp += Number(pk.vorp) || 0;
+      for (let i = 0; i < yLen; i++) yearPts[i] += (pk.yearPts && pk.yearPts[i]) || 0;
+    });
+    return { yearPts, vorp, split };
+  }
+
+  /**
+   * Swap players/picks between sideA and sideB, re-cut keepers, return per-team diffs.
+   * Team A score is not −Team B — cuts change independently.
+   */
+  function buildPickMaps(picks) {
+    const picksByKey = Object.create(null);
+    const pickOwnerByKey = Object.create(null);
+    (picks || []).forEach((p) => {
+      picksByKey[p.key] = p;
+      pickOwnerByKey[p.key] = p.owner;
+    });
+    return { picksByKey, pickOwnerByKey };
+  }
+
+  function simulateTrade(rows, league, cfg, sideA, sideB, giveKeys, getKeys, picks, preCache) {
+    const yLen = state.seasons.length;
+    const base = buildPickMaps(picks);
+    const picksByKey = base.picksByKey;
+    const pickOwnerByKey = Object.assign(Object.create(null), base.pickOwnerByKey);
+
+    const preA =
+      (preCache && preCache[sideA]) ||
+      teamTradeTotals(rows, sideA, cfg, base.pickOwnerByKey, picksByKey);
+    const preB =
+      (preCache && preCache[sideB]) ||
+      teamTradeTotals(rows, sideB, cfg, base.pickOwnerByKey, picksByKey);
+
+    const ownerOverride = Object.create(null);
+    (giveKeys || []).forEach((k) => {
+      if (picksByKey[k]) pickOwnerByKey[k] = sideB;
+      else ownerOverride[k] = sideB;
+    });
+    (getKeys || []).forEach((k) => {
+      if (picksByKey[k]) pickOwnerByKey[k] = sideA;
+      else ownerOverride[k] = sideA;
+    });
+
+    const touched = Object.keys(ownerOverride);
+    const simRows =
+      touched.length === 0
+        ? rows
+        : rows.map((r) => {
+            if (!ownerOverride[r.id]) return r;
+            return Object.assign({}, r, { owner: ownerOverride[r.id] });
+          });
+
+    const postA = teamTradeTotals(simRows, sideA, cfg, pickOwnerByKey, picksByKey);
+    const postB = teamTradeTotals(simRows, sideB, cfg, pickOwnerByKey, picksByKey);
+
+    function diffTotals(post, pre) {
+      return {
+        yearPts: post.yearPts.map((v, i) => v - (pre.yearPts[i] || 0)),
+        vorp: post.vorp - pre.vorp,
+        post,
+        pre
+      };
+    }
+
+    return {
+      a: diffTotals(postA, preA),
+      b: diffTotals(postB, preB),
+      yLen
+    };
+  }
+
+  function combinations(arr, k) {
+    if (k <= 0) return [[]];
+    if (!arr.length || k > arr.length) return [];
+    const out = [];
+    function rec(start, path) {
+      if (path.length === k) {
+        out.push(path.slice());
+        return;
+      }
+      for (let i = start; i < arr.length; i++) {
+        path.push(arr[i]);
+        rec(i + 1, path);
+        path.pop();
+      }
+    }
+    rec(0, []);
+    return out;
+  }
+
+  function scoreTradePackage(sim, giveKeys, getKeys, assetMap) {
+    const myVorp = sim.a.vorp;
+    const theirVorp = sim.b.vorp;
+    const myYears = sim.a.yearPts.reduce((s, v) => s + v, 0);
+    const theirYears = sim.b.yearPts.reduce((s, v) => s + v, 0);
+    // Soft fairness: crush deals that nuke the other side relative to our gain
+    if (myVorp > 20 && theirVorp < -1.75 * myVorp) return -1e9;
+    if (myVorp < -5) return -1e9;
+    let cutBonus = 0;
+    (giveKeys || []).forEach((k) => {
+      const a = assetMap[k];
+      if (a && a.belowCut) cutBonus += 8;
+    });
+    (getKeys || []).forEach((k) => {
+      const a = assetMap[k];
+      if (a && !a.belowCut) cutBonus += 4;
+      if (a && a.belowCut) cutBonus -= 2;
+    });
+    return myVorp * 1.2 + myYears * 0.002 + theirVorp * 0.35 + theirYears * 0.0005 + cutBonus;
+  }
+
+  function packageSignature(giveKeys, getKeys) {
+    const g = giveKeys.slice().sort().join(",");
+    const t = getKeys.slice().sort().join(",");
+    return g + "||" + t;
+  }
+
+  function suggestTradePackages(opts) {
+    const {
+      rows,
+      league,
+      cfg,
+      myTeam,
+      mode,
+      seedKey,
+      assetMap,
+      picks,
+      limit
+    } = opts;
+    const maxN = Math.min(5, limit || 5);
+    const poolCap = 6;
+    const maxAssets = 3;
+    if (!myTeam || !seedKey || !assetMap[seedKey]) return [];
+
+    const seed = assetMap[seedKey];
+    const myAssets = Object.keys(assetMap)
+      .map((k) => assetMap[k])
+      .filter((a) => a.owner === myTeam);
+    const others = (league.owners || []).filter((o) => o !== myTeam);
+
+    function rankMyFillers(list) {
+      return list
+        .slice()
+        .sort((a, b) => {
+          const ac = a.belowCut ? 1 : 0;
+          const bc = b.belowCut ? 1 : 0;
+          if (ac !== bc) return bc - ac;
+          return (a.vorp || 0) - (b.vorp || 0) || a.name.localeCompare(b.name);
+        });
+    }
+
+    function rankTheirTargets(list) {
+      return list
+        .slice()
+        .sort(
+          (a, b) =>
+            (a.belowCut ? 0 : 1) - (b.belowCut ? 0 : 1) ||
+            (b.vorp || 0) - (a.vorp || 0) ||
+            a.name.localeCompare(b.name)
+        );
+    }
+
+    const candidates = [];
+    const seen = new Set();
+    const baseMaps = buildPickMaps(picks);
+    const preCache = Object.create(null);
+    preCache[myTeam] = teamTradeTotals(
+      rows,
+      myTeam,
+      cfg,
+      baseMaps.pickOwnerByKey,
+      baseMaps.picksByKey
+    );
+    others.forEach((o) => {
+      preCache[o] = teamTradeTotals(
+        rows,
+        o,
+        cfg,
+        baseMaps.pickOwnerByKey,
+        baseMaps.picksByKey
+      );
+    });
+
+    others.forEach((other) => {
+      let theirAssets = Object.keys(assetMap)
+        .map((k) => assetMap[k])
+        .filter((a) => a.owner === other);
+      let myPool = myAssets.filter((a) => a.key !== seedKey);
+      let theirPool = theirAssets.filter((a) => a.key !== seedKey);
+
+      if (mode === "offer") {
+        if (seed.owner !== myTeam) return;
+        myPool = rankMyFillers(myPool).slice(0, poolCap);
+        theirPool = rankTheirTargets(theirAssets).slice(0, poolCap);
+      } else {
+        if (seed.owner === myTeam || seed.owner !== other) return;
+        theirPool = rankTheirTargets(theirPool).slice(0, poolCap);
+        myPool = rankMyFillers(myAssets).slice(0, poolCap);
+      }
+
+      const myKeys = myPool.map((a) => a.key);
+      const theirKeys = theirPool.map((a) => a.key);
+
+      function consider(giveKeys, getKeys) {
+        if (!giveKeys.length || !getKeys.length) return;
+        if (giveKeys.length > maxAssets || getKeys.length > maxAssets) return;
+        const sig = packageSignature(giveKeys, getKeys) + "|" + other;
+        if (seen.has(sig)) return;
+        seen.add(sig);
+        const sim = simulateTrade(
+          rows,
+          league,
+          cfg,
+          myTeam,
+          other,
+          giveKeys,
+          getKeys,
+          picks,
+          preCache
+        );
+        const score = scoreTradePackage(sim, giveKeys, getKeys, assetMap);
+        if (score <= -1e8) return;
+        candidates.push({
+          other,
+          giveKeys: giveKeys.slice(),
+          getKeys: getKeys.slice(),
+          sim,
+          score
+        });
+      }
+
+      if (mode === "offer") {
+        // give = [seed] + 0..2 fillers; get = 1..3 of theirs
+        for (let mg = 0; mg <= maxAssets - 1; mg++) {
+          combinations(myKeys, mg).forEach((extras) => {
+            const giveKeys = [seedKey].concat(extras);
+            for (let tg = 1; tg <= maxAssets; tg++) {
+              combinations(theirKeys, tg).forEach((getKeys) => {
+                consider(giveKeys, getKeys);
+              });
+            }
+          });
+        }
+      } else {
+        // get = [seed] + 0..2 of theirs; give = 1..3 of mine
+        for (let tg = 0; tg <= maxAssets - 1; tg++) {
+          combinations(theirKeys, tg).forEach((extras) => {
+            const getKeys = [seedKey].concat(extras);
+            for (let mg = 1; mg <= maxAssets; mg++) {
+              combinations(myKeys, mg).forEach((giveKeys) => {
+                consider(giveKeys, getKeys);
+              });
+            }
+          });
+        }
+      }
+    });
+
+    candidates.sort(
+      (a, b) =>
+        b.score - a.score ||
+        String(a.other).localeCompare(String(b.other)) ||
+        packageSignature(a.giveKeys, a.getKeys).localeCompare(
+          packageSignature(b.giveKeys, b.getKeys)
+        )
+    );
+    return candidates.slice(0, maxN);
+  }
+
+  function pickPlayerRowHtml(p) {
+    const tip = p.proxyName
+      ? "Overall #" + p.pick + " · ≈ " + p.proxyName
+      : "Overall #" + (p.pick || "") + " · no unowned proxy";
+    return (
+      '<div class="lt-player tc-pick-row">' +
+      '<div class="fd-headshot-empty" aria-hidden="true"></div>' +
+      '<div class="lt-player-meta">' +
+      '<div class="lt-player-name" title="' +
+      escapeHtml(tip) +
+      '">' +
+      escapeHtml(p.name || "") +
+      (p.proxyName
+        ? ' <span class="muted">≈ ' + escapeHtml(p.proxyName) + "</span>"
+        : "") +
+      "</div>" +
+      '<div class="lt-player-chips"><span class="fd-pos-chip">PICK</span></div>' +
+      "</div>" +
+      '<div class="lt-player-vorp">' +
+      fmtInt(p.vorp) +
+      "</div>" +
+      "</div>"
+    );
+  }
+
+  function tradeAssetBodyHtml(asset) {
+    if (!asset) return "";
+    if (asset.kind === "pick") return pickPlayerRowHtml(asset);
+    return teamPlayerRowHtml(asset.row || asset, !!asset.belowCut);
+  }
+
+  function tradeAssetRowHtml(asset, selected) {
+    if (!asset) return "";
+    return (
+      '<button type="button" class="tc-asset-btn' +
+      (selected ? " is-selected" : "") +
+      (asset.belowCut ? " is-cut" : "") +
+      '" data-tc-asset="' +
+      escapeHtml(asset.key) +
+      '">' +
+      tradeAssetBodyHtml(asset) +
+      "</button>"
+    );
+  }
+
+  function tradeAssetDisplayHtml(asset) {
+    if (!asset) return "";
+    return '<div class="tc-asset-view">' + tradeAssetBodyHtml(asset) + "</div>";
+  }
+
+  function tradeDiffTableHtml(sim, myTeam, other, yearSeasons) {
+    function row(label, yearPts, vorp, cls) {
+      return (
+        "<tr class='" +
+        cls +
+        "'><td class='tc-team-col'>" +
+        escapeHtml(label) +
+        "</td>" +
+        yearPts
+          .map((v) => {
+            return (
+              "<td class='tc-num " +
+              (v > 0 ? "up" : v < 0 ? "down" : "") +
+              "'>" +
+              fmtSigned(v) +
+              "</td>"
+            );
+          })
+          .join("") +
+        "<td class='tc-num tc-emph " +
+        (vorp > 0 ? "up" : vorp < 0 ? "down" : "") +
+        "'>" +
+        fmtSigned(vorp) +
+        "</td></tr>"
+      );
+    }
+    return (
+      '<div class="tc-overview-wrap"><table class="tc-overview"><thead><tr>' +
+      "<th class='tc-team-col'></th>" +
+      yearSeasons.map((y) => "<th>" + y + "</th>").join("") +
+      "<th>VORP</th></tr></thead><tbody>" +
+      row(myTeam, sim.a.yearPts, sim.a.vorp, "tc-row-a") +
+      row(other, sim.b.yearPts, sim.b.vorp, "tc-row-b") +
+      "</tbody></table></div>"
+    );
+  }
+
+  function tradeSuggestionCardHtml(pkg, assetMap, yearSeasons) {
+    const plan = state.teamLabels[pkg.other];
+    const giveHtml = pkg.giveKeys
+      .map((k) => tradeAssetDisplayHtml(assetMap[k]))
+      .join("");
+    const getHtml = pkg.getKeys
+      .map((k) => tradeAssetDisplayHtml(assetMap[k]))
+      .join("");
+    return (
+      '<article class="tc-suggest">' +
+      '<header class="tc-suggest-head">' +
+      '<div class="tc-suggest-team">' +
+      escapeHtml(pkg.other) +
+      (plan && plan.label
+        ? '<div class="lt-team-plan">' + escapeHtml(plan.label) + "</div>"
+        : "") +
+      "</div></header>" +
+      '<div class="tc-suggest-cols">' +
+      '<div class="tc-suggest-col"><div class="tc-suggest-label">You give</div>' +
+      giveHtml +
+      "</div>" +
+      '<div class="tc-suggest-col"><div class="tc-suggest-label">You get</div>' +
+      getHtml +
+      "</div>" +
+      "</div>" +
+      tradeDiffTableHtml(pkg.sim, "You", pkg.other, yearSeasons) +
+      "</article>"
+    );
   }
 
   function renderTradeCalculator(rows, league, cfg) {
@@ -1592,282 +2265,169 @@
       return;
     }
 
-    const h = horizonLen(state.seasons, cfg.endSeason);
-    const yearSeasons = state.seasons.slice(0, h);
+    const yearSeasons = state.seasons.slice();
     const unowned = unownedAfterCuts(rows, league, cfg);
     const picks = buildKeeperDraftPicks(unowned, cfg, state.seasons, rows, league);
-    const assetMap = tradeAssetMap(rows, picks);
-    const draftYear = yearSeasons[0] || state.seasons[0] || "";
-    const ladderOrder = projectedLadderBestToWorst(rows, league, cfg);
+    const keptSets = buildKeptSets(rows, league, cfg);
+    const assetMap = tradeAssetMap(rows, picks, keptSets);
 
-    let sideA = state.trade.sideA;
-    let sideB = state.trade.sideB;
-    if (!sideA || league.owners.indexOf(sideA) < 0) {
-      sideA = cfg.myTeam && league.owners.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : league.owners[0];
+    const myTeam =
+      cfg.myTeam && league.owners.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : "";
+
+    if (
+      state.trade.offerKey &&
+      !(assetMap[state.trade.offerKey] && assetMap[state.trade.offerKey].owner === myTeam)
+    ) {
+      state.trade.offerKey = "";
     }
-    if (!sideB || league.owners.indexOf(sideB) < 0 || sideB === sideA) {
-      sideB = league.owners.find((o) => o !== sideA) || league.owners[0];
+    if (
+      state.trade.targetKey &&
+      !(
+        assetMap[state.trade.targetKey] &&
+        assetMap[state.trade.targetKey].owner &&
+        assetMap[state.trade.targetKey].owner !== myTeam
+      )
+    ) {
+      state.trade.targetKey = "";
     }
-    state.trade.sideA = sideA;
-    state.trade.sideB = sideB;
 
-    // Drop selections that no longer exist / aren't owned by the active side
-    state.trade.give = (state.trade.give || []).filter((k) => {
-      const a = assetMap[k];
-      return !!(a && a.owner === sideA);
-    });
-    state.trade.get = (state.trade.get || []).filter((k) => {
-      const a = assetMap[k];
-      return !!(a && a.owner === sideB);
-    });
+    const myAssets = myTeam
+      ? Object.keys(assetMap)
+          .map((k) => assetMap[k])
+          .filter((a) => a.owner === myTeam)
+          .sort((a, b) => {
+            const ac = a.belowCut ? 1 : 0;
+            const bc = b.belowCut ? 1 : 0;
+            if (ac !== bc) return ac - bc;
+            return (b.vorp || 0) - (a.vorp || 0) || a.name.localeCompare(b.name);
+          })
+      : [];
 
-    const byOwner = Object.create(null);
-    league.owners.forEach((o) => {
-      byOwner[o] = rows
-        .filter((r) => r.owner === o)
-        .slice()
-        .sort(
-          (a, b) =>
-            (b.vorp || 0) - (a.vorp || 0) || (a.name || "").localeCompare(b.name || "")
-        );
-    });
+    const theirAssets = myTeam
+      ? Object.keys(assetMap)
+          .map((k) => assetMap[k])
+          .filter((a) => a.owner && a.owner !== myTeam)
+          .sort(
+            (a, b) =>
+              String(a.owner).localeCompare(String(b.owner)) ||
+              (b.vorp || 0) - (a.vorp || 0) ||
+              a.name.localeCompare(b.name)
+          )
+      : [];
 
-    const giveSet = new Set(state.trade.give);
-    const getSet = new Set(state.trade.get);
-
-    function teamOptions(selected) {
-      return league.owners
+    const teamOptions =
+      '<option value="">— Select —</option>' +
+      league.owners
         .map(
           (o) =>
             '<option value="' +
             escapeHtml(o) +
             '"' +
-            (o === selected ? " selected" : "") +
+            (o === myTeam ? " selected" : "") +
             ">" +
             escapeHtml(o) +
             "</option>"
         )
         .join("");
+
+    let offerSuggestions = [];
+    let targetSuggestions = [];
+    if (myTeam && state.trade.offerKey) {
+      offerSuggestions = suggestTradePackages({
+        rows,
+        league,
+        cfg,
+        myTeam,
+        mode: "offer",
+        seedKey: state.trade.offerKey,
+        assetMap,
+        picks,
+        limit: 5
+      });
+    }
+    if (myTeam && state.trade.targetKey) {
+      targetSuggestions = suggestTradePackages({
+        rows,
+        league,
+        cfg,
+        myTeam,
+        mode: "target",
+        seedKey: state.trade.targetKey,
+        assetMap,
+        picks,
+        limit: 5
+      });
     }
 
-    function playerChecks(owner, selectedSet, side) {
-      const list = byOwner[owner] || [];
-      if (!list.length) return '<p class="muted">No matched players</p>';
-      return list
-        .map((p) => {
-          const id = p.id;
-          return (
-            '<label class="tc-asset">' +
-            '<input type="checkbox" data-trade-side="' +
-            side +
-            '" data-trade-key="' +
-            escapeHtml(id) +
-            '"' +
-            (selectedSet.has(id) ? " checked" : "") +
-            "/>" +
-            '<span class="tc-asset-name" title="' +
-            escapeHtml(p.name) +
-            '">' +
-            escapeHtml(p.name) +
-            " " +
-            posChipsHtml(displayPos(p)) +
-            "</span>" +
-            '<span class="tc-asset-vorp">' +
-            fmtInt(p.vorp) +
-            "</span>" +
-            "</label>"
-          );
-        })
-        .join("");
-    }
-
-    function pickChecks(owner, selectedSet, side) {
-      const teamPicks = picks
-        .filter((p) => p.owner === owner)
-        .sort((a, b) => a.pick - b.pick);
-      if (!picks.length) {
-        return '<p class="muted">No draft picks — roster (DEF+MID+RUC+FWD+bench) must exceed Keepers.</p>';
+    function assetListHtml(list, selectedKey, emptyMsg, groupByOwner) {
+      if (!list.length) return '<p class="muted">' + emptyMsg + "</p>";
+      if (!groupByOwner) {
+        return list.map((a) => tradeAssetRowHtml(a, a.key === selectedKey)).join("");
       }
-      if (!teamPicks.length) {
-        return '<p class="muted">No picks assigned to this team.</p>';
-      }
-      return teamPicks
-        .map((p) => {
-          const tip = p.proxyName
-            ? "Overall #" + p.pick + " · ≈ " + p.proxyName
-            : "Overall #" + p.pick + " · no unowned proxy";
-          return (
-            '<label class="tc-asset tc-pick">' +
-            '<input type="checkbox" data-trade-side="' +
-            side +
-            '" data-trade-key="' +
-            escapeHtml(p.key) +
-            '"' +
-            (selectedSet.has(p.key) ? " checked" : "") +
-            "/>" +
-            '<span class="tc-asset-name" title="' +
-            escapeHtml(tip) +
-            '">' +
-            escapeHtml(p.name) +
-            (p.proxyName
-              ? ' <span class="muted">≈ ' + escapeHtml(p.proxyName) + "</span>"
-              : "") +
-            "</span>" +
-            '<span class="tc-asset-vorp">' +
-            fmtInt(p.vorp) +
-            "</span>" +
-            "</label>"
+      const parts = [];
+      let last = null;
+      list.forEach((a) => {
+        if (a.owner !== last) {
+          last = a.owner;
+          parts.push(
+            '<div class="tc-owner-head">' +
+              escapeHtml(a.owner) +
+              teamPlanLabelHtml(a.owner) +
+              "</div>"
           );
-        })
-        .join("");
+        }
+        parts.push(tradeAssetRowHtml(a, a.key === selectedKey));
+      });
+      return parts.join("");
     }
 
-    const given = sumTradeKeys(state.trade.give, assetMap, yearSeasons.length);
-    const received = sumTradeKeys(state.trade.get, assetMap, yearSeasons.length);
-    const netVorpA = received.vorp - given.vorp;
-    const netYearsA = yearSeasons.map((_, i) => received.yearPts[i] - given.yearPts[i]);
-    // Zero-sum on exchanged assets
-    const netVorpB = -netVorpA;
-    const netYearsB = netYearsA.map((v) => -v);
-
-    function winnerLabel(v) {
-      if (v > 0) return { cls: "tc-win-a", text: sideA };
-      if (v < 0) return { cls: "tc-win-b", text: sideB };
-      return { cls: "tc-win-tie", text: "Tie" };
+    function suggestionsHtml(list) {
+      if (!list.length) return '<p class="muted">No packages found.</p>';
+      return list.map((p) => tradeSuggestionCardHtml(p, assetMap, yearSeasons)).join("");
     }
 
-    function netCell(v, emphasize) {
-      return (
-        "<td class='tc-num " +
-        (v > 0 ? "up" : v < 0 ? "down" : "") +
-        (emphasize ? " tc-emph" : "") +
-        "'>" +
-        fmtSigned(v) +
-        "</td>"
-      );
-    }
-
-    const overviewHead =
-      "<tr><th class='tc-team-col'>Team</th>" +
-      yearSeasons.map((y) => "<th>" + y + "</th>").join("") +
-      "<th>VORP</th></tr>";
-
-    const overviewBody =
-      "<tr class='tc-row-a'>" +
-      "<td class='tc-team-col'>" +
-      escapeHtml(sideA) +
-      ' <span class="lt-you">you</span></td>' +
-      netYearsA.map((v) => netCell(v, false)).join("") +
-      netCell(netVorpA, true) +
-      "</tr>" +
-      "<tr class='tc-row-b'>" +
-      "<td class='tc-team-col'>" +
-      escapeHtml(sideB) +
-      "</td>" +
-      netYearsB.map((v) => netCell(v, false)).join("") +
-      netCell(netVorpB, true) +
-      "</tr>" +
-      "<tr class='tc-row-winner'>" +
-      "<td class='tc-team-col'>Wins</td>" +
-      netYearsA
-        .map((v) => {
-          const w = winnerLabel(v);
-          return (
-            "<td class='tc-winner-cell " +
-            w.cls +
-            "' title='" +
-            escapeHtml(w.text) +
-            "'>" +
-            escapeHtml(w.text) +
-            "</td>"
-          );
-        })
-        .join("") +
-      (function () {
-        const w = winnerLabel(netVorpA);
-        return (
-          "<td class='tc-winner-cell tc-emph " +
-          w.cls +
-          "' title='" +
-          escapeHtml(w.text) +
-          "'>" +
-          escapeHtml(w.text) +
-          "</td>"
-        );
-      })() +
-      "</tr>";
-
-    const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
-    const roster = rosterSize(cfg);
-    const perTeam = keeperDraftPicksPerTeam(cfg);
-    const worst = ladderOrder.length ? ladderOrder[ladderOrder.length - 1] : "";
-    const note =
-      "Each team shows its " +
-      perTeam +
-      " " +
-      draftYear +
-      " picks (roster " +
-      roster +
-      " − " +
-      cfg.keeperCount +
-      " keepers). Snake order from projected " +
-      draftYear +
-      " ladder" +
-      (worst ? " — R1 starts with " + worst : "") +
-      ". Pick values ≈ ranked unowned after" +
-      (cutOn ? " VORP + year-1 pos keeper cuts" : " treating rostered as kept") +
-      ". Year cells ±xPoints; VORP through " +
-      (cfg.endSeason || "end") +
-      ".";
+    const needTeam = !myTeam;
 
     el.style.display = "block";
     el.innerHTML =
       "<h3>Trade calculator</h3>" +
-      "<p class='muted'>" +
-      note +
-      "</p>" +
       "<div class='tc-sides'>" +
-      "<label class='tc-side-label'>You" +
-      '<select id="tc-side-a">' +
-      teamOptions(sideA) +
+      "<label class='tc-side-label'>My team" +
+      '<select id="tc-my-team">' +
+      teamOptions +
       "</select></label>" +
-      "<span class='tc-swap' aria-hidden='true'>⇄</span>" +
-      "<label class='tc-side-label'>Them" +
-      '<select id="tc-side-b">' +
-      teamOptions(sideB) +
-      "</select></label>" +
+      (myTeam && state.teamLabels[myTeam] && state.teamLabels[myTeam].label
+        ? '<div class="lt-team-plan tc-my-plan">' +
+          escapeHtml(state.teamLabels[myTeam].label) +
+          "</div>"
+        : "") +
       "</div>" +
-      "<div class='tc-grid'>" +
-      "<div class='tc-col'>" +
-      "<h4>You give</h4>" +
-      "<div class='tc-list'>" +
-      playerChecks(sideA, giveSet, "give") +
-      "</div>" +
-      "<h4 class='tc-sub'>Picks you give</h4>" +
-      "<div class='tc-list tc-list-picks'>" +
-      pickChecks(sideA, giveSet, "give") +
-      "</div>" +
-      "</div>" +
-      "<div class='tc-col'>" +
-      "<h4>You get</h4>" +
-      "<div class='tc-list'>" +
-      playerChecks(sideB, getSet, "get") +
-      "</div>" +
-      "<h4 class='tc-sub'>Picks you get</h4>" +
-      "<div class='tc-list tc-list-picks'>" +
-      pickChecks(sideB, getSet, "get") +
-      "</div>" +
-      "</div>" +
-      "</div>" +
-      "<div class='tc-net'>" +
-      "<h4>Annual overview</h4>" +
-      "<p class='muted'>Who gains value each season (and overall VORP).</p>" +
-      "<div class='tc-overview-wrap'><table class='tc-overview'><thead>" +
-      overviewHead +
-      "</thead><tbody>" +
-      overviewBody +
-      "</tbody></table></div>" +
-      "</div>";
+      (needTeam
+        ? "<p class='muted'>Select your team to start.</p>"
+        : "<section class='tc-section'>" +
+          "<h4>Offer</h4>" +
+          "<div class='tc-section-grid'>" +
+          "<div class='tc-col'>" +
+          "<div class='tc-list' id='tc-offer-list'>" +
+          assetListHtml(myAssets, state.trade.offerKey, "No assets on this roster") +
+          "</div></div>" +
+          "<div class='tc-suggest-stack'>" +
+          (state.trade.offerKey
+            ? suggestionsHtml(offerSuggestions)
+            : '<p class="muted">Pick one of yours.</p>') +
+          "</div></div></section>" +
+          "<section class='tc-section'>" +
+          "<h4>Target</h4>" +
+          "<div class='tc-section-grid'>" +
+          "<div class='tc-col'>" +
+          "<div class='tc-list' id='tc-target-list'>" +
+          assetListHtml(theirAssets, state.trade.targetKey, "No league assets", true) +
+          "</div></div>" +
+          "<div class='tc-suggest-stack'>" +
+          (state.trade.targetKey
+            ? suggestionsHtml(targetSuggestions)
+            : '<p class="muted">Pick someone else\'s.</p>') +
+          "</div></div></section>");
   }
 
   function bindTradeCalculator() {
@@ -1877,38 +2437,29 @@
     if (!el) return;
     el.addEventListener("change", (e) => {
       const t = e.target;
-      if (!t) return;
-      if (t.id === "tc-side-a") {
-        state.trade.sideA = t.value;
-        state.trade.give = [];
-        if (state.trade.sideB === state.trade.sideA) {
-          const owners = (state.league && state.league.owners) || [];
-          state.trade.sideB = owners.find((o) => o !== state.trade.sideA) || "";
-        }
-        renderTradeCalculator(state.rows, state.league, state.cfg);
+      if (!t || t.id !== "tc-my-team") return;
+      const val = t.value;
+      state.cfg.myTeam = val;
+      state.trade.offerKey = "";
+      state.trade.targetKey = "";
+      syncMyTeamSelect(state.league, state.cfg);
+      refresh();
+    });
+    el.addEventListener("click", (e) => {
+      const btn = e.target && e.target.closest ? e.target.closest("[data-tc-asset]") : null;
+      if (!btn) return;
+      const key = btn.getAttribute("data-tc-asset");
+      if (!key) return;
+      const inOffer = btn.closest("#tc-offer-list");
+      const inTarget = btn.closest("#tc-target-list");
+      if (inOffer) {
+        state.trade.offerKey = state.trade.offerKey === key ? "" : key;
+      } else if (inTarget) {
+        state.trade.targetKey = state.trade.targetKey === key ? "" : key;
+      } else {
         return;
       }
-      if (t.id === "tc-side-b") {
-        state.trade.sideB = t.value;
-        state.trade.get = [];
-        renderTradeCalculator(state.rows, state.league, state.cfg);
-        return;
-      }
-      if (t.matches && t.matches("input[data-trade-key]")) {
-        const side = t.getAttribute("data-trade-side");
-        const key = t.getAttribute("data-trade-key");
-        const arr = side === "give" ? "give" : "get";
-        const other = side === "give" ? "get" : "give";
-        const set = new Set(state.trade[arr]);
-        if (t.checked) {
-          set.add(key);
-          state.trade[other] = (state.trade[other] || []).filter((k) => k !== key);
-        } else {
-          set.delete(key);
-        }
-        state.trade[arr] = Array.from(set);
-        renderTradeCalculator(state.rows, state.league, state.cfg);
-      }
+      renderTradeCalculator(state.rows, state.league, state.cfg);
     });
   }
 
@@ -1950,10 +2501,14 @@
 
     const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
     const cutN = Math.max(0, Number(cfg.keeperCount) || 0);
-    const h = horizonLen(state.seasons, cfg.endSeason);
-    const yearSeasons = state.seasons.slice(0, h);
+    const yearSeasons = state.seasons.slice();
     const myTeam = cfg.myTeam || "";
     const standings = buildTeamStandings(rows, league, cfg);
+    const labelMap = assignTeamTrajectoryLabels(standings);
+    state.teamLabels = Object.create(null);
+    Object.keys(labelMap).forEach((o) => {
+      state.teamLabels[o] = labelMap[o];
+    });
     const byOwner = Object.create(null);
     standings.forEach((t) => {
       byOwner[t.owner] = {
@@ -2000,11 +2555,16 @@
           (mine ? "lt-mine-row" : "") +
           "'>" +
           "<td class='lt-ladder-team'>" +
+          '<div class="lt-team-cell">' +
+          '<div class="lt-team-name-row">' +
           '<span class="tr-rank">' +
           (i + 1) +
           "</span> " +
           escapeHtml(t.owner) +
           (mine ? ' <span class="lt-you">you</span>' : "") +
+          "</div>" +
+          teamPlanLabelHtml(t.owner) +
+          "</div>" +
           "</td>" +
           yearCells +
           "<td class='lt-num lt-vorp-col'>" +
@@ -2024,9 +2584,7 @@
         keptList.forEach((p) => body.push(teamPlayerRowHtml(p, false)));
         if (cutOn && cutN > 0 && cutList.length) {
           body.push(
-            '<div class="lt-cut" role="separator" title="Keeper cut (VORP&gt;0 fill on-field shape, then VORP flex; n=' +
-              cutN +
-              ')">' +
+            '<div class="lt-cut" role="separator" title="Keeper cut">' +
               "<span>Keeper cut · " +
               keptList.length +
               "/" +
@@ -2035,8 +2593,6 @@
               "</div>"
           );
           cutList.forEach((p) => body.push(teamPlayerRowHtml(p, true)));
-        } else if (!cutOn) {
-          // already showing full roster in counted
         }
         return (
           '<article class="lt-board' +
@@ -2044,6 +2600,7 @@
           '">' +
           '<header class="lt-board-head">' +
           '<div class="lt-board-title">' +
+          '<div class="lt-team-name-row">' +
           '<span class="lt-board-rank">#' +
           (i + 1) +
           "</span> " +
@@ -2053,6 +2610,8 @@
           escapeHtml(t.owner) +
           "</span>" +
           (mine ? ' <span class="lt-you">you</span>' : "") +
+          "</div>" +
+          teamPlanLabelHtml(t.owner) +
           "</div>" +
           '<div class="lt-board-stats">' +
           '<span class="lt-stat lt-stat-total">' +
@@ -2068,19 +2627,10 @@
       })
       .join("");
 
-    const cutNote = cutOn
-      ? " Year columns and VORP use each team's " +
-        cutN +
-        " keepers (on-field shape from VORP&gt;0 + year-1 pos; remaining slots pure VORP — negatives never block elites). Red line marks cuts."
-      : " Year columns sum xPoints; VORP is full-roster total under current settings.";
-
     if (ladderEl) {
       ladderEl.style.display = "block";
       ladderEl.innerHTML =
         "<h3>Ladder</h3>" +
-        "<p class='muted'>Gold / silver / bronze mark the top 3 in each column." +
-        cutNote +
-        "</p>" +
         "<div class='lt-ladder-wrap'><table class='lt-ladder'><thead>" +
         ladderHead +
         "</thead><tbody>" +
@@ -2091,7 +2641,6 @@
       boardsEl.style.display = "block";
       boardsEl.innerHTML =
         "<h3>Teams</h3>" +
-        "<p class='muted'>Players sorted by VORP within kept / cut groups.</p>" +
         "<div class='lt-boards'>" +
         boards +
         "</div>";
@@ -2466,7 +3015,11 @@
       if (!el) return;
       el.addEventListener("change", () => {
         readControlsFromDom();
-        if (id === "cfg-myTeam") rebuildOwnerDropdown(state.league, state.cfg);
+        if (id === "cfg-myTeam") {
+          rebuildOwnerDropdown(state.league, state.cfg);
+          state.trade.offerKey = "";
+          state.trade.targetKey = "";
+        }
         refresh();
       });
       if (id === "cfg-search") {
