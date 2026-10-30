@@ -27,7 +27,7 @@
     tab: "pool"
   };
 
-  const FD_TABS = ["pool", "teams", "trades", "ladder", "import"];
+  const FD_TABS = ["pool", "planner", "teams", "trades", "ladder", "import"];
 
   const CLUB_FILTER_ORDER = [
     "ADEL",
@@ -1285,16 +1285,17 @@
   }
 
   /**
-   * Season-1 positional probabilities from JSON (index 0 = first horizon year,
-   * currently 2027). Falls back to fantasyPos one-hot when pos[] is missing.
+   * Positional probabilities for a horizon year index.
+   * Falls back to fantasyPos one-hot when pos[] is missing.
    */
-  function year1PosProbs(row) {
+  function seasonPosProbs(row, yearIdx) {
     const out = { DEF: 0, MID: 0, RUC: 0, FWD: 0 };
     const a = row && row._asset;
+    const yi = Math.max(0, Number(yearIdx) || 0);
     let any = false;
     POS_KEYS.forEach((p) => {
       const arr = a && a.pos && a.pos[p];
-      const v = arr && arr.length ? Number(arr[0]) : NaN;
+      const v = arr && arr.length > yi ? Number(arr[yi]) : NaN;
       if (Number.isFinite(v) && v > 0) {
         out[p] = v;
         any = true;
@@ -1307,8 +1308,23 @@
     return out;
   }
 
+  /**
+   * Season-1 positional probabilities from JSON (index 0 = first horizon year,
+   * currently 2027). Falls back to fantasyPos one-hot when pos[] is missing.
+   */
+  function year1PosProbs(row) {
+    return seasonPosProbs(row, 0);
+  }
+
+  function seasonXPoints(row, yearIdx) {
+    const xp = row && row._asset && row._asset.xPoints;
+    return Number(numAt(xp, yearIdx)) || 0;
+  }
+
   /** Min year-1 share to claim a positional keeper slot. */
   const KEEPER_POS_MIN_P = 0.05;
+  /** Min season share to claim an on-field planner slot. */
+  const LINEUP_POS_MIN_P = 0.05;
 
   /**
    * Soft positional targets from on-field formation only (bench is flex).
@@ -1733,6 +1749,277 @@
   }
 
   /**
+   * Place roster into on-field formation then bench for one season.
+   * Greedy by season xPoints; claim highest-prob open slot (≥ LINEUP_POS_MIN_P).
+   */
+  function buildSeasonLineup(players, cfg, yearIdx) {
+    const need = {
+      DEF: Math.max(0, Number(cfg.slots && cfg.slots.DEF) || 0),
+      MID: Math.max(0, Number(cfg.slots && cfg.slots.MID) || 0),
+      RUC: Math.max(0, Number(cfg.slots && cfg.slots.RUC) || 0),
+      FWD: Math.max(0, Number(cfg.slots && cfg.slots.FWD) || 0)
+    };
+    const remaining = {
+      DEF: need.DEF,
+      MID: need.MID,
+      RUC: need.RUC,
+      FWD: need.FWD
+    };
+    const filled = { DEF: [], MID: [], RUC: [], FWD: [] };
+    const used = new Set();
+    const ranked = (players || []).slice().sort(
+      (a, b) =>
+        seasonXPoints(b, yearIdx) - seasonXPoints(a, yearIdx) ||
+        (b.vorp || 0) - (a.vorp || 0) ||
+        (a.name || "").localeCompare(b.name || "") ||
+        String(a.id).localeCompare(String(b.id))
+    );
+
+    function tryFill(minP) {
+      ranked.forEach((p) => {
+        if (used.has(p.id)) return;
+        if (!POS_KEYS.some((pos) => remaining[pos] > 0)) return;
+        const probs = seasonPosProbs(p, yearIdx);
+        const open = POS_KEYS.filter(
+          (pos) => remaining[pos] > 0 && (probs[pos] || 0) >= minP
+        ).sort(
+          (a, b) =>
+            (probs[b] || 0) - (probs[a] || 0) ||
+            remaining[b] - remaining[a] ||
+            a.localeCompare(b)
+        );
+        if (!open.length) return;
+        const pos = open[0];
+        filled[pos].push({
+          player: p,
+          pos,
+          xp: seasonXPoints(p, yearIdx),
+          probs
+        });
+        remaining[pos] -= 1;
+        used.add(p.id);
+      });
+    }
+
+    tryFill(LINEUP_POS_MIN_P);
+    // Backfill empty on-field slots with any remaining affinity
+    tryFill(0);
+
+    const benchN = Math.max(0, Number(cfg.bench) || 0);
+    const bench = [];
+    ranked.forEach((p) => {
+      if (used.has(p.id) || bench.length >= benchN) return;
+      bench.push({
+        player: p,
+        pos: "BENCH",
+        xp: seasonXPoints(p, yearIdx),
+        probs: seasonPosProbs(p, yearIdx)
+      });
+      used.add(p.id);
+    });
+
+    const overflow = ranked
+      .filter((p) => !used.has(p.id))
+      .map((p) => ({
+        player: p,
+        pos: "OUT",
+        xp: seasonXPoints(p, yearIdx),
+        probs: seasonPosProbs(p, yearIdx)
+      }));
+
+    let onFieldTotal = 0;
+    POS_KEYS.forEach((pos) => {
+      filled[pos].forEach((slot) => {
+        onFieldTotal += slot.xp;
+      });
+    });
+    const benchTotal = bench.reduce((s, x) => s + x.xp, 0);
+
+    return {
+      need,
+      remaining,
+      filled,
+      bench,
+      overflow,
+      onFieldTotal,
+      squadTotal: onFieldTotal + benchTotal
+    };
+  }
+
+  function plannerPlayerRowHtml(slot, belowCut) {
+    const r = slot.player;
+    const abbr = r.teamAbbr || r.club || "";
+    const teamChip = abbr
+      ? '<span class="fd-team-chip fd-team-' +
+        escapeHtml(abbr) +
+        '">' +
+        escapeHtml(abbr) +
+        "</span>"
+      : "";
+    return (
+      '<div class="lt-player' +
+      (belowCut ? " lt-below-cut" : "") +
+      '">' +
+      headshotHtml(r) +
+      '<div class="lt-player-meta">' +
+      '<div class="lt-player-name" title="' +
+      escapeHtml(r.name || "") +
+      '">' +
+      escapeHtml(r.name || "") +
+      "</div>" +
+      '<div class="lt-player-chips">' +
+      teamChip +
+      posChipsHtml(displayPos(r)) +
+      "</div>" +
+      "</div>" +
+      '<div class="fp-player-xp">' +
+      fmtInt(slot.xp) +
+      "</div>" +
+      "</div>"
+    );
+  }
+
+  function plannerPosBlockHtml(label, slots, emptyCount) {
+    const rows = (slots || []).map(plannerPlayerRowHtml);
+    for (let i = 0; i < (emptyCount || 0); i++) {
+      rows.push('<div class="fp-empty-slot">Empty</div>');
+    }
+    if (!rows.length) return "";
+    return (
+      '<div class="fp-pos-label">' +
+      escapeHtml(label) +
+      "</div>" +
+      rows.join("")
+    );
+  }
+
+  function renderTeamPlanner(rows, league, cfg) {
+    const el = document.getElementById("team-planner");
+    if (!el) return;
+
+    if (!league || !league.owners || !league.owners.length) {
+      el.innerHTML =
+        "<p class='muted'>Upload a Keeper Fantasy CSV in <b>Import</b>, then choose <b>My team</b> to plan lineups.</p>";
+      return;
+    }
+
+    const myTeam =
+      cfg.myTeam && league.owners.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : "";
+    if (!myTeam) {
+      el.innerHTML =
+        "<p class='muted'>Select <b>My team</b> (next to Through) to see your season-by-season planner.</p>";
+      return;
+    }
+
+    const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
+    const cutN = Math.max(0, Number(cfg.keeperCount) || 0);
+    const roster = rows.filter((r) => r.owner === myTeam && r.type !== "pick");
+    const split = splitRosterByKeepers(roster, cfg, myTeam, cutOn);
+    const keepers = split.kept;
+    const cutList = split.cut || [];
+
+    const h = horizonLen(state.seasons, cfg.endSeason);
+    const yearSeasons = state.seasons.slice(0, h);
+    if (!yearSeasons.length) {
+      el.innerHTML = "<p class='muted'>No seasons available.</p>";
+      return;
+    }
+
+    const boards = yearSeasons.map((year, yi) => {
+      const lineup = buildSeasonLineup(keepers, cfg, yi);
+      return { year, yi, lineup, isFirst: yi === 0 };
+    });
+
+    let bestIdx = 0;
+    boards.forEach((b, i) => {
+      if (b.lineup.onFieldTotal > boards[bestIdx].lineup.onFieldTotal) bestIdx = i;
+    });
+    const bestYear = boards[bestIdx].year;
+
+    const lab = state.teamLabels && state.teamLabels[myTeam];
+    const head =
+      '<div class="fp-head">' +
+      '<h3 class="fp-head-title">' +
+      escapeHtml(myTeam) +
+      "</h3>" +
+      (lab && lab.label
+        ? '<span class="fp-head-tag" title="' +
+          escapeHtml(lab.category || "") +
+          '">' +
+          escapeHtml(lab.label) +
+          "</span>"
+        : "") +
+      '<span class="fp-head-best">Best year · ' +
+      bestYear +
+      "</span>" +
+      "</div>";
+
+    const seasonCards = boards
+      .map((b, i) => {
+        const isBest = i === bestIdx;
+        const lineup = b.lineup;
+        let body = "";
+        POS_KEYS.forEach((pos) => {
+          body += plannerPosBlockHtml(
+            pos,
+            lineup.filled[pos],
+            lineup.remaining[pos]
+          );
+        });
+        body += plannerPosBlockHtml("Bench", lineup.bench, 0);
+        if (lineup.overflow.length) {
+          body += plannerPosBlockHtml("Reserve", lineup.overflow, 0);
+        }
+        if (b.isFirst && cutOn && cutN > 0 && cutList.length) {
+          body +=
+            '<div class="lt-cut" role="separator" title="Keeper cut">' +
+            "<span>Keeper cut · " +
+            keepers.length +
+            "/" +
+            cutN +
+            "</span>" +
+            "</div>";
+          cutList.forEach((p) => {
+            body += plannerPlayerRowHtml(
+              {
+                player: p,
+                xp: seasonXPoints(p, 0),
+                pos: "CUT"
+              },
+              true
+            );
+          });
+        }
+        return (
+          '<article class="fp-season' +
+          (isBest ? " is-best" : "") +
+          '">' +
+          '<header class="fp-season-head">' +
+          "<div>" +
+          '<div class="fp-season-year">' +
+          b.year +
+          (isBest ? '<span class="fp-season-badge">Best</span>' : "") +
+          "</div>" +
+          '<div class="fp-season-sub">' +
+          (b.isFirst ? "Current team · keepers" : "Best lineup") +
+          "</div>" +
+          "</div>" +
+          '<div class="fp-season-total" title="On-field xPts">' +
+          fmtInt(lineup.onFieldTotal) +
+          "</div>" +
+          "</header>" +
+          '<div class="fp-season-body">' +
+          (body || '<p class="muted" style="padding:8px 10px;">No players</p>') +
+          "</div>" +
+          "</article>"
+        );
+      })
+      .join("");
+
+    el.innerHTML = head + '<div class="fp-seasons">' + seasonCards + "</div>";
+  }
+
+  /**
    * Best→worst by projected first-horizon season (e.g. 2027) xPoints.
    * Used to snake the keeper draft: R1 worst→best, R2 best→worst, …
    */
@@ -1949,8 +2236,11 @@
     return out;
   }
 
-  /** Absolute |Σ give VORP − Σ get VORP| must be ≤ this (package fairness). */
-  const TRADE_VORP_GAP_MAX = 90;
+  /**
+   * Absolute |Σ give xPoints − Σ get xPoints| across all seasons must be ≤ this.
+   * Uses the same units as the year columns (not scarcity-adjusted VORP).
+   */
+  const TRADE_XPTS_GAP_MAX = 450;
 
   /** Soft buckets for plan-tag trade chemistry (bonus only). */
   const PLAN_TRADE_SIDE = {
@@ -1983,39 +2273,37 @@
     return 0;
   }
 
-  function sumAssetVorp(keys, assetMap) {
+  function sumAssetYearPts(keys, assetMap) {
     let s = 0;
     (keys || []).forEach((k) => {
       const a = assetMap[k];
-      if (a) s += Number(a.vorp) || 0;
+      if (!a || !a.yearPts) return;
+      for (let i = 0; i < a.yearPts.length; i++) s += Number(a.yearPts[i]) || 0;
     });
     return s;
   }
 
+  function yearPtsTotal(yearPts) {
+    return (yearPts || []).reduce((s, v) => s + (Number(v) || 0), 0);
+  }
+
   function scoreTradePackage(sim, giveKeys, getKeys, assetMap, myTeam, other) {
-    const myVorp = sim.a.vorp;
-    const theirVorp = sim.b.vorp;
-    const myYears = sim.a.yearPts.reduce((s, v) => s + v, 0);
-    const theirYears = sim.b.yearPts.reduce((s, v) => s + v, 0);
+    const myTotal = yearPtsTotal(sim.a.yearPts);
+    const theirTotal = yearPtsTotal(sim.b.yearPts);
     const assetGap = Math.abs(
-      sumAssetVorp(giveKeys, assetMap) - sumAssetVorp(getKeys, assetMap)
+      sumAssetYearPts(giveKeys, assetMap) - sumAssetYearPts(getKeys, assetMap)
     );
-    if (assetGap > TRADE_VORP_GAP_MAX) return -1e9;
+    if (assetGap > TRADE_XPTS_GAP_MAX) return -1e9;
     // Soft fairness on post-cut roster impact — prefer win-win, don't require it
-    if (myVorp < -25) return -1e9;
-    if (theirVorp < -80 && myVorp > 40) return -1e9;
+    if (myTotal < -200) return -1e9;
+    if (theirTotal < -800 && myTotal > 400) return -1e9;
 
-    let score =
-      myVorp * 1.1 +
-      myYears * 0.002 +
-      theirVorp * 0.45 +
-      theirYears * 0.0007 -
-      assetGap * 0.15;
+    let score = myTotal * 1.0 + theirTotal * 0.4 - assetGap * 0.05;
 
-    if (myVorp >= -5 && theirVorp >= -5) score += 35;
-    else if (myVorp >= 0 && theirVorp >= -25) score += 18;
+    if (myTotal >= -50 && theirTotal >= -50) score += 350;
+    else if (myTotal >= 0 && theirTotal >= -250) score += 180;
 
-    score += planTradeAffinity(myTeam, other);
+    score += planTradeAffinity(myTeam, other) * 8;
     return score;
   }
 
@@ -2048,16 +2336,20 @@
       .filter((a) => a.owner === myTeam);
     const others = (league.owners || []).filter((o) => o !== myTeam);
 
-    /** Prefer assets near a target VORP (fair packages), mix in picks. */
-    function takeNearVorpPool(list, targetVorp, cap) {
+    function assetYearTotal(a) {
+      return yearPtsTotal(a && a.yearPts);
+    }
+
+    /** Prefer assets near a target Σ xPoints (fair packages), mix in picks. */
+    function takeNearXPtsPool(list, targetX, cap) {
       const ranked = list
         .slice()
         .sort((a, b) => {
-          const da = Math.abs((a.vorp || 0) - targetVorp);
-          const db = Math.abs((b.vorp || 0) - targetVorp);
+          const da = Math.abs(assetYearTotal(a) - targetX);
+          const db = Math.abs(assetYearTotal(b) - targetX);
           return (
             da - db ||
-            (b.vorp || 0) - (a.vorp || 0) ||
+            assetYearTotal(b) - assetYearTotal(a) ||
             a.name.localeCompare(b.name)
           );
         });
@@ -2106,7 +2398,7 @@
       );
     });
 
-    const seedVorp = Number(seed.vorp) || 0;
+    const seedX = assetYearTotal(seed);
 
     others.forEach((other) => {
       const theirAssets = Object.keys(assetMap)
@@ -2117,20 +2409,20 @@
 
       if (mode === "offer") {
         if (seed.owner !== myTeam) return;
-        myPool = takeNearVorpPool(
+        myPool = takeNearXPtsPool(
           myAssets.filter((a) => a.key !== seedKey),
-          seedVorp * 0.35,
+          seedX * 0.35,
           poolCap
         );
-        theirPool = takeNearVorpPool(theirAssets, seedVorp, poolCap);
+        theirPool = takeNearXPtsPool(theirAssets, seedX, poolCap);
       } else {
         if (seed.owner === myTeam || seed.owner !== other) return;
-        theirPool = takeNearVorpPool(
+        theirPool = takeNearXPtsPool(
           theirAssets.filter((a) => a.key !== seedKey),
-          seedVorp * 0.35,
+          seedX * 0.35,
           poolCap
         );
-        myPool = takeNearVorpPool(myAssets, seedVorp, poolCap);
+        myPool = takeNearXPtsPool(myAssets, seedX, poolCap);
       }
 
       const myKeys = myPool.map((a) => a.key);
@@ -2140,9 +2432,9 @@
         if (!giveKeys.length || !getKeys.length) return;
         if (giveKeys.length > maxAssets || getKeys.length > maxAssets) return;
         const assetGap = Math.abs(
-          sumAssetVorp(giveKeys, assetMap) - sumAssetVorp(getKeys, assetMap)
+          sumAssetYearPts(giveKeys, assetMap) - sumAssetYearPts(getKeys, assetMap)
         );
-        if (assetGap > TRADE_VORP_GAP_MAX) return;
+        if (assetGap > TRADE_XPTS_GAP_MAX) return;
         const sig = packageSignature(giveKeys, getKeys) + "|" + other;
         if (seen.has(sig)) return;
         seen.add(sig);
@@ -2180,8 +2472,8 @@
         for (let mg = 0; mg <= maxAssets - 1; mg++) {
           combinations(myKeys, mg).forEach((extras) => {
             const giveKeys = [seedKey].concat(extras);
-            const giveV = sumAssetVorp(giveKeys, assetMap);
-            const matched = takeNearVorpPool(theirPool, giveV, poolCap);
+            const giveX = sumAssetYearPts(giveKeys, assetMap);
+            const matched = takeNearXPtsPool(theirPool, giveX, poolCap);
             const tKeys = matched.map((a) => a.key);
             for (let tg = 1; tg <= maxAssets; tg++) {
               combinations(tKeys, tg).forEach((getKeys) => {
@@ -2195,8 +2487,8 @@
         for (let tg = 0; tg <= maxAssets - 1; tg++) {
           combinations(theirKeys, tg).forEach((extras) => {
             const getKeys = [seedKey].concat(extras);
-            const getV = sumAssetVorp(getKeys, assetMap);
-            const matched = takeNearVorpPool(myPool, getV, poolCap);
+            const getX = sumAssetYearPts(getKeys, assetMap);
+            const matched = takeNearXPtsPool(myPool, getX, poolCap);
             const gKeys = matched.map((a) => a.key);
             for (let mg = 1; mg <= maxAssets; mg++) {
               combinations(gKeys, mg).forEach((giveKeys) => {
@@ -2270,7 +2562,8 @@
   }
 
   function tradeDiffTableHtml(sim, myTeam, other, yearSeasons) {
-    function row(label, yearPts, vorp, cls) {
+    function row(label, yearPts, cls) {
+      const total = yearPtsTotal(yearPts);
       return (
         "<tr class='" +
         cls +
@@ -2289,9 +2582,9 @@
           })
           .join("") +
         "<td class='tc-num tc-emph " +
-        (vorp > 0 ? "up" : vorp < 0 ? "down" : "") +
+        (total > 0 ? "up" : total < 0 ? "down" : "") +
         "'>" +
-        fmtSigned(vorp) +
+        fmtSigned(total) +
         "</td></tr>"
       );
     }
@@ -2299,9 +2592,9 @@
       '<div class="tc-overview-wrap"><table class="tc-overview"><thead><tr>' +
       "<th class='tc-team-col'></th>" +
       yearSeasons.map((y) => "<th>" + y + "</th>").join("") +
-      "<th>VORP</th></tr></thead><tbody>" +
-      row(myTeam, sim.a.yearPts, sim.a.vorp, "tc-row-a") +
-      row(other, sim.b.yearPts, sim.b.vorp, "tc-row-b") +
+      "<th title='Sum of year deltas'>Total</th></tr></thead><tbody>" +
+      row(myTeam, sim.a.yearPts, "tc-row-a") +
+      row(other, sim.b.yearPts, "tc-row-b") +
       "</tbody></table></div>"
     );
   }
@@ -2464,7 +2757,7 @@
 
     function suggestionsHtml(list) {
       if (!list.length) {
-        return '<p class="muted">No fair package within VORP gap.</p>';
+        return '<p class="muted">No fair package within xPoints gap.</p>';
       }
       return list.map((p) => tradeSuggestionCardHtml(p, assetMap, yearSeasons)).join("");
     }
@@ -2909,6 +3202,7 @@
     return ensureTable(columns, filtered).then(function () {
       renderMoversPanel(all, cfg, state.data);
       renderTeamRatings(all, state.league, cfg);
+      renderTeamPlanner(all, state.league, cfg);
       renderTradeCalculator(all, state.league, cfg);
       state.detailId = null;
       const asof = document.getElementById("futures-asof");
