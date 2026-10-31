@@ -919,10 +919,31 @@
       .replace(/"/g, "&quot;");
   }
 
+  /** National draft pick asset ids are PICK_YYYY_NN (not KD_PICK_* proxies). */
+  function isNationalPickAsset(r) {
+    return !!(r && String(r.id || "").indexOf("PICK_") === 0);
+  }
+
+  /** Material Person icon (inline SVG — site is vanilla JS, not MUI). */
+  function personIconHtml(className) {
+    return (
+      '<span class="' +
+      (className || "fd-headshot fd-headshot-pick") +
+      '" aria-hidden="true">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" focusable="false">' +
+      '<path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>' +
+      "</svg></span>"
+    );
+  }
+
   function headshotHtml(row) {
-    const isPick = row.type === "pick" || !row.id || String(row.id).indexOf("CD_I") !== 0;
+    const isPick =
+      isNationalPickAsset(row) ||
+      row.type === "pick" ||
+      !row.id ||
+      String(row.id).indexOf("CD_I") !== 0;
     if (isPick) {
-      return '<span class="fd-headshot fd-headshot-empty" aria-hidden="true"></span>';
+      return personIconHtml("fd-headshot fd-headshot-pick");
     }
     const pid = String(row.id).replace("CD_I", "");
     const src = HEADSHOT_BASE + pid + ".png?im=Resize=(80,80)";
@@ -933,6 +954,32 @@
       '" alt="" loading="lazy" onerror="this.parentNode.classList.add(\'fd-headshot-empty\');this.remove();">' +
       "</span>"
     );
+  }
+
+  function teamChipHtml(abbr) {
+    if (!abbr) return "";
+    return (
+      '<span class="fd-team-chip fd-team-' +
+      escapeHtml(abbr) +
+      '">' +
+      escapeHtml(abbr) +
+      "</span>"
+    );
+  }
+
+  function nationalPicksForYear(rows, draftYear) {
+    const y = Number(draftYear);
+    if (!Number.isFinite(y)) return [];
+    const prefix = "PICK_" + y + "_";
+    return (rows || [])
+      .filter((r) => isNationalPickAsset(r) && String(r.id).indexOf(prefix) === 0)
+      .slice()
+      .sort(
+        (a, b) =>
+          (b.vorp || 0) - (a.vorp || 0) ||
+          (a.name || "").localeCompare(b.name || "") ||
+          String(a.id).localeCompare(String(b.id))
+      );
   }
 
   function posChipsHtml(fantasyPos) {
@@ -964,13 +1011,6 @@
   function nameCellHtml(cell) {
     const row = cell.getRow().getData();
     const abbr = row.teamAbbr || row.club || "";
-    const teamChip = abbr
-      ? '<span class="fd-team-chip fd-team-' +
-        escapeHtml(abbr) +
-        '">' +
-        escapeHtml(abbr) +
-        "</span>"
-      : "";
     return (
       '<div class="fd-name-cell">' +
       headshotHtml(row) +
@@ -981,7 +1021,7 @@
       escapeHtml(row.name || "") +
       "</div>" +
       '<div class="fd-name-bottom">' +
-      teamChip +
+      teamChipHtml(abbr) +
       posChipsHtml(displayPos(row)) +
       "</div>" +
       "</div>" +
@@ -1948,22 +1988,29 @@
 
   function plannerPlayerRowHtml(slot, belowCut) {
     const r = slot.player;
-    const isPick = r.type === "pick";
+    const isPick = r.type === "pick" || isNationalPickAsset(r);
     if (isPick) {
       const tip =
         r._pick && r._pick.proxyName
           ? r.name + " · proxy " + r._pick.proxyName
           : r.name || "";
+      const abbr = r.teamAbbr || r.club || "";
       return (
         '<div class="lt-player tc-pick-row' +
         (belowCut ? " lt-below-cut" : "") +
         '">' +
-        libraryAddIconHtml() +
+        personIconHtml("fd-headshot fd-headshot-pick") +
         '<div class="lt-player-meta">' +
         '<div class="lt-player-name" title="' +
         escapeHtml(tip) +
         '">' +
         escapeHtml(r.name || "") +
+        "</div>" +
+        '<div class="lt-player-chips">' +
+        teamChipHtml(abbr) +
+        (isNationalPickAsset(r) || (r._pick && isNationalPickAsset(r._pick.proxyRow))
+          ? ""
+          : '<span class="fd-pos-chip">PICK</span>') +
         "</div>" +
         "</div>" +
         '<div class="fp-player-xp">' +
@@ -1973,13 +2020,6 @@
       );
     }
     const abbr = r.teamAbbr || r.club || "";
-    const teamChip = abbr
-      ? '<span class="fd-team-chip fd-team-' +
-        escapeHtml(abbr) +
-        '">' +
-        escapeHtml(abbr) +
-        "</span>"
-      : "";
     return (
       '<div class="lt-player' +
       (belowCut ? " lt-below-cut" : "") +
@@ -1992,7 +2032,7 @@
       escapeHtml(r.name || "") +
       "</div>" +
       '<div class="lt-player-chips">' +
-      teamChip +
+      teamChipHtml(abbr) +
       posChipsHtml(displayPos(r)) +
       "</div>" +
       "</div>" +
@@ -2274,6 +2314,8 @@
    * Snake-draft pick slots with unowned proxies.
    * yearCount=1 (default): upcoming draft only — used by Trades.
    * yearCount>1: one draft class per horizon season — used by Planner.
+   * Year 0 pool = national PICK_YYYY_* assets + free agents (by VORP/xPts),
+   * so e.g. 2027 Pick 1 can land on keeper boards with its club chip.
    */
   function buildKeeperDraftPicks(unowned, cfg, seasons, rows, league, opts) {
     const yearSeasons = seasons.slice();
@@ -2284,20 +2326,25 @@
     );
     const perTeam = keeperDraftPicksPerTeam(cfg);
     const standings = buildTeamStandings(rows, league, cfg);
-    const remaining = (unowned || []).slice();
+    const faRemaining = (unowned || []).slice();
     const out = [];
 
     for (let yi = 0; yi < yearCount; yi++) {
-      // Trades (yearCount=1): keep unowned VORP order. Planner re-ranks by that season.
-      if (yearCount > 1 || yi > 0) {
-        remaining.sort(
-          (a, b) =>
-            seasonXPoints(b, yi) - seasonXPoints(a, yi) ||
-            (b.vorp || 0) - (a.vorp || 0) ||
-            (a.name || "").localeCompare(b.name || "") ||
-            String(a.id).localeCompare(String(b.id))
-        );
+      const draftYear = yearSeasons[yi] || seasons[yi] || "";
+      let pool;
+      if (yi === 0) {
+        const natPicks = nationalPicksForYear(rows, draftYear);
+        pool = natPicks.concat(faRemaining);
+      } else {
+        pool = faRemaining.slice();
       }
+      pool.sort(
+        (a, b) =>
+          seasonXPoints(b, yi) - seasonXPoints(a, yi) ||
+          (b.vorp || 0) - (a.vorp || 0) ||
+          (a.name || "").localeCompare(b.name || "") ||
+          String(a.id).localeCompare(String(b.id))
+      );
       const ladder =
         yearCount === 1 && yi === 0
           ? projectedLadderBestToWorst(rows, league, cfg)
@@ -2312,35 +2359,48 @@
               )
               .map((t) => t.owner);
       const slots = snakeDraftSlots(ladder, perTeam);
-      const draftYear = yearSeasons[yi] || seasons[yi] || "";
       const singleYear = yearCount === 1;
+      const usedFaIds = new Set();
       slots.forEach((slot, i) => {
-        const proxy = remaining[i] || null;
+        const proxy = pool[i] || null;
+        const isNat = proxy && isNationalPickAsset(proxy);
+        if (proxy && !isNat) usedFaIds.add(proxy.id);
         const ypts = proxy
           ? yearPointsForRow(proxy, yLen)
           : yearSeasons.map(() => 0);
         const overall = i + 1;
+        const club = proxy ? proxy.teamAbbr || proxy.club || "" : "";
         out.push({
-          key: singleYear
-            ? "PICK:" + overall
-            : "PICK:" + draftYear + ":" + overall,
+          key: isNat
+            ? "NPICK:" + proxy.id
+            : singleYear
+              ? "PICK:" + overall
+              : "PICK:" + draftYear + ":" + overall,
           pick: overall,
           round: slot.round,
           owner: slot.owner,
           seasonIdx: yi,
           draftYear: draftYear,
-          id: singleYear
-            ? "KD_PICK_" + String(overall).padStart(2, "0")
-            : "KD_PICK_" + draftYear + "_" + String(overall).padStart(2, "0"),
-          name: draftYear + " R" + slot.round + " (#" + overall + ")",
+          id: isNat
+            ? proxy.id
+            : singleYear
+              ? "KD_PICK_" + String(overall).padStart(2, "0")
+              : "KD_PICK_" + draftYear + "_" + String(overall).padStart(2, "0"),
+          name: isNat
+            ? proxy.name
+            : draftYear + " R" + slot.round + " (#" + overall + ")",
           vorp: proxy ? Number(proxy.vorp) || 0 : 0,
           yearPts: ypts,
-          proxyName: proxy ? proxy.name : null,
-          proxyId: proxy ? proxy.id : null,
+          club: club,
+          proxyName: isNat ? null : proxy ? proxy.name : null,
+          proxyId: isNat ? null : proxy ? proxy.id : null,
           proxyRow: proxy
         });
       });
-      remaining.splice(0, slots.length);
+      // Drop used free agents; never carry unused national picks into later years.
+      for (let i = faRemaining.length - 1; i >= 0; i--) {
+        if (usedFaIds.has(faRemaining[i].id)) faRemaining.splice(i, 1);
+      }
     }
     return out;
   }
@@ -2348,16 +2408,20 @@
   /** Synthetic roster row so planner lineups can place a pick via its proxy. */
   function plannerPlayerFromPick(pick) {
     const proxy = pick && pick.proxyRow;
+    const isNat = proxy && isNationalPickAsset(proxy);
+    const club =
+      (pick && pick.club) ||
+      (proxy ? proxy.teamAbbr || proxy.club || "" : "");
     return {
       id: pick.id,
       name: pick.name,
       owner: pick.owner,
       type: "pick",
       vorp: Number(pick.vorp) || 0,
-      teamAbbr: proxy ? proxy.teamAbbr || proxy.club || "" : "",
-      club: proxy ? proxy.club || "" : "",
-      fantasyPos: proxy ? proxy.fantasyPos || "" : "",
-      keeperPos: proxy ? proxy.keeperPos || "" : "",
+      teamAbbr: club,
+      club: club,
+      fantasyPos: isNat ? "" : proxy ? proxy.fantasyPos || "" : "",
+      keeperPos: isNat ? "" : proxy ? proxy.keeperPos || "" : "",
       _asset:
         proxy && proxy._asset
           ? proxy._asset
@@ -2811,30 +2875,28 @@
     };
   }
 
-  function libraryAddIconHtml() {
-    return (
-      '<span class="tc-pick-icon" aria-hidden="true">' +
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" focusable="false">' +
-      '<path fill="currentColor" d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/>' +
-      "</svg></span>"
-    );
-  }
-
   function pickPlayerRowHtml(p) {
+    const proxy = p && p.proxyRow;
+    const isNat = proxy && isNationalPickAsset(proxy);
+    const abbr =
+      (p && p.club) || (proxy ? proxy.teamAbbr || proxy.club || "" : "");
     const tip =
       "Overall #" +
       (p.pick || "") +
       (p.proxyName ? " · proxy " + p.proxyName : "");
     return (
       '<div class="lt-player tc-pick-row">' +
-      libraryAddIconHtml() +
+      personIconHtml("fd-headshot fd-headshot-pick") +
       '<div class="lt-player-meta">' +
       '<div class="lt-player-name" title="' +
       escapeHtml(tip) +
       '">' +
       escapeHtml(p.name || "") +
       "</div>" +
-      '<div class="lt-player-chips"><span class="fd-pos-chip">PICK</span></div>' +
+      '<div class="lt-player-chips">' +
+      teamChipHtml(abbr) +
+      (isNat ? "" : '<span class="fd-pos-chip">PICK</span>') +
+      "</div>" +
       "</div>" +
       '<div class="lt-player-vorp">' +
       fmtInt(p.vorp) +

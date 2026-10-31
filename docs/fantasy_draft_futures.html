@@ -2014,9 +2014,24 @@ opacity: 0.48; border-style: dashed; border-color: #bdbdbd;
 .tc-asset-btn.is-suggested:hover { opacity: 0.72; background: #fafafa; }
 .tc-asset-btn .lt-player { pointer-events: none; }
 .tc-pick-icon {
-display: inline-flex; align-items: center; justify-content: center;
-width: 28px; height: 28px; color: #666; flex: 0 0 28px;
-}
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; color: #666; flex: 0 0 28px;
+    }
+    .fd-headshot-pick {
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #666; background: #eceff1;
+    }
+    .fd-headshot-pick svg { width: 60%; height: 60%; display: block; }
+    .fd-headshot-pick {
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #666; background: #eceff1;
+    }
+    .fd-headshot-pick svg { width: 60%; height: 60%; display: block; }
+    .fd-headshot-pick {
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #666; background: #eceff1;
+    }
+    .fd-headshot-pick svg { width: 60%; height: 60%; display: block; }
 .tc-suggest-label {
 font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase;
 letter-spacing: 0.03em; margin: 8px 0 4px;
@@ -2107,9 +2122,9 @@ display: flex; gap: 8px; flex-shrink: 0; font-variant-numeric: tabular-nums; fon
 display: grid; grid-template-columns: 28px minmax(0, 1fr) 44px;
 gap: 6px; align-items: center; padding: 3px 8px;
 }
-.lt-player .fd-headshot, .lt-player .fd-headshot-empty {
-width: 28px; height: 28px; flex: 0 0 28px;
-}
+.lt-player .fd-headshot, .lt-player .fd-headshot-empty, .lt-player .fd-headshot-pick {
+      width: 28px; height: 28px; flex: 0 0 28px;
+    }
 .lt-player-meta { min-width: 0; }
 .lt-player-name {
 font-weight: 600; font-size: 11px; line-height: 1.2;
@@ -2338,6 +2353,9 @@ border: 1px solid #ddd; display: block;
 width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block;
 }
 .fd-headshot-empty { background: #eee; }
+    .lt-player .fd-headshot-pick { color: #666; }
+    .lt-player .fd-headshot-pick { color: #666; }
+    .lt-player .fd-headshot-pick { color: #666; }
 .fd-name-meta {
 flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px;
 }
