@@ -1866,6 +1866,12 @@
         escapeHtml(abbr) +
         "</span>"
       : "";
+    const pickChip =
+      r.type === "pick" ? '<span class="fd-pos-chip">PICK</span>' : "";
+    const tip =
+      r.type === "pick" && r._pick && r._pick.proxyName
+        ? r.name + " · proxy " + r._pick.proxyName
+        : r.name || "";
     return (
       '<div class="lt-player' +
       (belowCut ? " lt-below-cut" : "") +
@@ -1873,12 +1879,13 @@
       headshotHtml(r) +
       '<div class="lt-player-meta">' +
       '<div class="lt-player-name" title="' +
-      escapeHtml(r.name || "") +
+      escapeHtml(tip) +
       '">' +
       escapeHtml(r.name || "") +
       "</div>" +
       '<div class="lt-player-chips">' +
       teamChip +
+      pickChip +
       posChipsHtml(displayPos(r)) +
       "</div>" +
       "</div>" +
@@ -1944,11 +1951,12 @@
 
     const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
     const cutN = Math.max(0, Number(cfg.keeperCount) || 0);
+    const rosterCap = rosterSize(cfg);
     // Keepers follow Through (endSeason) via VORP in computeRows / selectKeepers*
     const roster = rows.filter((r) => r.owner === myTeam && r.type !== "pick");
     const split = splitRosterByKeepers(roster, cfg, myTeam, cutOn);
     const keepers = split.kept;
-    const cutList = split.cut || [];
+    const initialCut = split.cut || [];
 
     const yearSeasons = state.seasons.slice();
     if (!yearSeasons.length) {
@@ -1956,15 +1964,77 @@
       return;
     }
 
-    const standings = buildTeamStandings(rows, league, cfg);
+    // Planner: draft class every season. Trades still call yearCount=1.
+    const unowned = unownedAfterCuts(rows, league, cfg);
+    const allPicks = buildKeeperDraftPicks(
+      unowned,
+      cfg,
+      yearSeasons,
+      rows,
+      league,
+      { yearCount: yearSeasons.length }
+    );
+    const picksByOwner = Object.create(null);
+    (league.owners || []).forEach((o) => {
+      picksByOwner[o] = [];
+    });
+    allPicks.forEach((p) => {
+      if (!picksByOwner[p.owner]) picksByOwner[p.owner] = [];
+      picksByOwner[p.owner].push(p);
+    });
 
+    const keepersByOwner = Object.create(null);
+    (league.owners || []).forEach((owner) => {
+      const owned = rows.filter((r) => r.owner === owner && r.type !== "pick");
+      keepersByOwner[owner] = splitRosterByKeepers(
+        owned,
+        cfg,
+        owner,
+        cutOn
+      ).kept;
+    });
+
+    // Pick-aware season totals for Proj ranks (keepers + accumulated picks, cut to roster)
+    const plannerYearPts = (league.owners || []).map((owner) => {
+      const k = keepersByOwner[owner] || [];
+      const op = picksByOwner[owner] || [];
+      const yearPts = yearSeasons.map((_, yi) => {
+        const seasonPicks = op
+          .filter((p) => (p.seasonIdx || 0) <= yi)
+          .map(plannerPlayerFromPick);
+        const { active } = cutPoolToRoster(k.concat(seasonPicks), cfg, yi);
+        return active.reduce((s, p) => s + seasonXPoints(p, yi), 0);
+      });
+      return { owner, yearPts };
+    });
+
+    const myPicks = picksByOwner[myTeam] || [];
     const boards = yearSeasons.map((year, yi) => {
-      const lineup = buildSeasonLineup(keepers, cfg, yi);
-      const rank = ladderRankForOwner(standings, myTeam, yi);
+      const seasonPicks = myPicks
+        .filter((p) => (p.seasonIdx || 0) <= yi)
+        .map(plannerPlayerFromPick);
+      const pool = keepers.concat(seasonPicks);
+      const splitYi = cutPoolToRoster(pool, cfg, yi);
+      const lineup = buildSeasonLineup(splitYi.active, cfg, yi);
+      // Season 1 also lists players never kept; later years use squad cut only
+      const cutList =
+        yi === 0 && cutOn && cutN > 0
+          ? initialCut.concat(splitYi.cut)
+          : splitYi.cut;
+      const rank = ladderRankForOwner(plannerYearPts, myTeam, yi);
       const yearPts =
-        ((standings.find((t) => t.owner === myTeam) || {}).yearPts || [])[yi] ||
-        0;
-      return { year, yi, lineup, isFirst: yi === 0, rank, yearPts };
+        ((plannerYearPts.find((t) => t.owner === myTeam) || {}).yearPts ||
+          [])[yi] || 0;
+      return {
+        year,
+        yi,
+        lineup,
+        isFirst: yi === 0,
+        rank,
+        yearPts,
+        cutList,
+        pickCount: seasonPicks.length
+      };
     });
 
     let bestIdx = 0;
@@ -2016,20 +2086,32 @@
         if (lineup.overflow.length) {
           body += plannerPosBlockHtml("Reserve", lineup.overflow, 0);
         }
-        if (b.isFirst && cutOn && cutN > 0 && cutList.length) {
+        const cutList = b.cutList || [];
+        if (cutList.length) {
+          const cutTitle = b.isFirst ? "Keeper cut" : "Squad cut";
+          const keptHave =
+            b.isFirst && cutOn && cutN > 0
+              ? keepers.length
+              : Math.max(0, keepers.length + b.pickCount - cutList.length);
+          const keptNeed =
+            b.isFirst && cutOn && cutN > 0 ? cutN : rosterCap;
           body +=
-            '<div class="lt-cut" role="separator" title="Keeper cut">' +
-            "<span>Keeper cut · " +
-            keepers.length +
+            '<div class="lt-cut" role="separator" title="' +
+            cutTitle +
+            '">' +
+            "<span>" +
+            cutTitle +
+            " · " +
+            keptHave +
             "/" +
-            cutN +
+            keptNeed +
             "</span>" +
             "</div>";
           cutList.forEach((p) => {
             body += plannerPlayerRowHtml(
               {
                 player: p,
-                xp: seasonXPoints(p, 0),
+                xp: seasonXPoints(p, b.yi),
                 pos: "CUT"
               },
               true
@@ -2038,6 +2120,12 @@
         }
         const projLabel =
           b.rank != null ? "Proj " + ordinalRank(b.rank) : "Proj —";
+        const sub =
+          b.isFirst && b.pickCount
+            ? "Keepers + draft"
+            : b.isFirst
+              ? "Current team · keepers"
+              : "Best lineup · +" + b.pickCount + " picks";
         return (
           '<article class="fp-season' +
           (isBest ? " is-best" : "") +
@@ -2049,7 +2137,7 @@
           (isBest ? '<span class="fp-season-badge">Best</span>' : "") +
           "</div>" +
           '<div class="fp-season-sub">' +
-          (b.isFirst ? "Current team · keepers" : "Best lineup") +
+          sub +
           "</div>" +
           "</div>" +
           '<div class="fp-season-total" title="Projected ladder place">' +
@@ -2097,31 +2185,116 @@
     return slots;
   }
 
-  function buildKeeperDraftPicks(unowned, cfg, seasons, rows, league) {
+  /**
+   * Snake-draft pick slots with unowned proxies.
+   * yearCount=1 (default): upcoming draft only — used by Trades.
+   * yearCount>1: one draft class per horizon season — used by Planner.
+   */
+  function buildKeeperDraftPicks(unowned, cfg, seasons, rows, league, opts) {
     const yearSeasons = seasons.slice();
-    const draftYear = yearSeasons[0] || seasons[0] || "";
+    const yLen = yearSeasons.length;
+    const yearCount = Math.max(
+      1,
+      Math.min(yLen || 1, Number(opts && opts.yearCount) || 1)
+    );
     const perTeam = keeperDraftPicksPerTeam(cfg);
-    const ladder = projectedLadderBestToWorst(rows, league, cfg);
-    const slots = snakeDraftSlots(ladder, perTeam);
-    return slots.map((slot, i) => {
-      const proxy = unowned[i] || null;
-      const ypts = proxy
-        ? yearPointsForRow(proxy, yearSeasons.length)
-        : yearSeasons.map(() => 0);
-      const overall = i + 1;
-      return {
-        key: "PICK:" + overall,
-        pick: overall,
-        round: slot.round,
-        owner: slot.owner,
-        id: "KD_PICK_" + String(overall).padStart(2, "0"),
-        name: draftYear + " R" + slot.round + " (#" + overall + ")",
-        vorp: proxy ? Number(proxy.vorp) || 0 : 0,
-        yearPts: ypts,
-        proxyName: proxy ? proxy.name : null,
-        proxyId: proxy ? proxy.id : null
-      };
-    });
+    const standings = buildTeamStandings(rows, league, cfg);
+    const remaining = (unowned || []).slice();
+    const out = [];
+
+    for (let yi = 0; yi < yearCount; yi++) {
+      // Trades (yearCount=1): keep unowned VORP order. Planner re-ranks by that season.
+      if (yearCount > 1 || yi > 0) {
+        remaining.sort(
+          (a, b) =>
+            seasonXPoints(b, yi) - seasonXPoints(a, yi) ||
+            (b.vorp || 0) - (a.vorp || 0) ||
+            (a.name || "").localeCompare(b.name || "") ||
+            String(a.id).localeCompare(String(b.id))
+        );
+      }
+      const ladder =
+        yearCount === 1 && yi === 0
+          ? projectedLadderBestToWorst(rows, league, cfg)
+          : standings
+              .slice()
+              .sort(
+                (a, b) =>
+                  ((b.yearPts && b.yearPts[yi]) || 0) -
+                    ((a.yearPts && a.yearPts[yi]) || 0) ||
+                  (b.vorp || 0) - (a.vorp || 0) ||
+                  a.owner.localeCompare(b.owner)
+              )
+              .map((t) => t.owner);
+      const slots = snakeDraftSlots(ladder, perTeam);
+      const draftYear = yearSeasons[yi] || seasons[yi] || "";
+      const singleYear = yearCount === 1;
+      slots.forEach((slot, i) => {
+        const proxy = remaining[i] || null;
+        const ypts = proxy
+          ? yearPointsForRow(proxy, yLen)
+          : yearSeasons.map(() => 0);
+        const overall = i + 1;
+        out.push({
+          key: singleYear
+            ? "PICK:" + overall
+            : "PICK:" + draftYear + ":" + overall,
+          pick: overall,
+          round: slot.round,
+          owner: slot.owner,
+          seasonIdx: yi,
+          draftYear: draftYear,
+          id: singleYear
+            ? "KD_PICK_" + String(overall).padStart(2, "0")
+            : "KD_PICK_" + draftYear + "_" + String(overall).padStart(2, "0"),
+          name: draftYear + " R" + slot.round + " (#" + overall + ")",
+          vorp: proxy ? Number(proxy.vorp) || 0 : 0,
+          yearPts: ypts,
+          proxyName: proxy ? proxy.name : null,
+          proxyId: proxy ? proxy.id : null,
+          proxyRow: proxy
+        });
+      });
+      remaining.splice(0, slots.length);
+    }
+    return out;
+  }
+
+  /** Synthetic roster row so planner lineups can place a pick via its proxy. */
+  function plannerPlayerFromPick(pick) {
+    const proxy = pick && pick.proxyRow;
+    return {
+      id: pick.id,
+      name: pick.name,
+      owner: pick.owner,
+      type: "pick",
+      vorp: Number(pick.vorp) || 0,
+      teamAbbr: proxy ? proxy.teamAbbr || proxy.club || "" : "",
+      club: proxy ? proxy.club || "" : "",
+      fantasyPos: proxy ? proxy.fantasyPos || "" : "",
+      keeperPos: proxy ? proxy.keeperPos || "" : "",
+      _asset:
+        proxy && proxy._asset
+          ? proxy._asset
+          : { xPoints: (pick.yearPts || []).slice() },
+      _pick: pick
+    };
+  }
+
+  /** Rank pool by season xPoints and split into roster cap vs cut list. */
+  function cutPoolToRoster(pool, cfg, yearIdx) {
+    const cap = rosterSize(cfg);
+    const ranked = (pool || []).slice().sort(
+      (a, b) =>
+        seasonXPoints(b, yearIdx) - seasonXPoints(a, yearIdx) ||
+        (b.vorp || 0) - (a.vorp || 0) ||
+        (a.name || "").localeCompare(b.name || "") ||
+        String(a.id).localeCompare(String(b.id))
+    );
+    return {
+      active: ranked.slice(0, cap),
+      cut: ranked.slice(cap)
+    };
   }
 
   function fmtSigned(v) {
