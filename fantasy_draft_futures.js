@@ -1323,8 +1323,19 @@
 
   /** Min year-1 share to claim a positional keeper slot. */
   const KEEPER_POS_MIN_P = 0.05;
-  /** Min season share to claim an on-field planner slot. */
+  /** Min season pos share to claim an on-field planner slot. */
   const LINEUP_POS_MIN_P = 0.05;
+  /** Min season xGamesPOS to claim a planner slot when pos share is thin. */
+  const LINEUP_XGAMES_MIN = 5;
+
+  /** True if the player can legally fill `pos` in that horizon year. */
+  function canPlaySeasonPos(row, pos, yearIdx) {
+    const probs = seasonPosProbs(row, yearIdx);
+    if ((probs[pos] || 0) >= LINEUP_POS_MIN_P) return true;
+    const a = row && row._asset;
+    const xg = numAt(a && a["xGames" + pos], yearIdx);
+    return Number.isFinite(xg) && xg >= LINEUP_XGAMES_MIN;
+  }
 
   /**
    * Soft positional targets from on-field formation only (bench is flex).
@@ -1750,7 +1761,8 @@
 
   /**
    * Place roster into on-field formation then bench for one season.
-   * Greedy by season xPoints; claim highest-prob open slot (≥ LINEUP_POS_MIN_P).
+   * Greedy by season xPoints; only into positions they can play that year.
+   * Empty slots stay empty — never force ineligible players into a line.
    */
   function buildSeasonLineup(players, cfg, yearIdx) {
     const need = {
@@ -1775,35 +1787,29 @@
         String(a.id).localeCompare(String(b.id))
     );
 
-    function tryFill(minP) {
-      ranked.forEach((p) => {
-        if (used.has(p.id)) return;
-        if (!POS_KEYS.some((pos) => remaining[pos] > 0)) return;
-        const probs = seasonPosProbs(p, yearIdx);
-        const open = POS_KEYS.filter(
-          (pos) => remaining[pos] > 0 && (probs[pos] || 0) >= minP
-        ).sort(
-          (a, b) =>
-            (probs[b] || 0) - (probs[a] || 0) ||
-            remaining[b] - remaining[a] ||
-            a.localeCompare(b)
-        );
-        if (!open.length) return;
-        const pos = open[0];
-        filled[pos].push({
-          player: p,
-          pos,
-          xp: seasonXPoints(p, yearIdx),
-          probs
-        });
-        remaining[pos] -= 1;
-        used.add(p.id);
+    ranked.forEach((p) => {
+      if (used.has(p.id)) return;
+      if (!POS_KEYS.some((pos) => remaining[pos] > 0)) return;
+      const probs = seasonPosProbs(p, yearIdx);
+      const open = POS_KEYS.filter(
+        (pos) => remaining[pos] > 0 && canPlaySeasonPos(p, pos, yearIdx)
+      ).sort(
+        (a, b) =>
+          (probs[b] || 0) - (probs[a] || 0) ||
+          remaining[b] - remaining[a] ||
+          a.localeCompare(b)
+      );
+      if (!open.length) return;
+      const pos = open[0];
+      filled[pos].push({
+        player: p,
+        pos,
+        xp: seasonXPoints(p, yearIdx),
+        probs
       });
-    }
-
-    tryFill(LINEUP_POS_MIN_P);
-    // Backfill empty on-field slots with any remaining affinity
-    tryFill(0);
+      remaining[pos] -= 1;
+      used.add(p.id);
+    });
 
     const benchN = Math.max(0, Number(cfg.bench) || 0);
     const bench = [];
