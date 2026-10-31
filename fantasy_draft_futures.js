@@ -2370,8 +2370,17 @@
   const TRADE_BALANCED_GAP = 140;
   const TRADE_MAX_ASSETS = 2;
 
+  function emptyTradeSim(yLen) {
+    const z = Array.from({ length: yLen }, () => 0);
+    return {
+      a: { yearPts: z.slice(), vorp: 0 },
+      b: { yearPts: z.slice(), vorp: 0 },
+      yLen: yLen
+    };
+  }
+
   /**
-   * Suggest at most one extra piece per side to balance confirmed give/get.
+   * Suggest at most one filler piece (often one side only) to balance confirmed give/get.
    * When both sides empty, proposes an opening 1-for-1.
    */
   function suggestTradeFillers(opts) {
@@ -2386,7 +2395,7 @@
       assetMap,
       picks
     } = opts;
-    const empty = { suggestGive: null, suggestGet: null, sim: null, balanced: false };
+    const empty = { suggestGive: null, suggestGet: null, balanced: false };
     if (!myTeam || !other || myTeam === other) return empty;
 
     const give = (giveKeys || []).slice();
@@ -2409,18 +2418,19 @@
     );
 
     function runSim(g, t) {
-      if (!g.length || !t.length) return null;
       return simulateTrade(rows, league, cfg, myTeam, other, g, t, picks, preCache);
     }
 
-    if (give.length && get.length) {
-      const gap = Math.abs(sumAssetYearPts(give, assetMap) - sumAssetYearPts(get, assetMap));
+    const giveX0 = sumAssetYearPts(give, assetMap);
+    const getX0 = sumAssetYearPts(get, assetMap);
+    if (give.length || get.length) {
+      const gap = Math.abs(giveX0 - getX0);
       const sim0 = runSim(give, get);
-      if (sim0 && gap <= TRADE_BALANCED_GAP) {
+      if (gap <= TRADE_BALANCED_GAP) {
         const myT = yearPtsTotal(sim0.a.yearPts);
         const theirT = yearPtsTotal(sim0.b.yearPts);
         if (myT >= -180 && theirT >= -350) {
-          return { suggestGive: null, suggestGet: null, sim: sim0, balanced: true };
+          return { suggestGive: null, suggestGet: null, balanced: true };
         }
       }
     }
@@ -2448,43 +2458,47 @@
 
     const canAddGive = give.length < TRADE_MAX_ASSETS;
     const canAddGet = get.length < TRADE_MAX_ASSETS;
-    let best = { score: -1e9, suggestGive: null, suggestGet: null, sim: null };
+    let best = { score: -1e9, suggestGive: null, suggestGet: null };
 
     function consider(sg, st) {
       const g = sg ? give.concat([sg]) : give.slice();
       const t = st ? get.concat([st]) : get.slice();
-      if (!g.length || !t.length) return;
+      // Need a real trade direction after applying the suggestion
+      if (!g.length && !t.length) return;
       if (g.length > TRADE_MAX_ASSETS || t.length > TRADE_MAX_ASSETS) return;
       const assetGap = Math.abs(
         sumAssetYearPts(g, assetMap) - sumAssetYearPts(t, assetMap)
       );
       if (assetGap > TRADE_XPTS_GAP_MAX) return;
       const sim = runSim(g, t);
-      if (!sim) return;
       const score = scoreTradePackage(sim, g, t, assetMap, myTeam, other);
       if (score <= -1e8 || score <= best.score) return;
-      best = { score, suggestGive: sg || null, suggestGet: st || null, sim };
+      best = { score, suggestGive: sg || null, suggestGet: st || null };
     }
 
     if (!give.length && !get.length) {
+      // Opening: one piece each
       myAvail.forEach((a) => {
         theirAvail.forEach((b) => consider(a.key, b.key));
       });
     } else {
-      if (canAddGive && canAddGet) {
-        myAvail.forEach((a) => {
-          theirAvail.forEach((b) => consider(a.key, b.key));
-        });
+      // Prefer a single-side filler on the short side
+      const needGet = giveX0 > getX0 + TRADE_BALANCED_GAP * 0.25;
+      const needGive = getX0 > giveX0 + TRADE_BALANCED_GAP * 0.25;
+      if (needGet && canAddGet) {
+        theirAvail.forEach((b) => consider(null, b.key));
+      } else if (needGive && canAddGive) {
+        myAvail.forEach((a) => consider(a.key, null));
+      } else {
+        if (canAddGet) theirAvail.forEach((b) => consider(null, b.key));
+        if (canAddGive) myAvail.forEach((a) => consider(a.key, null));
       }
-      if (canAddGive) myAvail.forEach((a) => consider(a.key, null));
-      if (canAddGet) theirAvail.forEach((b) => consider(null, b.key));
     }
 
     if (best.score <= -1e8) return empty;
     return {
       suggestGive: best.suggestGive,
       suggestGet: best.suggestGet,
-      sim: best.sim,
       balanced: false
     };
   }
@@ -2550,9 +2564,10 @@
   }
 
   function tradeDiffTableHtml(sim, myTeam, other, yearSeasons) {
-    if (!sim) {
-      return '<p class="muted tc-diff-empty">Add assets to see differentials.</p>';
-    }
+    const yLen = yearSeasons.length;
+    const s = sim || emptyTradeSim(yLen);
+    const ya = (s.a && s.a.yearPts) || Array.from({ length: yLen }, () => 0);
+    const yb = (s.b && s.b.yearPts) || Array.from({ length: yLen }, () => 0);
     function row(label, yearPts, cls) {
       const total = yearPtsTotal(yearPts);
       return (
@@ -2584,8 +2599,8 @@
       "<th class='tc-team-col'></th>" +
       yearSeasons.map((y) => "<th>" + y + "</th>").join("") +
       "<th title='Sum of year deltas'>Total</th></tr></thead><tbody>" +
-      row(myTeam, sim.a.yearPts, "tc-row-a") +
-      row(other, sim.b.yearPts, "tc-row-b") +
+      row(myTeam, ya, "tc-row-a") +
+      row(other, yb, "tc-row-b") +
       "</tbody></table></div>"
     );
   }
@@ -2698,7 +2713,6 @@
     let fillers = {
       suggestGive: null,
       suggestGet: null,
-      sim: null,
       balanced: false
     };
     if (myTeam && otherTeam) {
@@ -2715,40 +2729,17 @@
       });
     }
 
-    const fullGive = state.trade.give.slice();
-    if (fillers.suggestGive) fullGive.push(fillers.suggestGive);
-    const fullGet = state.trade.get.slice();
-    if (fillers.suggestGet) fullGet.push(fillers.suggestGet);
-    let displaySim = fillers.sim;
-    if (
-      state.trade.give.length &&
-      state.trade.get.length &&
-      !fillers.suggestGive &&
-      !fillers.suggestGet
-    ) {
+    // Yearly diffs use confirmed pieces only (suggestions stay visual).
+    let displaySim = emptyTradeSim(yearSeasons.length);
+    if (myTeam && otherTeam) {
       displaySim = simulateTrade(
         rows,
         league,
         cfg,
         myTeam,
         otherTeam,
-        state.trade.give,
-        state.trade.get,
-        picks
-      );
-    } else if (
-      fullGive.length &&
-      fullGet.length &&
-      (fillers.suggestGive || fillers.suggestGet)
-    ) {
-      displaySim = simulateTrade(
-        rows,
-        league,
-        cfg,
-        myTeam,
-        otherTeam,
-        fullGive,
-        fullGet,
+        state.trade.give || [],
+        state.trade.get || [],
         picks
       );
     }
