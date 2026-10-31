@@ -1763,12 +1763,51 @@
     );
   }
 
+  function sortBySeasonXp(a, b, yearIdx) {
+    return (
+      seasonXPoints(b, yearIdx) - seasonXPoints(a, yearIdx) ||
+      (b.vorp || 0) - (a.vorp || 0) ||
+      (a.name || "").localeCompare(b.name || "") ||
+      String(a.id).localeCompare(String(b.id))
+    );
+  }
+
+  /** Share of a line still empty (1 = fully empty). */
+  function posEmptyShare(pos, remaining, need) {
+    const n = need[pos] || 0;
+    if (n <= 0) return -1;
+    return (remaining[pos] || 0) / n;
+  }
+
+  /** Emptiest on-field line by remaining/need; ties → more absolute empty → POS order. */
+  function emptiestOpenPos(remaining, need) {
+    let best = null;
+    let bestShare = -1;
+    let bestRem = -1;
+    POS_KEYS.forEach((pos) => {
+      const rem = remaining[pos] || 0;
+      if (rem <= 0) return;
+      const share = posEmptyShare(pos, remaining, need);
+      if (
+        share > bestShare ||
+        (share === bestShare && rem > bestRem) ||
+        (share === bestShare && rem === bestRem && (best == null || pos < best))
+      ) {
+        best = pos;
+        bestShare = share;
+        bestRem = rem;
+      }
+    });
+    return best;
+  }
+
   /**
    * Place roster into on-field formation then bench for one season.
-   * Greedy by season xPoints; only into positions they can play that year.
-   * Empty slots stay empty — never force ineligible players into a line.
+   * Kept assets: greedy by season xPoints into eligible positions.
+   * opts.mustInclude (new picks): draft order into the proportionally emptiest
+   * open line; leftover picks take bench before remaining kept assets.
    */
-  function buildSeasonLineup(players, cfg, yearIdx) {
+  function buildSeasonLineup(players, cfg, yearIdx, opts) {
     const need = {
       DEF: Math.max(0, Number(cfg.slots && cfg.slots.DEF) || 0),
       MID: Math.max(0, Number(cfg.slots && cfg.slots.MID) || 0),
@@ -1783,16 +1822,38 @@
     };
     const filled = { DEF: [], MID: [], RUC: [], FWD: [] };
     const used = new Set();
-    const ranked = (players || []).slice().sort(
-      (a, b) =>
-        seasonXPoints(b, yearIdx) - seasonXPoints(a, yearIdx) ||
-        (b.vorp || 0) - (a.vorp || 0) ||
-        (a.name || "").localeCompare(b.name || "") ||
+    const mustList = ((opts && opts.mustInclude) || []).slice();
+    const mustIds = new Set(mustList.map((p) => p && p.id).filter(Boolean));
+    // Draft order: earlier overall pick first (R1 before R2…)
+    const mustRanked = mustList.slice().sort((a, b) => {
+      const pa = a && a._pick;
+      const pb = b && b._pick;
+      return (
+        ((pa && pa.pick) || 0) - ((pb && pb.pick) || 0) ||
+        ((pa && pa.round) || 0) - ((pb && pb.round) || 0) ||
         String(a.id).localeCompare(String(b.id))
-    );
+      );
+    });
+    const restRanked = (players || [])
+      .filter((p) => p && !mustIds.has(p.id))
+      .slice()
+      .sort((a, b) => sortBySeasonXp(a, b, yearIdx));
+    const ranked = restRanked.concat(mustRanked);
 
-    ranked.forEach((p) => {
-      if (used.has(p.id)) return;
+    function placeOnField(p, pos) {
+      filled[pos].push({
+        player: p,
+        pos,
+        xp: seasonXPoints(p, yearIdx),
+        probs: seasonPosProbs(p, yearIdx)
+      });
+      remaining[pos] -= 1;
+      used.add(p.id);
+    }
+
+    // 1) Kept assets claim eligible on-field spots
+    restRanked.forEach((p) => {
+      if (!p || used.has(p.id)) return;
       if (!POS_KEYS.some((pos) => remaining[pos] > 0)) return;
       const probs = seasonPosProbs(p, yearIdx);
       const open = POS_KEYS.filter(
@@ -1804,27 +1865,56 @@
           a.localeCompare(b)
       );
       if (!open.length) return;
-      const pos = open[0];
-      filled[pos].push({
-        player: p,
-        pos,
-        xp: seasonXPoints(p, yearIdx),
-        probs
-      });
-      remaining[pos] -= 1;
-      used.add(p.id);
+      placeOnField(p, open[0]);
+    });
+
+    // 2) Incoming picks: emptiest line first; any position (no eligibility)
+    mustRanked.forEach((p) => {
+      if (!p || used.has(p.id)) return;
+      const pos = emptiestOpenPos(remaining, need);
+      if (!pos) return;
+      placeOnField(p, pos);
     });
 
     const benchN = Math.max(0, Number(cfg.bench) || 0);
     const bench = [];
-    ranked.forEach((p) => {
-      if (used.has(p.id) || bench.length >= benchN) return;
+    function tryBench(p) {
+      if (!p || used.has(p.id) || bench.length >= benchN) return;
       bench.push({
         player: p,
         pos: "BENCH",
         xp: seasonXPoints(p, yearIdx),
         probs: seasonPosProbs(p, yearIdx)
       });
+      used.add(p.id);
+    }
+    // 3) Leftover picks → bench, then remaining kept
+    mustRanked.forEach(tryBench);
+    restRanked.forEach(tryBench);
+
+    // Last resort: bump lowest kept bench seat so every pick fits
+    mustRanked.forEach((p) => {
+      if (!p || used.has(p.id)) return;
+      let worstIdx = -1;
+      let worstXp = Infinity;
+      for (let i = 0; i < bench.length; i++) {
+        const bp = bench[i].player;
+        if (mustIds.has(bp.id)) continue;
+        const xp = seasonXPoints(bp, yearIdx);
+        if (xp < worstXp) {
+          worstXp = xp;
+          worstIdx = i;
+        }
+      }
+      if (worstIdx < 0) return;
+      const bumped = bench[worstIdx].player;
+      used.delete(bumped.id);
+      bench[worstIdx] = {
+        player: p,
+        pos: "BENCH",
+        xp: seasonXPoints(p, yearIdx),
+        probs: seasonPosProbs(p, yearIdx)
+      };
       used.add(p.id);
     });
 
@@ -1858,6 +1948,30 @@
 
   function plannerPlayerRowHtml(slot, belowCut) {
     const r = slot.player;
+    const isPick = r.type === "pick";
+    if (isPick) {
+      const tip =
+        r._pick && r._pick.proxyName
+          ? r.name + " · proxy " + r._pick.proxyName
+          : r.name || "";
+      return (
+        '<div class="lt-player tc-pick-row' +
+        (belowCut ? " lt-below-cut" : "") +
+        '">' +
+        libraryAddIconHtml() +
+        '<div class="lt-player-meta">' +
+        '<div class="lt-player-name" title="' +
+        escapeHtml(tip) +
+        '">' +
+        escapeHtml(r.name || "") +
+        "</div>" +
+        "</div>" +
+        '<div class="fp-player-xp">' +
+        fmtInt(slot.xp) +
+        "</div>" +
+        "</div>"
+      );
+    }
     const abbr = r.teamAbbr || r.club || "";
     const teamChip = abbr
       ? '<span class="fd-team-chip fd-team-' +
@@ -1866,12 +1980,6 @@
         escapeHtml(abbr) +
         "</span>"
       : "";
-    const pickChip =
-      r.type === "pick" ? '<span class="fd-pos-chip">PICK</span>' : "";
-    const tip =
-      r.type === "pick" && r._pick && r._pick.proxyName
-        ? r.name + " · proxy " + r._pick.proxyName
-        : r.name || "";
     return (
       '<div class="lt-player' +
       (belowCut ? " lt-below-cut" : "") +
@@ -1879,13 +1987,12 @@
       headshotHtml(r) +
       '<div class="lt-player-meta">' +
       '<div class="lt-player-name" title="' +
-      escapeHtml(tip) +
+      escapeHtml(r.name || "") +
       '">' +
       escapeHtml(r.name || "") +
       "</div>" +
       '<div class="lt-player-chips">' +
       teamChip +
-      pickChip +
       posChipsHtml(displayPos(r)) +
       "</div>" +
       "</div>" +
@@ -1951,7 +2058,6 @@
 
     const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
     const cutN = Math.max(0, Number(cfg.keeperCount) || 0);
-    const rosterCap = rosterSize(cfg);
     // Keepers follow Through (endSeason) via VORP in computeRows / selectKeepers*
     const roster = rows.filter((r) => r.owner === myTeam && r.type !== "pick");
     const split = splitRosterByKeepers(roster, cfg, myTeam, cutOn);
@@ -1983,57 +2089,40 @@
       picksByOwner[p.owner].push(p);
     });
 
-    const keepersByOwner = Object.create(null);
-    (league.owners || []).forEach((owner) => {
-      const owned = rows.filter((r) => r.owner === owner && r.type !== "pick");
-      keepersByOwner[owner] = splitRosterByKeepers(
-        owned,
-        cfg,
-        owner,
-        cutOn
-      ).kept;
-    });
-
-    // Pick-aware season totals for Proj ranks (keepers + accumulated picks, cut to roster)
+    // Rolling keep-20 + add-10 path for every team (Proj ranks + my boards)
+    const pathsByOwner = Object.create(null);
     const plannerYearPts = (league.owners || []).map((owner) => {
-      const k = keepersByOwner[owner] || [];
-      const op = picksByOwner[owner] || [];
-      const yearPts = yearSeasons.map((_, yi) => {
-        const seasonPicks = op
-          .filter((p) => (p.seasonIdx || 0) <= yi)
-          .map(plannerPlayerFromPick);
-        const { active } = cutPoolToRoster(k.concat(seasonPicks), cfg, yi);
-        return active.reduce((s, p) => s + seasonXPoints(p, yi), 0);
-      });
-      return { owner, yearPts };
+      const owned = rows.filter((r) => r.owner === owner && r.type !== "pick");
+      const k = splitRosterByKeepers(owned, cfg, owner, cutOn).kept;
+      const path = buildPlannerSeasonPath(
+        k,
+        picksByOwner[owner] || [],
+        cfg,
+        yearSeasons
+      );
+      pathsByOwner[owner] = path;
+      return { owner, yearPts: path.yearPts };
     });
 
-    const myPicks = picksByOwner[myTeam] || [];
-    const boards = yearSeasons.map((year, yi) => {
-      const seasonPicks = myPicks
-        .filter((p) => (p.seasonIdx || 0) <= yi)
-        .map(plannerPlayerFromPick);
-      const pool = keepers.concat(seasonPicks);
-      const splitYi = cutPoolToRoster(pool, cfg, yi);
-      const lineup = buildSeasonLineup(splitYi.active, cfg, yi);
-      // Season 1 also lists players never kept; later years use squad cut only
+    const myPath = pathsByOwner[myTeam] || {
+      boards: [],
+      yearPts: []
+    };
+    const boards = myPath.boards.map((b) => {
       const cutList =
-        yi === 0 && cutOn && cutN > 0
-          ? initialCut.concat(splitYi.cut)
-          : splitYi.cut;
-      const rank = ladderRankForOwner(plannerYearPts, myTeam, yi);
-      const yearPts =
-        ((plannerYearPts.find((t) => t.owner === myTeam) || {}).yearPts ||
-          [])[yi] || 0;
+        b.yi === 0 && cutOn && cutN > 0
+          ? initialCut.concat(b.cutList || [])
+          : b.cutList || [];
       return {
-        year,
-        yi,
-        lineup,
-        isFirst: yi === 0,
-        rank,
-        yearPts,
+        year: b.year,
+        yi: b.yi,
+        lineup: b.lineup,
+        isFirst: b.yi === 0,
+        rank: ladderRankForOwner(plannerYearPts, myTeam, b.yi),
+        yearPts: b.yearPts,
         cutList,
-        pickCount: seasonPicks.length
+        pickCount: b.pickCount,
+        keptCount: (b.kept || []).length
       };
     });
 
@@ -2089,12 +2178,8 @@
         const cutList = b.cutList || [];
         if (cutList.length) {
           const cutTitle = b.isFirst ? "Keeper cut" : "Squad cut";
-          const keptHave =
-            b.isFirst && cutOn && cutN > 0
-              ? keepers.length
-              : Math.max(0, keepers.length + b.pickCount - cutList.length);
-          const keptNeed =
-            b.isFirst && cutOn && cutN > 0 ? cutN : rosterCap;
+          const keptHave = b.isFirst ? keepers.length : b.keptCount;
+          const keptNeed = cutN > 0 ? cutN : keptHave;
           body +=
             '<div class="lt-cut" role="separator" title="' +
             cutTitle +
@@ -2122,10 +2207,10 @@
           b.rank != null ? "Proj " + ordinalRank(b.rank) : "Proj —";
         const sub =
           b.isFirst && b.pickCount
-            ? "Keepers + draft"
+            ? "Keepers + " + b.pickCount + " picks"
             : b.isFirst
               ? "Current team · keepers"
-              : "Best lineup · +" + b.pickCount + " picks";
+              : b.keptCount + " kept + " + b.pickCount + " picks";
         return (
           '<article class="fp-season' +
           (isBest ? " is-best" : "") +
@@ -2281,20 +2366,70 @@
     };
   }
 
-  /** Rank pool by season xPoints and split into roster cap vs cut list. */
-  function cutPoolToRoster(pool, cfg, yearIdx) {
-    const cap = rosterSize(cfg);
-    const ranked = (pool || []).slice().sort(
-      (a, b) =>
-        seasonXPoints(b, yearIdx) - seasonXPoints(a, yearIdx) ||
-        (b.vorp || 0) - (a.vorp || 0) ||
-        (a.name || "").localeCompare(b.name || "") ||
-        String(a.id).localeCompare(String(b.id))
-    );
+  /**
+   * Pre-draft cut: keep top keeperCount by season xPoints, cut the rest
+   * (rosterSize − keepers, e.g. 10). Incoming picks are added after this.
+   */
+  function cutDownToKeepers(roster, cfg, yearIdx) {
+    const keepN = Math.max(0, Number(cfg.keeperCount) || 0);
+    const ranked = (roster || [])
+      .slice()
+      .sort((a, b) => sortBySeasonXp(a, b, yearIdx));
     return {
-      active: ranked.slice(0, cap),
-      cut: ranked.slice(cap)
+      kept: ranked.slice(0, keepN),
+      cut: ranked.slice(keepN)
     };
+  }
+
+  /**
+   * Rolling planner path: each season keep 20 from prior roster, add that
+   * year's picks (locked into lineup). Returns per-season boards + yearPts.
+   */
+  function buildPlannerSeasonPath(initialKeepers, ownerPicks, cfg, yearSeasons) {
+    const picksBySeason = Object.create(null);
+    (ownerPicks || []).forEach((p) => {
+      const yi = Number(p.seasonIdx) || 0;
+      if (!picksBySeason[yi]) picksBySeason[yi] = [];
+      picksBySeason[yi].push(p);
+    });
+
+    let prevRoster = null;
+    const boards = [];
+    const yearPts = [];
+
+    yearSeasons.forEach((year, yi) => {
+      let kept;
+      let cutList;
+      if (yi === 0) {
+        kept = (initialKeepers || []).slice();
+        cutList = [];
+      } else {
+        const split = cutDownToKeepers(prevRoster, cfg, yi);
+        kept = split.kept;
+        cutList = split.cut;
+      }
+      const newPicks = (picksBySeason[yi] || []).map(plannerPlayerFromPick);
+      const active = kept.concat(newPicks);
+      const lineup = buildSeasonLineup(active, cfg, yi, {
+        mustInclude: newPicks
+      });
+      const pts = active.reduce((s, p) => s + seasonXPoints(p, yi), 0);
+      yearPts.push(pts);
+      prevRoster = active;
+      boards.push({
+        year,
+        yi,
+        lineup,
+        cutList,
+        kept,
+        newPicks,
+        active,
+        pickCount: newPicks.length,
+        yearPts: pts
+      });
+    });
+
+    return { boards, yearPts };
   }
 
   function fmtSigned(v) {
