@@ -162,8 +162,10 @@
     /** @type {null | {source:string, fileName:string, ownership:Object.<string,string>, positions:Object.<string,string>, owners:string[], unmatchedOwned:Array, matchedOwned:number, totalOwned:number}} */
     league: null,
     trade: {
-      offerKey: "",
-      targetKey: "",
+      otherTeam: "",
+      search: "",
+      give: [],
+      get: [],
       bound: false
     },
     /** @type {Object.<string,string>} */
@@ -640,8 +642,10 @@
     state.league = null;
     state.cfg.myTeam = "";
     state.cfg.owners = [];
-    state.trade.offerKey = "";
-    state.trade.targetKey = "";
+    state.trade.otherTeam = "";
+    state.trade.search = "";
+    state.trade.give = [];
+    state.trade.get = [];
     state.teamLabels = Object.create(null);
     const input = document.getElementById("keeper-csv-input");
     if (input) input.value = "";
@@ -1886,7 +1890,7 @@
   }
 
   function plannerPosBlockHtml(label, slots, emptyCount) {
-    const rows = (slots || []).map(plannerPlayerRowHtml);
+    const rows = (slots || []).map((slot) => plannerPlayerRowHtml(slot, false));
     for (let i = 0; i < (emptyCount || 0); i++) {
       rows.push('<div class="fp-empty-slot">Empty</div>');
     }
@@ -2171,9 +2175,14 @@
     return out;
   }
 
-  /** Kept-player totals + owned pick proxy values. */
+  /**
+   * Kept-player totals + owned pick proxy values.
+   * Always chooses keeperCount keepers for trade math — you finalise 20
+   * before the draft even if the UI cut toggle is off. Picks sit outside
+   * that 20; trading a pick can free a roster spot so the lowest keeper drops.
+   */
   function teamTradeTotals(rows, owner, cfg, pickOwnerByKey, picksByKey) {
-    const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
+    const cutOn = Math.max(0, Number(cfg.keeperCount) || 0) > 0;
     const yLen = state.seasons.length;
     const players = rows.filter((r) => r.owner === owner);
     const split = splitRosterByKeepers(players, cfg, owner, cutOn);
@@ -2357,72 +2366,31 @@
     return g + "||" + t;
   }
 
-  function suggestTradePackages(opts) {
+  /** Package gap below this → stop suggesting fillers. */
+  const TRADE_BALANCED_GAP = 140;
+  const TRADE_MAX_ASSETS = 2;
+
+  /**
+   * Suggest at most one extra piece per side to balance confirmed give/get.
+   * When both sides empty, proposes an opening 1-for-1.
+   */
+  function suggestTradeFillers(opts) {
     const {
       rows,
       league,
       cfg,
       myTeam,
-      mode,
-      seedKey,
+      other,
+      giveKeys,
+      getKeys,
       assetMap,
-      picks,
-      limit
+      picks
     } = opts;
-    const maxN = Math.min(1, limit || 1);
-    const poolCap = 10;
-    const maxAssets = 2;
-    if (!myTeam || !seedKey || !assetMap[seedKey]) return [];
+    const empty = { suggestGive: null, suggestGet: null, sim: null, balanced: false };
+    if (!myTeam || !other || myTeam === other) return empty;
 
-    const seed = assetMap[seedKey];
-    const myAssets = Object.keys(assetMap)
-      .map((k) => assetMap[k])
-      .filter((a) => a.owner === myTeam);
-    const others = (league.owners || []).filter((o) => o !== myTeam);
-
-    function assetYearTotal(a) {
-      return yearPtsTotal(a && a.yearPts);
-    }
-
-    /** Prefer assets near a target Σ xPoints (fair packages), mix in picks. */
-    function takeNearXPtsPool(list, targetX, cap) {
-      const ranked = list
-        .slice()
-        .sort((a, b) => {
-          const da = Math.abs(assetYearTotal(a) - targetX);
-          const db = Math.abs(assetYearTotal(b) - targetX);
-          return (
-            da - db ||
-            assetYearTotal(b) - assetYearTotal(a) ||
-            a.name.localeCompare(b.name)
-          );
-        });
-      const pickList = ranked.filter((a) => a.kind === "pick");
-      const playerList = ranked.filter((a) => a.kind !== "pick");
-      const pickSlots = Math.min(3, pickList.length, Math.max(2, Math.floor(cap / 3)));
-      const out = [];
-      const used = new Set();
-      pickList.slice(0, pickSlots).forEach((a) => {
-        out.push(a);
-        used.add(a.key);
-      });
-      playerList.forEach((a) => {
-        if (out.length >= cap) return;
-        if (used.has(a.key)) return;
-        out.push(a);
-        used.add(a.key);
-      });
-      pickList.forEach((a) => {
-        if (out.length >= cap) return;
-        if (used.has(a.key)) return;
-        out.push(a);
-        used.add(a.key);
-      });
-      return out;
-    }
-
-    const candidates = [];
-    const seen = new Set();
+    const give = (giveKeys || []).slice();
+    const get = (getKeys || []).slice();
     const baseMaps = buildPickMaps(picks);
     const preCache = Object.create(null);
     preCache[myTeam] = teamTradeTotals(
@@ -2432,144 +2400,117 @@
       baseMaps.pickOwnerByKey,
       baseMaps.picksByKey
     );
-    others.forEach((o) => {
-      preCache[o] = teamTradeTotals(
-        rows,
-        o,
-        cfg,
-        baseMaps.pickOwnerByKey,
-        baseMaps.picksByKey
-      );
-    });
+    preCache[other] = teamTradeTotals(
+      rows,
+      other,
+      cfg,
+      baseMaps.pickOwnerByKey,
+      baseMaps.picksByKey
+    );
 
-    const seedX = assetYearTotal(seed);
+    function runSim(g, t) {
+      if (!g.length || !t.length) return null;
+      return simulateTrade(rows, league, cfg, myTeam, other, g, t, picks, preCache);
+    }
 
-    others.forEach((other) => {
-      const theirAssets = Object.keys(assetMap)
-        .map((k) => assetMap[k])
-        .filter((a) => a.owner === other);
-      let myPool;
-      let theirPool;
-
-      if (mode === "offer") {
-        if (seed.owner !== myTeam) return;
-        myPool = takeNearXPtsPool(
-          myAssets.filter((a) => a.key !== seedKey),
-          seedX * 0.35,
-          poolCap
-        );
-        theirPool = takeNearXPtsPool(theirAssets, seedX, poolCap);
-      } else {
-        if (seed.owner === myTeam || seed.owner !== other) return;
-        theirPool = takeNearXPtsPool(
-          theirAssets.filter((a) => a.key !== seedKey),
-          seedX * 0.35,
-          poolCap
-        );
-        myPool = takeNearXPtsPool(myAssets, seedX, poolCap);
+    if (give.length && get.length) {
+      const gap = Math.abs(sumAssetYearPts(give, assetMap) - sumAssetYearPts(get, assetMap));
+      const sim0 = runSim(give, get);
+      if (sim0 && gap <= TRADE_BALANCED_GAP) {
+        const myT = yearPtsTotal(sim0.a.yearPts);
+        const theirT = yearPtsTotal(sim0.b.yearPts);
+        if (myT >= -180 && theirT >= -350) {
+          return { suggestGive: null, suggestGet: null, sim: sim0, balanced: true };
+        }
       }
+    }
 
-      const myKeys = myPool.map((a) => a.key);
-      const theirKeys = theirPool.map((a) => a.key);
+    const giveSet = new Set(give);
+    const getSet = new Set(get);
+    const myAvail = Object.keys(assetMap)
+      .map((k) => assetMap[k])
+      .filter((a) => a.owner === myTeam && !giveSet.has(a.key))
+      .sort(
+        (a, b) =>
+          yearPtsTotal(b.yearPts) - yearPtsTotal(a.yearPts) ||
+          a.name.localeCompare(b.name)
+      )
+      .slice(0, 14);
+    const theirAvail = Object.keys(assetMap)
+      .map((k) => assetMap[k])
+      .filter((a) => a.owner === other && !getSet.has(a.key))
+      .sort(
+        (a, b) =>
+          yearPtsTotal(b.yearPts) - yearPtsTotal(a.yearPts) ||
+          a.name.localeCompare(b.name)
+      )
+      .slice(0, 14);
 
-      function consider(giveKeys, getKeys) {
-        if (!giveKeys.length || !getKeys.length) return;
-        if (giveKeys.length > maxAssets || getKeys.length > maxAssets) return;
-        const assetGap = Math.abs(
-          sumAssetYearPts(giveKeys, assetMap) - sumAssetYearPts(getKeys, assetMap)
-        );
-        if (assetGap > TRADE_XPTS_GAP_MAX) return;
-        const sig = packageSignature(giveKeys, getKeys) + "|" + other;
-        if (seen.has(sig)) return;
-        seen.add(sig);
-        const sim = simulateTrade(
-          rows,
-          league,
-          cfg,
-          myTeam,
-          other,
-          giveKeys,
-          getKeys,
-          picks,
-          preCache
-        );
-        const score = scoreTradePackage(
-          sim,
-          giveKeys,
-          getKeys,
-          assetMap,
-          myTeam,
-          other
-        );
-        if (score <= -1e8) return;
-        candidates.push({
-          other,
-          giveKeys: giveKeys.slice(),
-          getKeys: getKeys.slice(),
-          sim,
-          score
+    const canAddGive = give.length < TRADE_MAX_ASSETS;
+    const canAddGet = get.length < TRADE_MAX_ASSETS;
+    let best = { score: -1e9, suggestGive: null, suggestGet: null, sim: null };
+
+    function consider(sg, st) {
+      const g = sg ? give.concat([sg]) : give.slice();
+      const t = st ? get.concat([st]) : get.slice();
+      if (!g.length || !t.length) return;
+      if (g.length > TRADE_MAX_ASSETS || t.length > TRADE_MAX_ASSETS) return;
+      const assetGap = Math.abs(
+        sumAssetYearPts(g, assetMap) - sumAssetYearPts(t, assetMap)
+      );
+      if (assetGap > TRADE_XPTS_GAP_MAX) return;
+      const sim = runSim(g, t);
+      if (!sim) return;
+      const score = scoreTradePackage(sim, g, t, assetMap, myTeam, other);
+      if (score <= -1e8 || score <= best.score) return;
+      best = { score, suggestGive: sg || null, suggestGet: st || null, sim };
+    }
+
+    if (!give.length && !get.length) {
+      myAvail.forEach((a) => {
+        theirAvail.forEach((b) => consider(a.key, b.key));
+      });
+    } else {
+      if (canAddGive && canAddGet) {
+        myAvail.forEach((a) => {
+          theirAvail.forEach((b) => consider(a.key, b.key));
         });
       }
+      if (canAddGive) myAvail.forEach((a) => consider(a.key, null));
+      if (canAddGet) theirAvail.forEach((b) => consider(null, b.key));
+    }
 
-      if (mode === "offer") {
-        // give = [seed] + 0..1 filler; get = 1..2 near seed value
-        for (let mg = 0; mg <= maxAssets - 1; mg++) {
-          combinations(myKeys, mg).forEach((extras) => {
-            const giveKeys = [seedKey].concat(extras);
-            const giveX = sumAssetYearPts(giveKeys, assetMap);
-            const matched = takeNearXPtsPool(theirPool, giveX, poolCap);
-            const tKeys = matched.map((a) => a.key);
-            for (let tg = 1; tg <= maxAssets; tg++) {
-              combinations(tKeys, tg).forEach((getKeys) => {
-                consider(giveKeys, getKeys);
-              });
-            }
-          });
-        }
-      } else {
-        // get = [seed] + 0..1 of theirs; give = 1..2 of mine near get value
-        for (let tg = 0; tg <= maxAssets - 1; tg++) {
-          combinations(theirKeys, tg).forEach((extras) => {
-            const getKeys = [seedKey].concat(extras);
-            const getX = sumAssetYearPts(getKeys, assetMap);
-            const matched = takeNearXPtsPool(myPool, getX, poolCap);
-            const gKeys = matched.map((a) => a.key);
-            for (let mg = 1; mg <= maxAssets; mg++) {
-              combinations(gKeys, mg).forEach((giveKeys) => {
-                consider(giveKeys, getKeys);
-              });
-            }
-          });
-        }
-      }
-    });
+    if (best.score <= -1e8) return empty;
+    return {
+      suggestGive: best.suggestGive,
+      suggestGet: best.suggestGet,
+      sim: best.sim,
+      balanced: false
+    };
+  }
 
-    candidates.sort(
-      (a, b) =>
-        b.score - a.score ||
-        String(a.other).localeCompare(String(b.other)) ||
-        packageSignature(a.giveKeys, a.getKeys).localeCompare(
-          packageSignature(b.giveKeys, b.getKeys)
-        )
+  function libraryAddIconHtml() {
+    return (
+      '<span class="tc-pick-icon" aria-hidden="true">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" focusable="false">' +
+      '<path fill="currentColor" d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/>' +
+      "</svg></span>"
     );
-    return candidates.slice(0, maxN);
   }
 
   function pickPlayerRowHtml(p) {
-    const tip = p.proxyName
-      ? "Overall #" + p.pick + " · ≈ " + p.proxyName
-      : "Overall #" + (p.pick || "") + " · no unowned proxy";
+    const tip =
+      "Overall #" +
+      (p.pick || "") +
+      (p.proxyName ? " · proxy " + p.proxyName : "");
     return (
       '<div class="lt-player tc-pick-row">' +
-      '<div class="fd-headshot-empty" aria-hidden="true"></div>' +
+      libraryAddIconHtml() +
       '<div class="lt-player-meta">' +
       '<div class="lt-player-name" title="' +
       escapeHtml(tip) +
       '">' +
       escapeHtml(p.name || "") +
-      (p.proxyName
-        ? ' <span class="muted">≈ ' + escapeHtml(p.proxyName) + "</span>"
-        : "") +
       "</div>" +
       '<div class="lt-player-chips"><span class="fd-pos-chip">PICK</span></div>' +
       "</div>" +
@@ -2586,26 +2527,32 @@
     return teamPlayerRowHtml(asset.row || asset, !!asset.belowCut);
   }
 
-  function tradeAssetRowHtml(asset, selected) {
+  function tradeAssetRowHtml(asset, selected, opts) {
     if (!asset) return "";
+    const o = opts || {};
+    const owner = o.owner != null ? o.owner : asset.owner;
     return (
       '<button type="button" class="tc-asset-btn' +
       (selected ? " is-selected" : "") +
+      (o.suggested ? " is-suggested" : "") +
       (asset.belowCut ? " is-cut" : "") +
       '" data-tc-asset="' +
       escapeHtml(asset.key) +
-      '">' +
+      '"' +
+      (o.role ? ' data-tc-role="' + escapeHtml(o.role) + '"' : "") +
+      (owner
+        ? ' data-tc-owner="' + escapeHtml(owner) + '"'
+        : "") +
+      ">" +
       tradeAssetBodyHtml(asset) +
       "</button>"
     );
   }
 
-  function tradeAssetDisplayHtml(asset) {
-    if (!asset) return "";
-    return '<div class="tc-asset-view">' + tradeAssetBodyHtml(asset) + "</div>";
-  }
-
   function tradeDiffTableHtml(sim, myTeam, other, yearSeasons) {
+    if (!sim) {
+      return '<p class="muted tc-diff-empty">Add assets to see differentials.</p>';
+    }
     function row(label, yearPts, cls) {
       const total = yearPtsTotal(yearPts);
       return (
@@ -2643,36 +2590,6 @@
     );
   }
 
-  function tradeSuggestionCardHtml(pkg, assetMap, yearSeasons) {
-    const plan = state.teamLabels[pkg.other];
-    const giveHtml = pkg.giveKeys
-      .map((k) => tradeAssetDisplayHtml(assetMap[k]))
-      .join("");
-    const getHtml = pkg.getKeys
-      .map((k) => tradeAssetDisplayHtml(assetMap[k]))
-      .join("");
-    return (
-      '<article class="tc-suggest">' +
-      '<header class="tc-suggest-head">' +
-      '<div class="tc-suggest-team">' +
-      escapeHtml(pkg.other) +
-      (plan && plan.label
-        ? '<div class="lt-team-plan">' + escapeHtml(plan.label) + "</div>"
-        : "") +
-      "</div></header>" +
-      '<div class="tc-suggest-cols">' +
-      '<div class="tc-suggest-col"><div class="tc-suggest-label">You give</div>' +
-      giveHtml +
-      "</div>" +
-      '<div class="tc-suggest-col"><div class="tc-suggest-label">You get</div>' +
-      getHtml +
-      "</div>" +
-      "</div>" +
-      tradeDiffTableHtml(pkg.sim, "You", pkg.other, yearSeasons) +
-      "</article>"
-    );
-  }
-
   function renderTradeCalculator(rows, league, cfg) {
     const el = document.getElementById("trade-calculator");
     if (!el) return;
@@ -2692,22 +2609,30 @@
     const myTeam =
       cfg.myTeam && league.owners.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : "";
 
-    if (
-      state.trade.offerKey &&
-      !(assetMap[state.trade.offerKey] && assetMap[state.trade.offerKey].owner === myTeam)
-    ) {
-      state.trade.offerKey = "";
-    }
-    if (
-      state.trade.targetKey &&
-      !(
-        assetMap[state.trade.targetKey] &&
-        assetMap[state.trade.targetKey].owner &&
-        assetMap[state.trade.targetKey].owner !== myTeam
-      )
-    ) {
-      state.trade.targetKey = "";
-    }
+    let otherTeam =
+      state.trade.otherTeam && league.owners.indexOf(state.trade.otherTeam) >= 0
+        ? state.trade.otherTeam
+        : "";
+    if (otherTeam && otherTeam === myTeam) otherTeam = "";
+    state.trade.otherTeam = otherTeam;
+
+    const searchQ = String(state.trade.search || "")
+      .trim()
+      .toLowerCase();
+
+    state.trade.give = (state.trade.give || []).filter(
+      (k) => assetMap[k] && assetMap[k].owner === myTeam
+    );
+    state.trade.get = (state.trade.get || []).filter(
+      (k) =>
+        assetMap[k] &&
+        assetMap[k].owner &&
+        assetMap[k].owner !== myTeam &&
+        (!otherTeam || assetMap[k].owner === otherTeam)
+    );
+
+    const giveSet = new Set(state.trade.give);
+    const getSet = new Set(state.trade.get);
 
     const myAssets = myTeam
       ? Object.keys(assetMap)
@@ -2717,75 +2642,124 @@
             const ac = a.belowCut ? 1 : 0;
             const bc = b.belowCut ? 1 : 0;
             if (ac !== bc) return ac - bc;
-            return (b.vorp || 0) - (a.vorp || 0) || a.name.localeCompare(b.name);
+            return (
+              yearPtsTotal(b.yearPts) - yearPtsTotal(a.yearPts) ||
+              a.name.localeCompare(b.name)
+            );
           })
       : [];
 
-    const theirAssets = myTeam
-      ? Object.keys(assetMap)
-          .map((k) => assetMap[k])
-          .filter((a) => a.owner && a.owner !== myTeam)
-          .sort(
-            (a, b) =>
-              String(a.owner).localeCompare(String(b.owner)) ||
-              (b.vorp || 0) - (a.vorp || 0) ||
-              a.name.localeCompare(b.name)
-          )
-      : [];
+    let theirAssets = [];
+    if (myTeam) {
+      theirAssets = Object.keys(assetMap)
+        .map((k) => assetMap[k])
+        .filter((a) => a.owner && a.owner !== myTeam)
+        .filter((a) => {
+          if (searchQ) {
+            return String(a.name || "")
+              .toLowerCase()
+              .includes(searchQ);
+          }
+          return !otherTeam || a.owner === otherTeam;
+        })
+        .sort((a, b) => {
+          if (!searchQ && otherTeam) {
+            /* same team */
+          } else {
+            const oc = String(a.owner).localeCompare(String(b.owner));
+            if (oc) return oc;
+          }
+          const ac = a.belowCut ? 1 : 0;
+          const bc = b.belowCut ? 1 : 0;
+          if (ac !== bc) return ac - bc;
+          return (
+            yearPtsTotal(b.yearPts) - yearPtsTotal(a.yearPts) ||
+            a.name.localeCompare(b.name)
+          );
+        });
+    }
 
-    const teamOptions =
-      '<option value="">— Select —</option>' +
+    const otherOptions =
+      '<option value="">— Other team —</option>' +
       league.owners
+        .filter((o) => o !== myTeam)
         .map(
           (o) =>
             '<option value="' +
             escapeHtml(o) +
             '"' +
-            (o === myTeam ? " selected" : "") +
+            (o === otherTeam ? " selected" : "") +
             ">" +
             escapeHtml(o) +
             "</option>"
         )
         .join("");
 
-    let offerSuggestions = [];
-    let targetSuggestions = [];
-    if (myTeam && state.trade.offerKey) {
-      offerSuggestions = suggestTradePackages({
+    let fillers = {
+      suggestGive: null,
+      suggestGet: null,
+      sim: null,
+      balanced: false
+    };
+    if (myTeam && otherTeam) {
+      fillers = suggestTradeFillers({
         rows,
         league,
         cfg,
         myTeam,
-        mode: "offer",
-        seedKey: state.trade.offerKey,
+        other: otherTeam,
+        giveKeys: state.trade.give,
+        getKeys: state.trade.get,
         assetMap,
-        picks,
-        limit: 1
-      });
-    }
-    if (myTeam && state.trade.targetKey) {
-      targetSuggestions = suggestTradePackages({
-        rows,
-        league,
-        cfg,
-        myTeam,
-        mode: "target",
-        seedKey: state.trade.targetKey,
-        assetMap,
-        picks,
-        limit: 1
+        picks
       });
     }
 
-    function assetListHtml(list, selectedKey, emptyMsg, groupByOwner) {
+    const fullGive = state.trade.give.slice();
+    if (fillers.suggestGive) fullGive.push(fillers.suggestGive);
+    const fullGet = state.trade.get.slice();
+    if (fillers.suggestGet) fullGet.push(fillers.suggestGet);
+    let displaySim = fillers.sim;
+    if (
+      state.trade.give.length &&
+      state.trade.get.length &&
+      !fillers.suggestGive &&
+      !fillers.suggestGet
+    ) {
+      displaySim = simulateTrade(
+        rows,
+        league,
+        cfg,
+        myTeam,
+        otherTeam,
+        state.trade.give,
+        state.trade.get,
+        picks
+      );
+    } else if (
+      fullGive.length &&
+      fullGet.length &&
+      (fillers.suggestGive || fillers.suggestGet)
+    ) {
+      displaySim = simulateTrade(
+        rows,
+        league,
+        cfg,
+        myTeam,
+        otherTeam,
+        fullGive,
+        fullGet,
+        picks
+      );
+    }
+
+    function rosterListHtml(list, selectedSet, role, emptyMsg) {
       if (!list.length) return '<p class="muted">' + emptyMsg + "</p>";
-      if (!groupByOwner) {
-        return list.map((a) => tradeAssetRowHtml(a, a.key === selectedKey)).join("");
-      }
       const parts = [];
       let last = null;
+      const multiOwner = role === "get" && (searchQ || !otherTeam);
       list.forEach((a) => {
-        if (a.owner !== last) {
+        if (multiOwner && a.owner !== last) {
           last = a.owner;
           parts.push(
             '<div class="tc-owner-head">' +
@@ -2794,60 +2768,104 @@
               "</div>"
           );
         }
-        parts.push(tradeAssetRowHtml(a, a.key === selectedKey));
+        parts.push(
+          tradeAssetRowHtml(a, selectedSet.has(a.key), {
+            role: role,
+            owner: a.owner
+          })
+        );
       });
       return parts.join("");
     }
 
-    function suggestionsHtml(list) {
-      if (!list.length) {
-        return '<p class="muted">No fair package within xPoints gap.</p>';
+    function confirmedStackHtml(keys, role) {
+      if (!keys.length) {
+        return '<p class="muted tc-slot-hint">Confirmed</p>';
       }
-      return list.map((p) => tradeSuggestionCardHtml(p, assetMap, yearSeasons)).join("");
+      return keys
+        .map((k) =>
+          tradeAssetRowHtml(assetMap[k], true, {
+            role: role + "-locked",
+            owner: assetMap[k] && assetMap[k].owner
+          })
+        )
+        .join("");
     }
 
-    const needTeam = !myTeam;
+    function suggestStackHtml(key, role) {
+      if (!key || !assetMap[key]) return "";
+      return (
+        '<div class="tc-suggest-label">Suggested</div>' +
+        tradeAssetRowHtml(assetMap[key], false, {
+          role: role + "-suggest",
+          suggested: true,
+          owner: assetMap[key].owner
+        })
+      );
+    }
 
     el.style.display = "block";
+    if (!myTeam) {
+      el.innerHTML =
+        "<h3>Trade calculator</h3>" +
+        "<p class='muted'>Select <b>My team</b> (header / Import) to start.</p>";
+      return;
+    }
+
     el.innerHTML =
       "<h3>Trade calculator</h3>" +
-      "<div class='tc-sides'>" +
-      "<label class='tc-side-label'>My team" +
-      '<select id="tc-my-team">' +
-      teamOptions +
-      "</select></label>" +
-      (myTeam && state.teamLabels[myTeam] && state.teamLabels[myTeam].label
-        ? '<div class="lt-team-plan tc-my-plan">' +
-          escapeHtml(state.teamLabels[myTeam].label) +
-          "</div>"
+      '<div class="tc-board">' +
+      '<div class="tc-col tc-roster">' +
+      '<div class="tc-col-head">' +
+      '<div class="tc-col-title">' +
+      escapeHtml(myTeam) +
+      "</div>" +
+      teamPlanLabelHtml(myTeam) +
+      "</div>" +
+      '<div class="tc-list" id="tc-my-list">' +
+      rosterListHtml(myAssets, giveSet, "give", "No assets") +
+      "</div></div>" +
+      '<div class="tc-center">' +
+      '<div class="tc-diff">' +
+      tradeDiffTableHtml(
+        displaySim,
+        "You",
+        otherTeam || "Them",
+        yearSeasons
+      ) +
+      (fillers.balanced
+        ? '<p class="muted tc-balanced">Balanced</p>'
         : "") +
       "</div>" +
-      (needTeam
-        ? "<p class='muted'>Select your team to start.</p>"
-        : "<section class='tc-section'>" +
-          "<h4>Offer</h4>" +
-          "<div class='tc-section-grid'>" +
-          "<div class='tc-col'>" +
-          "<div class='tc-list' id='tc-offer-list'>" +
-          assetListHtml(myAssets, state.trade.offerKey, "No assets on this roster") +
-          "</div></div>" +
-          "<div class='tc-suggest-stack'>" +
-          (state.trade.offerKey
-            ? suggestionsHtml(offerSuggestions)
-            : '<p class="muted">Pick one of yours.</p>') +
-          "</div></div></section>" +
-          "<section class='tc-section'>" +
-          "<h4>Target</h4>" +
-          "<div class='tc-section-grid'>" +
-          "<div class='tc-col'>" +
-          "<div class='tc-list' id='tc-target-list'>" +
-          assetListHtml(theirAssets, state.trade.targetKey, "No league assets", true) +
-          "</div></div>" +
-          "<div class='tc-suggest-stack'>" +
-          (state.trade.targetKey
-            ? suggestionsHtml(targetSuggestions)
-            : '<p class="muted">Pick someone else\'s.</p>') +
-          "</div></div></section>");
+      '<div class="tc-inputs">' +
+      '<div class="tc-col tc-tray" id="tc-give-tray">' +
+      confirmedStackHtml(state.trade.give, "give") +
+      suggestStackHtml(fillers.suggestGive, "give") +
+      "</div>" +
+      '<div class="tc-col tc-tray" id="tc-get-tray">' +
+      confirmedStackHtml(state.trade.get, "get") +
+      suggestStackHtml(fillers.suggestGet, "get") +
+      "</div>" +
+      "</div></div>" +
+      '<div class="tc-col tc-roster">' +
+      '<div class="tc-col-head">' +
+      '<select id="tc-other-team">' +
+      otherOptions +
+      "</select>" +
+      (otherTeam ? teamPlanLabelHtml(otherTeam) : "") +
+      '<input id="tc-player-search" type="search" placeholder="Search players" value="' +
+      escapeHtml(state.trade.search || "") +
+      '"/>' +
+      "</div>" +
+      '<div class="tc-list" id="tc-other-list">' +
+      rosterListHtml(
+        theirAssets,
+        getSet,
+        "get",
+        otherTeam || searchQ ? "No assets" : "Choose a team or search"
+      ) +
+      "</div></div>" +
+      "</div>";
   }
 
   function bindTradeCalculator() {
@@ -2855,27 +2873,87 @@
     state.trade.bound = true;
     const el = document.getElementById("trade-calculator");
     if (!el) return;
+
+    function toggleKey(arrName, key, maxN) {
+      const arr = (state.trade[arrName] || []).slice();
+      const i = arr.indexOf(key);
+      if (i >= 0) arr.splice(i, 1);
+      else {
+        if (arr.length >= maxN) return false;
+        arr.push(key);
+      }
+      state.trade[arrName] = arr;
+      return true;
+    }
+
     el.addEventListener("change", (e) => {
       const t = e.target;
-      if (!t || t.id !== "tc-my-team") return;
-      const val = t.value;
-      state.cfg.myTeam = val;
-      state.trade.offerKey = "";
-      state.trade.targetKey = "";
-      syncMyTeamSelect(state.league, state.cfg);
-      refresh();
+      if (!t) return;
+      if (t.id === "tc-other-team") {
+        state.trade.otherTeam = t.value || "";
+        state.trade.search = "";
+        state.trade.get = [];
+        state.trade.give = [];
+        renderTradeCalculator(state.rows, state.league, state.cfg);
+      }
     });
+
+    el.addEventListener("input", (e) => {
+      const t = e.target;
+      if (!t || t.id !== "tc-player-search") return;
+      state.trade.search = t.value || "";
+      if (state.trade.search.trim()) {
+        // Search overrides team filter; keep otherTeam for affinity but list is search-wide
+      }
+      renderTradeCalculator(state.rows, state.league, state.cfg);
+      const inp = document.getElementById("tc-player-search");
+      if (inp) {
+        inp.focus();
+        const len = inp.value.length;
+        try {
+          inp.setSelectionRange(len, len);
+        } catch (err) {
+          /* ignore */
+        }
+      }
+    });
+
     el.addEventListener("click", (e) => {
       const btn = e.target && e.target.closest ? e.target.closest("[data-tc-asset]") : null;
       if (!btn) return;
       const key = btn.getAttribute("data-tc-asset");
+      const role = btn.getAttribute("data-tc-role") || "";
+      const owner = btn.getAttribute("data-tc-owner") || "";
       if (!key) return;
-      const inOffer = btn.closest("#tc-offer-list");
-      const inTarget = btn.closest("#tc-target-list");
-      if (inOffer) {
-        state.trade.offerKey = state.trade.offerKey === key ? "" : key;
-      } else if (inTarget) {
-        state.trade.targetKey = state.trade.targetKey === key ? "" : key;
+
+      if (role === "give-suggest" || role === "get-suggest") {
+        const side = role.indexOf("give") === 0 ? "give" : "get";
+        if ((state.trade[side] || []).indexOf(key) < 0) {
+          if ((state.trade[side] || []).length >= TRADE_MAX_ASSETS) return;
+          state.trade[side] = (state.trade[side] || []).concat([key]);
+        }
+        renderTradeCalculator(state.rows, state.league, state.cfg);
+        return;
+      }
+
+      if (role === "give-locked" || role === "get-locked") {
+        const side = role.indexOf("give") === 0 ? "give" : "get";
+        state.trade[side] = (state.trade[side] || []).filter((k) => k !== key);
+        renderTradeCalculator(state.rows, state.league, state.cfg);
+        return;
+      }
+
+      const inMy = btn.closest("#tc-my-list");
+      const inOther = btn.closest("#tc-other-list");
+      if (inMy) {
+        toggleKey("give", key, TRADE_MAX_ASSETS);
+      } else if (inOther) {
+        if (owner && owner !== state.cfg.myTeam && state.trade.otherTeam !== owner) {
+          state.trade.otherTeam = owner;
+          state.trade.get = [];
+          state.trade.search = "";
+        }
+        toggleKey("get", key, TRADE_MAX_ASSETS);
       } else {
         return;
       }
@@ -3438,8 +3516,10 @@
         readControlsFromDom();
         if (id === "cfg-myTeam") {
           rebuildOwnerDropdown(state.league, state.cfg);
-          state.trade.offerKey = "";
-          state.trade.targetKey = "";
+          state.trade.otherTeam = "";
+          state.trade.search = "";
+          state.trade.give = [];
+          state.trade.get = [];
         }
         refresh();
       });

@@ -4537,7 +4537,7 @@ All models are based on over a decade of data that is collected from public sour
   }
 
   function plannerPosBlockHtml(label, slots, emptyCount) {
-    const rows = (slots || []).map(plannerPlayerRowHtml);
+    const rows = (slots || []).map((slot) => plannerPlayerRowHtml(slot, false));
     for (let i = 0; i < (emptyCount || 0); i++) {
       rows.push('<div class="fp-empty-slot">Empty</div>');
     }
