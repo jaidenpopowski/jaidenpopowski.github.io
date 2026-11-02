@@ -12,8 +12,8 @@ const AFL_SHARE_BASE =
 
 const ALLOWED_ORIGINS = new Set([
   "https://jaidenpopowski.github.io",
-  "https://statsbyjaiden.com",
-  "https://www.statsbyjaiden.com",
+  "https://statsbyjaiden.com.au",
+  "https://www.statsbyjaiden.com.au",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
   "http://localhost:4321",
