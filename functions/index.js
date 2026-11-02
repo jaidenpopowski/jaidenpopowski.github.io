@@ -34,16 +34,26 @@ function setCors(req, res) {
   res.set("Access-Control-Max-Age", "3600");
 }
 
+/** Extract share hash from raw hash or AFL draft share URL. */
+function extractLeagueHash(raw) {
+  const s = String(raw || "").trim();
+  if (!s) return "";
+  if (/^[a-f0-9]{16,}$/i.test(s)) return s;
+  let m = s.match(/\/draft\/league\/\d+\/draft\/([a-f0-9]{16,})/i);
+  if (m) return m[1];
+  // Prefer a long hex segment after /draft/ (skip the "/draft/league/..." prefix)
+  m = s.match(/\/draft\/([a-f0-9]{16,})(?:[/?#]|$)/i);
+  if (m) return m[1];
+  return "";
+}
+
 function parseLeagueHash(body) {
   if (!body || typeof body !== "object") return "";
-  if (body.leagueHash && /^\w+$/.test(String(body.leagueHash))) {
-    return String(body.leagueHash);
+  if (body.leagueHash) {
+    const fromField = extractLeagueHash(body.leagueHash);
+    if (fromField) return fromField;
   }
-  const url = String(body.url || "").trim();
-  if (!url) return "";
-  if (/^\w{16,}$/.test(url)) return url;
-  const m = url.match(/\/draft\/(\w+)/i) || url.match(/league\/(\w+)/i);
-  return m ? m[1] : "";
+  return extractLeagueHash(body.url || "");
 }
 
 function allowRate(uid) {
@@ -64,11 +74,13 @@ async function fetchAflJson(url) {
   const res = await fetch(url, {
     headers: {
       Accept: "application/json",
-      "User-Agent": "statsbyjaiden-import/1.0"
+      "User-Agent":
+        "Mozilla/5.0 (compatible; statsbyjaiden-import/1.0; +https://statsbyjaiden.com.au)",
+      Referer: "https://fantasy.afl.com.au/"
     }
   });
   if (!res.ok) {
-    const err = new Error("AFL upstream HTTP " + res.status);
+    const err = new Error("AFL upstream HTTP " + res.status + " for " + url);
     err.status = res.status;
     throw err;
   }

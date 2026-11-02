@@ -1136,8 +1136,10 @@
   function parseAflShareInput(raw) {
     const s = String(raw || "").trim();
     if (!s) return "";
-    if (/^\w{16,}$/.test(s)) return s;
-    const m = s.match(/\/draft\/(\w+)/i) || s.match(/league\/(\w+)/i);
+    if (/^[a-f0-9]{16,}$/i.test(s)) return s;
+    let m = s.match(/\/draft\/league\/\d+\/draft\/([a-f0-9]{16,})/i);
+    if (m) return m[1];
+    m = s.match(/\/draft\/([a-f0-9]{16,})(?:[/?#]|$)/i);
     return m ? m[1] : "";
   }
 
