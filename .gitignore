@@ -7,3 +7,5 @@
 *.xlsx
 functions/.env.local
 statsbyjaiden-firebase-adminsdk-*.json
+firebase-debug.log
+firebase-debug.*.log

@@ -11,6 +11,11 @@
     "https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/";
 
   const OWNER_FA = "__FA__";
+  const AFL_IMPORT_FN_URL =
+    "https://us-central1-statsbyjaiden.cloudfunctions.net/importAflLeague";
+  /** Keeper CSV owner strings treated as unowned (not a fantasy team). */
+  const UNOWNED_OWNER_RE =
+    /^(free\s*agents?|fa|rfa|waivers?|restricted\s*free\s*agent)$/i;
 
   const DEFAULT_CFG = {
     teams: 10,
@@ -26,7 +31,9 @@
     draftOrder: [],
     myTeam: "",
     search: "",
-    tab: "pool"
+    tab: "pool",
+    /** redraft | keeper | dynasty | null */
+    leagueType: null
   };
 
   const FD_TABS = ["pool", "planner", "teams", "trades", "ladder", "import", "help"];
@@ -162,8 +169,22 @@
     rows: [],
     table: null,
     detailId: null,
-    /** @type {null | {source:string, fileName:string, ownership:Object.<string,string>, positions:Object.<string,string>, owners:string[], unmatchedOwned:Array, matchedOwned:number, totalOwned:number}} */
+    /**
+     * @type {null | {
+     *   source: string,
+     *   teams: Object.<string,{name:string}>,
+     *   ownership: Object.<string,string>,
+     *   positions?: Object.<string,string>,
+     *   owners: string[],
+     *   platform?: Object,
+     *   matchedOwned?: number,
+     *   totalOwned?: number,
+     *   unmatchedOwnedCount?: number,
+     *   fromAccount?: boolean
+     * }}
+     */
     league: null,
+    accountUser: null,
     trade: {
       otherTeam: "",
       search: "",
@@ -174,6 +195,45 @@
     /** @type {Object.<string,string>} */
     teamLabels: Object.create(null)
   };
+
+  function isUnownedOwner(owner) {
+    const s = String(owner || "").trim();
+    return !s || UNOWNED_OWNER_RE.test(s);
+  }
+
+  function leagueTeamEntries(league) {
+    if (!league || !league.teams) return [];
+    return Object.keys(league.teams)
+      .map((id) => ({
+        id: String(id),
+        name: (league.teams[id] && league.teams[id].name) || String(id)
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  function leagueHasTeams(league) {
+    return !!(league && league.teams && Object.keys(league.teams).length);
+  }
+
+  /** Runtime name list derived from teams map (not persisted). */
+  function syncLeagueOwnersFromTeams(league) {
+    if (!league) return league;
+    league.owners = leagueTeamEntries(league).map((e) => e.name);
+    return league;
+  }
+
+  function teamIdByName(league, name) {
+    if (!league || !league.teams || !name) return "";
+    const entries = leagueTeamEntries(league);
+    const hit = entries.find((e) => e.name === name);
+    return hit ? hit.id : "";
+  }
+
+  function teamNameById(league, id) {
+    if (!league || !league.teams || id == null || id === "") return "";
+    const t = league.teams[String(id)];
+    return t && t.name ? t.name : "";
+  }
 
   /** Tunable thresholds for team trajectory labels (see teamRatingSpec.txt). */
   const TRAJECTORY_CFG = {
@@ -271,29 +331,33 @@
 
   function writeCfgToUrl(cfg) {
     const q = new URLSearchParams();
-    q.set("teams", String(cfg.teams));
-    q.set("bench", String(cfg.bench));
-    q.set("keepers", String(cfg.keeperCount));
-    POS_KEYS.forEach((k) => q.set(k.toLowerCase(), String(cfg.slots[k])));
-    if (cfg.endSeason) q.set("end", String(cfg.endSeason));
-    // Only persist cut when the user has explicitly toggled (boolean, not null)
-    if (cfg.keeperCut === true) q.set("cut", "1");
-    else if (cfg.keeperCut === false) q.set("cut", "0");
-    if (cfg.posFilter && cfg.posFilter !== "ALL") q.set("pos", cfg.posFilter);
-    if (cfg.clubs && cfg.clubs.length) q.set("clubs", cfg.clubs.join(","));
-    if (cfg.owners && cfg.owners.length) {
-      q.set(
-        "owners",
-        cfg.owners.map((o) => (o === OWNER_FA ? "FA" : o)).join(",")
-      );
+    // Account-backed leagues: only ephemeral UI in the URL
+    const slim = !!(state.league && state.league.fromAccount);
+    if (!slim) {
+      q.set("teams", String(cfg.teams));
+      q.set("bench", String(cfg.bench));
+      q.set("keepers", String(cfg.keeperCount));
+      POS_KEYS.forEach((k) => q.set(k.toLowerCase(), String(cfg.slots[k])));
+      if (cfg.endSeason) q.set("end", String(cfg.endSeason));
+      if (cfg.keeperCut === true) q.set("cut", "1");
+      else if (cfg.keeperCut === false) q.set("cut", "0");
+      if (cfg.posFilter && cfg.posFilter !== "ALL") q.set("pos", cfg.posFilter);
+      if (cfg.clubs && cfg.clubs.length) q.set("clubs", cfg.clubs.join(","));
+      if (cfg.owners && cfg.owners.length) {
+        q.set(
+          "owners",
+          cfg.owners.map((o) => (o === OWNER_FA ? "FA" : o)).join(",")
+        );
+      }
+      if (cfg.draftOrder && cfg.draftOrder.length) {
+        q.set("draft", cfg.draftOrder.join(","));
+      }
+      if (cfg.myTeam) q.set("me", cfg.myTeam);
     }
-    if (cfg.draftOrder && cfg.draftOrder.length) {
-      q.set("draft", cfg.draftOrder.join(","));
-    }
-    if (cfg.myTeam) q.set("me", cfg.myTeam);
     if (cfg.search) q.set("q", cfg.search);
     if (cfg.tab && cfg.tab !== "pool") q.set("tab", cfg.tab);
-    const url = window.location.pathname + "?" + q.toString();
+    const qs = q.toString();
+    const url = window.location.pathname + (qs ? "?" + qs : "");
     window.history.replaceState({}, "", url);
   }
 
@@ -527,23 +591,31 @@
     const index = buildPlayerIndex(assets);
     const ownership = Object.create(null);
     const positions = Object.create(null);
-    const unmatchedOwned = [];
-    const unmatchedAll = [];
+    const teams = Object.create(null);
+    const nameToId = Object.create(null);
+    let nextTeamId = 1;
     let matchedOwned = 0;
     let totalOwned = 0;
-    const ownersSet = new Set();
+    let unmatchedOwnedCount = 0;
+
+    function teamIdForOwnerName(ownerName) {
+      if (Object.prototype.hasOwnProperty.call(nameToId, ownerName)) {
+        return nameToId[ownerName];
+      }
+      const id = String(nextTeamId++);
+      nameToId[ownerName] = id;
+      teams[id] = { name: ownerName };
+      return id;
+    }
 
     csvRows.forEach((r) => {
       const name = r.name || r.Player || r.player || "";
-      const owner = r.owner || r.Owner || "";
+      const owner = String(r.owner || r.Owner || "").trim();
       const team = r.team || r.Team || "";
       const posRaw = r.position || r.Position || r.pos || "";
       if (!name) return;
-      const isFa = !owner || /^free\s*agent$/i.test(owner);
-      if (!isFa) {
-        totalOwned++;
-        ownersSet.add(owner);
-      }
+      const unowned = isUnownedOwner(owner);
+      if (!unowned) totalOwned++;
       const club = mapKeeperClub(team);
       let hit = null;
       const variants = nameVariants(name);
@@ -560,25 +632,22 @@
       if (hit) {
         const posNorm = normalizeKeeperPos(posRaw);
         if (posNorm) positions[hit.id] = posNorm;
-        if (!isFa) {
-          ownership[hit.id] = owner;
+        if (!unowned) {
+          ownership[hit.id] = teamIdForOwnerName(owner);
           matchedOwned++;
         }
-      } else {
-        const miss = { name, team, owner: owner || "Free Agent", club };
-        unmatchedAll.push(miss);
-        if (!isFa) unmatchedOwned.push(miss);
+      } else if (!unowned) {
+        unmatchedOwnedCount++;
       }
     });
 
     return {
+      teams,
       ownership,
       positions,
-      owners: Array.from(ownersSet).sort((a, b) => a.localeCompare(b)),
-      unmatchedOwned,
-      unmatchedAll,
       matchedOwned,
-      totalOwned
+      totalOwned,
+      unmatchedOwnedCount
     };
   }
 
@@ -586,14 +655,21 @@
     if (!league || !league.ownership) {
       rows.forEach((r) => {
         r.owner = null;
+        r.ownerTeamId = null;
         r.keeperPos = null;
       });
       return rows;
     }
     rows.forEach((r) => {
-      r.owner = league.ownership[r.id] || null;
-      r.keeperPos =
-        (league.positions && league.positions[r.id]) || null;
+      const tid = league.ownership[r.id];
+      if (tid != null && tid !== "") {
+        r.ownerTeamId = String(tid);
+        r.owner = teamNameById(league, tid) || null;
+      } else {
+        r.ownerTeamId = null;
+        r.owner = null;
+      }
+      r.keeperPos = (league.positions && league.positions[r.id]) || null;
     });
     return rows;
   }
@@ -613,7 +689,7 @@
   function syncOwnerDropdownVisibility(league) {
     const wrap = document.getElementById("owner-dropdown");
     if (!wrap) return;
-    const hasLeague = !!(league && league.owners && league.owners.length);
+    const hasLeague = leagueHasTeams(league);
     wrap.classList.toggle("is-visible", hasLeague);
     if (!hasLeague) {
       state.cfg.owners = [];
@@ -627,17 +703,18 @@
     syncOwnerDropdownVisibility(league);
     rebuildOwnerDropdown(league, cfg);
     if (!wrap || !sel) return;
-    const hasLeague = !!(league && league.owners && league.owners.length);
+    const hasLeague = leagueHasTeams(league);
     wrap.classList.toggle("is-visible", hasLeague);
     if (!hasLeague) {
       sel.innerHTML = "";
       return;
     }
-    const cur = cfg.myTeam && league.owners.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : "";
+    const names = league.owners || [];
+    const cur = cfg.myTeam && names.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : "";
     if (cfg.myTeam && !cur) cfg.myTeam = "";
     sel.innerHTML =
       '<option value="">— Select —</option>' +
-      league.owners
+      names
         .map(
           (o) =>
             '<option value="' +
@@ -656,6 +733,7 @@
     state.cfg.myTeam = "";
     state.cfg.owners = [];
     state.cfg.draftOrder = [];
+    state.cfg.leagueType = null;
     state.trade.otherTeam = "";
     state.trade.search = "";
     state.trade.give = [];
@@ -663,9 +741,34 @@
     state.teamLabels = Object.create(null);
     const input = document.getElementById("keeper-csv-input");
     if (input) input.value = "";
+    const aflUrl = document.getElementById("afl-share-url");
+    if (aflUrl) aflUrl.value = "";
     setLeagueStatus("");
+    applyLeagueTypeUi(state.cfg);
     syncMyTeamSelect(null, state.cfg);
+    updateAccountSyncUi();
     refresh();
+  }
+
+  function applyImportedLeague(league, opts) {
+    const o = opts || {};
+    syncLeagueOwnersFromTeams(league);
+    state.league = league;
+    const nTeams = (league.owners && league.owners.length) || 0;
+    if (nTeams >= 2) {
+      state.cfg.teams = nTeams;
+      const teamsEl = document.getElementById("cfg-teams");
+      if (teamsEl) teamsEl.value = String(state.cfg.teams);
+    }
+    if (state.cfg.myTeam && league.owners.indexOf(state.cfg.myTeam) < 0) {
+      state.cfg.myTeam = "";
+    }
+    if (o.settings) applyLeagueSettingsToCfg(o.settings, state.cfg);
+    applyLeagueTypeDefaults(state.cfg, league, o.infer || null);
+    applyLeagueTypeUi(state.cfg);
+    syncMyTeamSelect(state.league, state.cfg);
+    syncControlsToDom(state.cfg, state.seasons);
+    updateAccountSyncUi();
   }
 
   function handleKeeperCsvFile(file) {
@@ -686,33 +789,28 @@
           throw new Error('Expected columns include "name" and "owner"');
         }
         const matched = matchKeeperPlayers(objects, state.data.assets);
-        if (!matched.owners.length) {
+        if (!Object.keys(matched.teams).length) {
           throw new Error("No fantasy teams found (every row was Free Agent?)");
         }
-        state.league = {
+        const league = {
           source: "keeper",
-          fileName: file.name || "players.csv",
+          teams: matched.teams,
           ownership: matched.ownership,
           positions: matched.positions,
-          owners: matched.owners,
-          unmatchedOwned: matched.unmatchedOwned,
-          unmatchedAll: matched.unmatchedAll,
+          platform: { fileName: file.name || "players.csv", leagueType: "keeper" },
           matchedOwned: matched.matchedOwned,
-          totalOwned: matched.totalOwned
+          totalOwned: matched.totalOwned,
+          unmatchedOwnedCount: matched.unmatchedOwnedCount,
+          fromAccount: false
         };
-        // Align VORP depth with imported league size
-        state.cfg.teams = Math.max(2, matched.owners.length);
-        const teamsEl = document.getElementById("cfg-teams");
-        if (teamsEl) teamsEl.value = String(state.cfg.teams);
-        if (state.cfg.myTeam && matched.owners.indexOf(state.cfg.myTeam) < 0) {
-          state.cfg.myTeam = "";
-        }
-        syncMyTeamSelect(state.league, state.cfg);
-
-        const missN = matched.unmatchedOwned.length;
+        state.cfg.leagueType = "keeper";
+        applyImportedLeague(league, {
+          infer: { leagueType: "keeper" }
+        });
+        const missN = matched.unmatchedOwnedCount;
         setLeagueStatus(
           "Loaded " +
-            matched.owners.length +
+            league.owners.length +
             " teams · matched " +
             matched.matchedOwned +
             "/" +
@@ -737,6 +835,383 @@
       setLeagueStatus("Failed to read file.", true);
     };
     reader.readAsText(file);
+  }
+
+  // ── League type defaults / account sync / AFL import ───────────────────────
+
+  function squadSlotTotal(slots) {
+    const s = slots || {};
+    return (
+      (Number(s.DEF) || 0) +
+      (Number(s.MID) || 0) +
+      (Number(s.RUC) || 0) +
+      (Number(s.FWD) || 0) +
+      (Number(s.FLX) || 0) +
+      (Number(s.INT) || 0)
+    );
+  }
+
+  function applyLeagueSettingsToCfg(settings, cfg) {
+    if (!settings) return cfg;
+    if (settings.bench != null) cfg.bench = Number(settings.bench) || cfg.bench;
+    if (settings.keeperCount != null) {
+      cfg.keeperCount = Number(settings.keeperCount) || 0;
+    }
+    if (settings.keeperCut === true || settings.keeperCut === false) {
+      cfg.keeperCut = settings.keeperCut;
+    }
+    if (settings.slots && typeof settings.slots === "object") {
+      POS_KEYS.forEach((k) => {
+        if (settings.slots[k] != null) cfg.slots[k] = Number(settings.slots[k]) || 0;
+      });
+    }
+    if (settings.endSeason != null) cfg.endSeason = Number(settings.endSeason) || cfg.endSeason;
+    if (Array.isArray(settings.draftOrder)) cfg.draftOrder = settings.draftOrder.slice();
+    if (settings.myTeam != null) cfg.myTeam = settings.myTeam || "";
+    if (settings.leagueType) cfg.leagueType = settings.leagueType;
+    return cfg;
+  }
+
+  /**
+   * @param {object} cfg
+   * @param {object|null} league
+   * @param {null|{leagueType?:string,draftStatus?:string,squadSize?:object,reserve?:number,reserveDraftRounds?:number,inferredKeeperCount?:number|null,year?:number}} infer
+   */
+  function applyLeagueTypeDefaults(cfg, league, infer) {
+    const lt =
+      (infer && infer.leagueType) ||
+      cfg.leagueType ||
+      (league && league.platform && league.platform.leagueType) ||
+      null;
+    if (!lt) return;
+    cfg.leagueType = lt;
+
+    const seasons = state.seasons || [];
+    const pickEnd = (offsetFromStart) => {
+      if (!seasons.length) return cfg.endSeason;
+      const idx = Math.min(Math.max(0, offsetFromStart), seasons.length - 1);
+      return seasons[idx];
+    };
+
+    if (infer && infer.slots) {
+      POS_KEYS.forEach((k) => {
+        if (infer.slots[k] != null) cfg.slots[k] = Number(infer.slots[k]) || 0;
+      });
+    }
+    if (infer && infer.bench != null) cfg.bench = Number(infer.bench) || 0;
+
+    if (lt === "redraft") {
+      cfg.endSeason = pickEnd(0);
+      cfg.keeperCount = 0;
+      cfg.keeperCut = false;
+    } else if (lt === "keeper") {
+      cfg.endSeason = pickEnd(2);
+      if (infer && infer.inferredKeeperCount != null) {
+        cfg.keeperCount = Number(infer.inferredKeeperCount) || cfg.keeperCount;
+      }
+      if (infer && infer.draftStatus && infer.draftStatus !== "scheduled") {
+        cfg.keeperCut = true;
+      }
+    } else if (lt === "dynasty") {
+      cfg.endSeason = pickEnd(4);
+      cfg.keeperCut = false;
+      const squad = squadSlotTotal(cfg.slots) + (Number(cfg.bench) || 0);
+      if (infer && infer.reserveDraftRounds != null) {
+        // Dynasty: no cut UI; keepers ≈ full roster (everything is kept)
+        cfg.keeperCount = Math.max(0, squad);
+      } else {
+        cfg.keeperCount = Math.max(0, squad);
+      }
+    }
+  }
+
+  function applyLeagueTypeUi(cfg) {
+    const lt = cfg && cfg.leagueType;
+    const hidePlanner = lt === "redraft";
+    const hideCut = lt === "dynasty" || lt === "redraft";
+
+    document.querySelectorAll('.fd-tab-btn[data-tab="planner"]').forEach((btn) => {
+      btn.style.display = hidePlanner ? "none" : "";
+    });
+    if (hidePlanner && cfg.tab === "planner") {
+      setActiveTab("pool");
+    }
+
+    const cutLabel = document.getElementById("cfg-keeperCut");
+    const cutWrap = cutLabel && cutLabel.closest ? cutLabel.closest("label") : null;
+    if (cutWrap) cutWrap.style.display = hideCut ? "none" : "";
+
+    const keepersInput = document.getElementById("cfg-keepers");
+    const keepersWrap =
+      keepersInput && keepersInput.closest ? keepersInput.closest("label") : null;
+    if (keepersWrap && lt === "redraft") {
+      keepersWrap.style.display = "none";
+    } else if (keepersWrap) {
+      keepersWrap.style.display = "";
+    }
+  }
+
+  function buildLeaguePersistPayload() {
+    const league = state.league;
+    const cfg = state.cfg;
+    if (!league || !leagueHasTeams(league)) return null;
+
+    const draftOrderIds = (cfg.draftOrder || [])
+      .map((name) => teamIdByName(league, name))
+      .filter(Boolean);
+    const myTeamId = teamIdByName(league, cfg.myTeam);
+
+    return {
+      source: league.source || "keeper",
+      updatedAt: new Date().toISOString(),
+      platform: league.platform || {},
+      teams: league.teams,
+      ownership: league.ownership || {},
+      positions: league.positions || {},
+      settings: {
+        bench: cfg.bench,
+        keeperCount: cfg.keeperCount,
+        keeperCut: cfg.keeperCut,
+        slots: { ...cfg.slots },
+        endSeason: cfg.endSeason,
+        draftOrder: draftOrderIds,
+        myTeam: myTeamId || "",
+        leagueType: cfg.leagueType || null
+      }
+    };
+  }
+
+  function hydrateLeagueFromPersist(raw) {
+    if (!raw || !raw.teams || typeof raw.teams !== "object") return null;
+    const league = {
+      source: raw.source || "keeper",
+      teams: raw.teams,
+      ownership: raw.ownership || {},
+      positions: raw.positions || {},
+      platform: raw.platform || {},
+      fromAccount: true
+    };
+    syncLeagueOwnersFromTeams(league);
+
+    const settings = raw.settings || {};
+    const draftNames = (settings.draftOrder || [])
+      .map((id) => teamNameById(league, id))
+      .filter(Boolean);
+    const myName = teamNameById(league, settings.myTeam);
+
+    state.league = league;
+    state.cfg.teams = Math.max(2, league.owners.length || state.cfg.teams);
+    applyLeagueSettingsToCfg(
+      {
+        bench: settings.bench,
+        keeperCount: settings.keeperCount,
+        keeperCut: settings.keeperCut,
+        slots: settings.slots,
+        endSeason: settings.endSeason,
+        leagueType: settings.leagueType,
+        draftOrder: draftNames,
+        myTeam: myName
+      },
+      state.cfg
+    );
+    applyLeagueTypeUi(state.cfg);
+    syncMyTeamSelect(state.league, state.cfg);
+    syncControlsToDom(state.cfg, state.seasons);
+    updateAccountSyncUi();
+    return league;
+  }
+
+  function updateAccountSyncUi() {
+    const guest = document.getElementById("fd-account-guest");
+    const authed = document.getElementById("fd-account-authed");
+    const saveBtn = document.getElementById("fd-league-save");
+    const delBtn = document.getElementById("fd-league-delete");
+    const refreshBtn = document.getElementById("fd-league-refresh");
+    const loggedIn = !!state.accountUser;
+    if (guest) guest.style.display = loggedIn ? "none" : "";
+    if (authed) authed.style.display = loggedIn ? "" : "none";
+    const hasLeague = leagueHasTeams(state.league);
+    if (saveBtn) saveBtn.disabled = !hasLeague;
+    if (delBtn) delBtn.disabled = !hasLeague;
+    if (refreshBtn) {
+      const canRefresh =
+        hasLeague &&
+        state.league &&
+        state.league.source === "afl" &&
+        state.league.platform &&
+        state.league.platform.leagueHash;
+      refreshBtn.style.display = canRefresh ? "" : "none";
+      refreshBtn.disabled = !canRefresh;
+    }
+  }
+
+  async function waitForSbjAuth(timeoutMs) {
+    const start = Date.now();
+    const limit = timeoutMs == null ? 8000 : timeoutMs;
+    while (!window.SbjAuth) {
+      if (Date.now() - start > limit) return null;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    return window.SbjAuth;
+  }
+
+  async function saveLeagueToAccount() {
+    const sbj = await waitForSbjAuth();
+    if (!sbj || !sbj.currentUser) {
+      setLeagueStatus("Log in to save your league to your account.", true);
+      return;
+    }
+    const payload = buildLeaguePersistPayload();
+    if (!payload) {
+      setLeagueStatus("Import a league before saving.", true);
+      return;
+    }
+    try {
+      const { doc, setDoc } = await import(
+        "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+      );
+      const userRef = doc(sbj.db, "users", sbj.currentUser.uid);
+      await setDoc(userRef, { league: payload }, { merge: true });
+      if (state.league) state.league.fromAccount = true;
+      setLeagueStatus("Saved league to your account.");
+      updateAccountSyncUi();
+      writeCfgToUrl(state.cfg);
+    } catch (e) {
+      console.error(e);
+      setLeagueStatus(
+        "Save failed — " + (e && e.message ? e.message : "unknown error"),
+        true
+      );
+    }
+  }
+
+  async function deleteLeagueFromAccount() {
+    const sbj = await waitForSbjAuth();
+    if (!sbj || !sbj.currentUser) return;
+    if (!window.confirm("Delete saved league data from your account?")) return;
+    try {
+      const { doc, setDoc, deleteField } = await import(
+        "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+      );
+      const userRef = doc(sbj.db, "users", sbj.currentUser.uid);
+      await setDoc(userRef, { league: deleteField() }, { merge: true });
+      clearKeeperLeague();
+      setLeagueStatus("Deleted saved league from your account.");
+    } catch (e) {
+      console.error(e);
+      setLeagueStatus(
+        "Delete failed — " + (e && e.message ? e.message : "unknown error"),
+        true
+      );
+    }
+  }
+
+  async function loadLeagueFromAccount() {
+    const sbj = await waitForSbjAuth();
+    if (!sbj) return;
+    const { user } = await sbj.authReady;
+    state.accountUser = user || null;
+    updateAccountSyncUi();
+    if (!user) return;
+    try {
+      const { doc, getDoc } = await import(
+        "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+      );
+      const snap = await getDoc(doc(sbj.db, "users", user.uid));
+      if (!snap.exists()) return;
+      const data = snap.data() || {};
+      if (!data.league) return;
+      hydrateLeagueFromPersist(data.league);
+      setLeagueStatus("Loaded league from your account.");
+      await refresh();
+    } catch (e) {
+      console.error(e);
+      setLeagueStatus(
+        "Could not load saved league — " + (e && e.message ? e.message : "error"),
+        true
+      );
+    }
+  }
+
+  function parseAflShareInput(raw) {
+    const s = String(raw || "").trim();
+    if (!s) return "";
+    if (/^\w{16,}$/.test(s)) return s;
+    const m = s.match(/\/draft\/(\w+)/i) || s.match(/league\/(\w+)/i);
+    return m ? m[1] : "";
+  }
+
+  async function importAflLeagueFromShare(urlOrHash, opts) {
+    const o = opts || {};
+    const sbj = await waitForSbjAuth();
+    if (!sbj || !sbj.currentUser) {
+      setLeagueStatus("Log in to import an AFL Fantasy league.", true);
+      return;
+    }
+    const leagueHash = parseAflShareInput(urlOrHash);
+    if (!leagueHash) {
+      setLeagueStatus("Paste a valid AFL Fantasy draft share URL.", true);
+      return;
+    }
+    setLeagueStatus("Fetching AFL Fantasy league…");
+    try {
+      const token = await sbj.getAuthToken();
+      const res = await fetch(AFL_IMPORT_FN_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token
+        },
+        body: JSON.stringify({ leagueHash })
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error((body && body.error) || "HTTP " + res.status);
+      }
+      const league = {
+        source: "afl",
+        teams: body.teams || {},
+        ownership: body.ownership || {},
+        positions: {},
+        platform: body.platform || { leagueHash },
+        fromAccount: !!o.fromAccount
+      };
+      applyImportedLeague(league, { infer: body.infer || null });
+      const nOwn = Object.keys(league.ownership).length;
+      setLeagueStatus(
+        "AFL Fantasy · " +
+          league.owners.length +
+          " teams · " +
+          nOwn +
+          " rostered players" +
+          (body.platform && body.platform.leagueName
+            ? " · " + body.platform.leagueName
+            : "")
+      );
+      await refresh();
+      if (o.autoSave) await saveLeagueToAccount();
+    } catch (e) {
+      console.error(e);
+      setLeagueStatus(
+        "AFL import failed — " + (e && e.message ? e.message : "unknown error"),
+        true
+      );
+    }
+  }
+
+  async function refreshAflLeague() {
+    const hash =
+      state.league &&
+      state.league.platform &&
+      state.league.platform.leagueHash;
+    if (!hash) {
+      setLeagueStatus("No AFL league hash to refresh.", true);
+      return;
+    }
+    await importAflLeagueFromShare(hash, {
+      fromAccount: !!(state.league && state.league.fromAccount),
+      autoSave: !!(state.league && state.league.fromAccount)
+    });
   }
 
   // ── Aggregation / VORP ─────────────────────────────────────────────────────
@@ -4044,15 +4519,15 @@
   function rebuildOwnerDropdown(league, cfg) {
     const panel = document.getElementById("owner-dropdown-panel");
     if (!panel) return;
-    if (!league || !league.owners || !league.owners.length) {
+    if (!leagueHasTeams(league)) {
       panel.innerHTML = "";
       panel.dataset.built = "0";
       updateOwnerDropdownLabel(cfg);
       return;
     }
-    const my =
-      cfg.myTeam && league.owners.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : "";
-    const others = league.owners
+    const names = league.owners || [];
+    const my = cfg.myTeam && names.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : "";
+    const others = names
       .filter((o) => o !== my)
       .slice()
       .sort((a, b) => a.localeCompare(b));
@@ -4253,6 +4728,30 @@
       keeperClear.addEventListener("click", () => clearKeeperLeague());
     }
 
+    const aflImportBtn = document.getElementById("afl-import-btn");
+    if (aflImportBtn) {
+      aflImportBtn.addEventListener("click", () => {
+        const input = document.getElementById("afl-share-url");
+        importAflLeagueFromShare(input && input.value);
+      });
+    }
+    const saveBtn = document.getElementById("fd-league-save");
+    if (saveBtn) saveBtn.addEventListener("click", () => saveLeagueToAccount());
+    const delBtn = document.getElementById("fd-league-delete");
+    if (delBtn) delBtn.addEventListener("click", () => deleteLeagueFromAccount());
+    const refreshBtn = document.getElementById("fd-league-refresh");
+    if (refreshBtn) refreshBtn.addEventListener("click", () => refreshAflLeague());
+    const loginSave = document.getElementById("fd-login-to-save");
+    if (loginSave) {
+      loginSave.addEventListener("click", (e) => {
+        e.preventDefault();
+        const redirect = encodeURIComponent(
+          window.location.pathname + window.location.search
+        );
+        window.location.href = "/login.html?redirect=" + redirect;
+      });
+    }
+
     const doList = document.getElementById("fd-draft-order-list");
     if (doList) {
       doList.addEventListener("click", (e) => {
@@ -4293,6 +4792,7 @@
     state.cfg = readCfgFromUrl();
     bindControls();
     setActiveTab(state.cfg.tab || "pool");
+    updateAccountSyncUi();
 
     const loading = document.getElementById("loading-state");
     const err = document.getElementById("futures-error");
@@ -4313,7 +4813,9 @@
           state.cfg.endSeason = state.seasons[state.seasons.length - 1];
         }
       }
+      await loadLeagueFromAccount();
       syncControlsToDom(state.cfg, state.seasons);
+      applyLeagueTypeUi(state.cfg);
       setActiveTab(state.cfg.tab || "pool");
       if (loading) loading.style.display = "none";
       if (shell) {

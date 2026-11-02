@@ -86,3 +86,19 @@ export async function getAuthToken() {
   if (!currentUser) return null;
   return await currentUser.getIdToken();
 }
+
+// Bridge for non-module page scripts (e.g. fantasy_draft_futures.js)
+if (typeof window !== "undefined") {
+  window.SbjAuth = {
+    get currentUser() {
+      return currentUser;
+    },
+    get isPaid() {
+      return isPaid;
+    },
+    authReady,
+    getAuthToken,
+    auth,
+    db
+  };
+}
