@@ -1495,6 +1495,16 @@
     return libraryAddIconHtml();
   }
 
+  /** ChampID / AFL Fantasy player id (digits). Accepts legacy CD_I prefix. */
+  function pulsePlayerId(row) {
+    if (!row || row.type === "pick") return "";
+    const id = String(row.id || "");
+    if (!id) return "";
+    if (/^CD_I\d+$/i.test(id)) return id.replace(/^CD_I/i, "");
+    if (/^\d+$/.test(id)) return id;
+    return "";
+  }
+
   function headshotHtml(row) {
     if (isNationalPickAsset(row)) {
       return personIconHtml("fd-headshot fd-headshot-pick");
@@ -1502,10 +1512,10 @@
     if (isKeeperLeaguePick(row) || row.type === "pick") {
       return libraryAddIconHtml();
     }
-    if (!row.id || String(row.id).indexOf("CD_I") !== 0) {
+    const pid = pulsePlayerId(row);
+    if (!pid) {
       return personIconHtml("fd-headshot fd-headshot-pick");
     }
-    const pid = String(row.id).replace("CD_I", "");
     const src = HEADSHOT_BASE + pid + ".png?im=Resize=(80,80)";
     return (
       '<span class="fd-headshot">' +
@@ -2113,7 +2123,7 @@
       }
     }
     return rows
-      .filter((r) => r.type !== "pick" && r.id && String(r.id).indexOf("CD_I") === 0)
+      .filter((r) => r.type !== "pick" && !!pulsePlayerId(r))
       .filter((r) => !kept.has(r.id))
       .slice()
       .sort(

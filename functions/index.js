@@ -125,23 +125,23 @@ function inferKeeperCount(leagueMeta, draftBoard) {
   const picks = (draftBoard && draftBoard.completedPicks) || [];
   if (!picks.length) return null;
 
-  const byOriginal = new Map();
+  // Seed every original owner at 0 so a full-keeper team (0 draft picks used)
+  // still participates in the min. Then count picks each team actually used
+  // via teamId (see importKeeper.R: squad - min(teamId picks) ≈ keepers).
+  const usedByTeam = new Map();
   picks.forEach((p) => {
     const oid = p && p.originalTeamId;
-    if (oid == null) return;
-    if (!byOriginal.has(oid)) byOriginal.set(oid, { total: 0, kept: 0 });
-    const row = byOriginal.get(oid);
-    row.total += 1;
-    if (p.teamId != null && Number(p.teamId) === Number(oid)) row.kept += 1;
+    if (oid != null && !usedByTeam.has(oid)) usedByTeam.set(oid, 0);
+    const tid = p && p.teamId;
+    if (tid == null) return;
+    usedByTeam.set(tid, (usedByTeam.get(tid) || 0) + 1);
   });
 
   let minUsed = Infinity;
-  byOriginal.forEach((row) => {
-    const used = row.total - row.kept;
+  usedByTeam.forEach((used) => {
     if (used < minUsed) minUsed = used;
   });
   if (!Number.isFinite(minUsed)) return null;
-  // squad - picks used by original team ≈ keepers (see importKeeper notes)
   return Math.max(0, squad - minUsed);
 }
 
@@ -154,6 +154,7 @@ function normalizeAflPayload(leagueMeta, teamsArr, draftBoard) {
     const id = String(t.id);
     teams[id] = { name: t.name || "Team " + id };
     collectPlayerIds(t).forEach((pid) => {
+      // Match fantasy_draft_futures.json asset ids (digits, no CD_I).
       ownership[String(pid)] = id;
     });
   });
