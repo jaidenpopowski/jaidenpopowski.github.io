@@ -18,10 +18,12 @@
     bench: 12,
     keeperCount: 20,
     keeperCut: null,
-    endSeason: 2029,
+    endSeason: null,
     posFilter: "ALL",
     clubs: [],
     owners: [],
+    /** Best→worst owner order for snake draft (Import tab). Empty = projected. */
+    draftOrder: [],
     myTeam: "",
     search: "",
     tab: "pool"
@@ -148,7 +150,8 @@
       ...src,
       slots: { ...src.slots },
       clubs: Array.isArray(src.clubs) ? src.clubs.slice() : [],
-      owners: Array.isArray(src.owners) ? src.owners.slice() : []
+      owners: Array.isArray(src.owners) ? src.owners.slice() : [],
+      draftOrder: Array.isArray(src.draftOrder) ? src.draftOrder.slice() : []
     };
   }
 
@@ -251,6 +254,12 @@
     }
     if (q.has("me")) cfg.myTeam = q.get("me") || "";
     if (q.has("q")) cfg.search = q.get("q") || "";
+    if (q.has("draft")) {
+      cfg.draftOrder = String(q.get("draft") || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
     if (q.has("tab")) {
       let tab = q.get("tab");
       if (tab === "movers") tab = "pool";
@@ -267,7 +276,8 @@
     q.set("keepers", String(cfg.keeperCount));
     POS_KEYS.forEach((k) => q.set(k.toLowerCase(), String(cfg.slots[k])));
     if (cfg.endSeason) q.set("end", String(cfg.endSeason));
-    if (cfg.keeperCut) q.set("cut", "1");
+    // Only persist cut when the user has explicitly toggled (boolean, not null)
+    if (cfg.keeperCut === true) q.set("cut", "1");
     else if (cfg.keeperCut === false) q.set("cut", "0");
     if (cfg.posFilter && cfg.posFilter !== "ALL") q.set("pos", cfg.posFilter);
     if (cfg.clubs && cfg.clubs.length) q.set("clubs", cfg.clubs.join(","));
@@ -276,6 +286,9 @@
         "owners",
         cfg.owners.map((o) => (o === OWNER_FA ? "FA" : o)).join(",")
       );
+    }
+    if (cfg.draftOrder && cfg.draftOrder.length) {
+      q.set("draft", cfg.draftOrder.join(","));
     }
     if (cfg.myTeam) q.set("me", cfg.myTeam);
     if (cfg.search) q.set("q", cfg.search);
@@ -642,6 +655,7 @@
     state.league = null;
     state.cfg.myTeam = "";
     state.cfg.owners = [];
+    state.cfg.draftOrder = [];
     state.trade.otherTeam = "";
     state.trade.search = "";
     state.trade.give = [];
@@ -754,6 +768,48 @@
       }
     }
     return any ? s : null;
+  }
+
+  /** Cumulative expected games: Σ pListed × xGames through index i (inclusive). */
+  function cumExpectedGames(asset, i) {
+    if (!asset || i < 0) return null;
+    const xg = asset.xGames;
+    const pl = asset.probListed;
+    if (!xg || !xg.length) return null;
+    let s = 0;
+    let any = false;
+    const n = Math.min(i + 1, xg.length);
+    for (let j = 0; j < n; j++) {
+      const g = Number(xg[j]);
+      if (!Number.isFinite(g)) continue;
+      const p = pl && pl.length > j ? Number(pl[j]) : 1;
+      s += g * (Number.isFinite(p) ? p : 1);
+      any = true;
+    }
+    return any ? s : null;
+  }
+
+  /** Value-weighted mean xAvg over horizon (weights = pListed × xGames). */
+  function weightedXAvg(asset, h) {
+    if (!asset) return null;
+    const xa = asset.xAvg;
+    const xg = asset.xGames;
+    const pl = asset.probListed;
+    if (!xa || !xa.length) return null;
+    let num = 0;
+    let den = 0;
+    const n = Math.min(h, xa.length);
+    for (let i = 0; i < n; i++) {
+      const a = Number(xa[i]);
+      if (!Number.isFinite(a)) continue;
+      const g = xg && xg.length > i ? Number(xg[i]) : 0;
+      const p = pl && pl.length > i ? Number(pl[i]) : 1;
+      const w = (Number.isFinite(g) ? g : 0) * (Number.isFinite(p) ? p : 1);
+      if (w <= 0) continue;
+      num += a * w;
+      den += w;
+    }
+    return den > 0 ? num / den : numAt(xa, Math.max(0, h - 1));
   }
 
   function meanPos(asset, pos, h) {
@@ -872,9 +928,9 @@
         vorp,
         dxPoints: r.dxPoints,
         driver: a.delta && a.delta.driver,
-        event: (a.delta && a.delta.event) || null,
-        xAvg: numAt(a.xAvg, last),
-        xGames: cumAt(a.xGames, last),
+        event: (a.delta && a.delta.event) || (a.event) || null,
+        xAvg: weightedXAvg(a, r.h),
+        xGames: cumExpectedGames(a, last),
         pListed: numAt(a.probListed, last),
         pDEF: r.P.DEF,
         pMID: r.P.MID,
@@ -924,7 +980,16 @@
     return !!(r && String(r.id || "").indexOf("PICK_") === 0);
   }
 
-  /** Material Person icon (inline SVG — site is vanilla JS, not MUI). */
+  /** True for keeper-league top-up slots (KD / type=pick without a national id). */
+  function isKeeperLeaguePick(r) {
+    if (!r) return false;
+    if (isNationalPickAsset(r)) return false;
+    if (r.type === "pick") return true;
+    const id = String(r.id || "");
+    return id.indexOf("KD_PICK_") === 0;
+  }
+
+  /** Material Person icon — national / real AFL draftee placeholder. */
   function personIconHtml(className) {
     return (
       '<span class="' +
@@ -936,13 +1001,31 @@
     );
   }
 
+  /** Material Library-add icon — keeper-league draft slot (not a real AFL asset). */
+  function libraryAddIconHtml() {
+    return (
+      '<span class="tc-pick-icon" aria-hidden="true">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" focusable="false">' +
+      '<path fill="currentColor" d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/>' +
+      "</svg></span>"
+    );
+  }
+
+  function pickIconHtml(row) {
+    if (isNationalPickAsset(row) || (row && row._pick && isNationalPickAsset(row._pick.proxyRow))) {
+      return personIconHtml("fd-headshot fd-headshot-pick");
+    }
+    return libraryAddIconHtml();
+  }
+
   function headshotHtml(row) {
-    const isPick =
-      isNationalPickAsset(row) ||
-      row.type === "pick" ||
-      !row.id ||
-      String(row.id).indexOf("CD_I") !== 0;
-    if (isPick) {
+    if (isNationalPickAsset(row)) {
+      return personIconHtml("fd-headshot fd-headshot-pick");
+    }
+    if (isKeeperLeaguePick(row) || row.type === "pick") {
+      return libraryAddIconHtml();
+    }
+    if (!row.id || String(row.id).indexOf("CD_I") !== 0) {
       return personIconHtml("fd-headshot fd-headshot-pick");
     }
     const pid = String(row.id).replace("CD_I", "");
@@ -1330,7 +1413,8 @@
 
   /**
    * Positional probabilities for a horizon year index.
-   * Falls back to fantasyPos one-hot when pos[] is missing.
+   * Falls back to fantasyPos/keeperPos one-hot when pos[] is missing or
+   * flat/uniform (e.g. 0.25×4 from export when n+1 probs are unknown).
    */
   function seasonPosProbs(row, yearIdx) {
     const out = { DEF: 0, MID: 0, RUC: 0, FWD: 0 };
@@ -1345,8 +1429,33 @@
         any = true;
       }
     });
-    if (any) return out;
-    playerFantasyPosKeys(row).forEach((p) => {
+    if (any) {
+      const vals = POS_KEYS.map((p) => out[p]);
+      const first = vals[0];
+      const uniform =
+        vals.every((v) => Math.abs(v - first) < 1e-6) && first > 0;
+      if (!uniform) return out;
+    }
+    const keys = playerFantasyPosKeys(row);
+    if (!keys.length) {
+      const kp = String((row && row.keeperPos) || "")
+        .split("/")
+        .map((p) => p.trim())
+        .filter((p) => POS_KEYS.indexOf(p) >= 0);
+      kp.forEach((p) => {
+        out[p] = 1;
+      });
+      if (kp.length) {
+        POS_KEYS.forEach((p) => {
+          if (kp.indexOf(p) < 0) out[p] = 0;
+        });
+      }
+      return out;
+    }
+    POS_KEYS.forEach((p) => {
+      out[p] = 0;
+    });
+    keys.forEach((p) => {
       out[p] = 1;
     });
     return out;
@@ -1545,15 +1654,21 @@
     );
   }
 
+  /**
+   * Pre-draft (cut on): roster − keepers (default 10).
+   * Post-draft (cut off): 0 invented picks — full roster already filled.
+   */
   function keeperDraftPicksPerTeam(cfg) {
+    const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
+    if (!cutOn) return 0;
     return Math.max(0, rosterSize(cfg) - (Number(cfg.keeperCount) || 0));
   }
 
-  /** Per-team kept roster + year xPoints / VORP. Year columns always use all seasons. */
+  /** Per-team kept roster + year xPoints / VORP. Year columns follow Through (endSeason). */
   function buildTeamStandings(rows, league, cfg) {
     const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
-    const yearSeasons = state.seasons.slice();
-    const yLen = yearSeasons.length;
+    const yLen = horizonLen(state.seasons, cfg.endSeason) || state.seasons.length;
+    const yearSeasons = state.seasons.slice(0, yLen);
     return (league.owners || []).map((owner) => {
       const players = rows.filter((r) => r.owner === owner);
       const split = splitRosterByKeepers(players, cfg, owner, cutOn);
@@ -1819,22 +1934,30 @@
     return (remaining[pos] || 0) / n;
   }
 
-  /** Emptiest on-field line by remaining/need; ties → more absolute empty → POS order. */
-  function emptiestOpenPos(remaining, need) {
+  /**
+   * Emptiest on-field line by remaining/need; ties → more absolute empty → POS order.
+   * When priors (e.g. pick pos shares) are provided, score = emptyShare × prior.
+   */
+  function emptiestOpenPos(remaining, need, priors) {
     let best = null;
-    let bestShare = -1;
+    let bestScore = -1;
     let bestRem = -1;
     POS_KEYS.forEach((pos) => {
       const rem = remaining[pos] || 0;
       if (rem <= 0) return;
       const share = posEmptyShare(pos, remaining, need);
+      const prior =
+        priors && Number.isFinite(Number(priors[pos]))
+          ? Math.max(0, Number(priors[pos]))
+          : 1;
+      const score = share * prior;
       if (
-        share > bestShare ||
-        (share === bestShare && rem > bestRem) ||
-        (share === bestShare && rem === bestRem && (best == null || pos < best))
+        score > bestScore ||
+        (score === bestScore && rem > bestRem) ||
+        (score === bestScore && rem === bestRem && (best == null || pos < best))
       ) {
         best = pos;
-        bestShare = share;
+        bestScore = score;
         bestRem = rem;
       }
     });
@@ -1908,10 +2031,11 @@
       placeOnField(p, open[0]);
     });
 
-    // 2) Incoming picks: emptiest line first; any position (no eligibility)
+    // 2) Incoming picks: emptiest line × pick pos priors (nationals); any line
     mustRanked.forEach((p) => {
       if (!p || used.has(p.id)) return;
-      const pos = emptiestOpenPos(remaining, need);
+      const priors = seasonPosProbs(p, yearIdx);
+      const pos = emptiestOpenPos(remaining, need, priors);
       if (!pos) return;
       placeOnField(p, pos);
     });
@@ -1988,18 +2112,21 @@
 
   function plannerPlayerRowHtml(slot, belowCut) {
     const r = slot.player;
-    const isPick = r.type === "pick" || isNationalPickAsset(r);
+    const isNat =
+      isNationalPickAsset(r) ||
+      (r._pick && isNationalPickAsset(r._pick.proxyRow));
+    const isPick = r.type === "pick" || isNat || isKeeperLeaguePick(r);
     if (isPick) {
       const tip =
-        r._pick && r._pick.proxyName
+        !isNat && r._pick && r._pick.proxyName
           ? r.name + " · proxy " + r._pick.proxyName
           : r.name || "";
-      const abbr = r.teamAbbr || r.club || "";
+      const abbr = isNat ? r.teamAbbr || r.club || "" : "";
       return (
         '<div class="lt-player tc-pick-row' +
         (belowCut ? " lt-below-cut" : "") +
         '">' +
-        personIconHtml("fd-headshot fd-headshot-pick") +
+        pickIconHtml(r) +
         '<div class="lt-player-meta">' +
         '<div class="lt-player-name" title="' +
         escapeHtml(tip) +
@@ -2008,9 +2135,7 @@
         "</div>" +
         '<div class="lt-player-chips">' +
         teamChipHtml(abbr) +
-        (isNationalPickAsset(r) || (r._pick && isNationalPickAsset(r._pick.proxyRow))
-          ? ""
-          : '<span class="fd-pos-chip">PICK</span>') +
+        (isNat ? "" : '<span class="fd-pos-chip">PICK</span>') +
         "</div>" +
         "</div>" +
         '<div class="fp-player-xp">' +
@@ -2282,7 +2407,7 @@
 
   /**
    * Best→worst by projected first-horizon season (e.g. 2027) xPoints.
-   * Used to snake the keeper draft: R1 worst→best, R2 best→worst, …
+   * Fallback when no Import-tab draft order is set.
    */
   function projectedLadderBestToWorst(rows, league, cfg) {
     return buildTeamStandings(rows, league, cfg)
@@ -2294,6 +2419,26 @@
           a.owner.localeCompare(b.owner)
       )
       .map((t) => t.owner);
+  }
+
+  /**
+   * Draft order for snake: Import-tab order (best→worst) when complete,
+   * else projected keeper ladder. R1 still snakes worst→best via snakeDraftSlots.
+   */
+  function draftOrderBestToWorst(rows, league, cfg) {
+    const owners = (league && league.owners) || [];
+    const order = (cfg && cfg.draftOrder) || [];
+    if (order.length && owners.length) {
+      const set = new Set(owners);
+      const filtered = order.filter((o) => set.has(o));
+      if (filtered.length === owners.length) return filtered.slice();
+      // Partial import: keep listed first, append missing by projected rank
+      const missing = projectedLadderBestToWorst(rows, league, cfg).filter(
+        (o) => filtered.indexOf(o) < 0
+      );
+      return filtered.concat(missing);
+    }
+    return projectedLadderBestToWorst(rows, league, cfg);
   }
 
   function snakeDraftSlots(ownersBestToWorst, rounds) {
@@ -2314,8 +2459,9 @@
    * Snake-draft pick slots with unowned proxies.
    * yearCount=1 (default): upcoming draft only — used by Trades.
    * yearCount>1: one draft class per horizon season — used by Planner.
-   * Year 0 pool = national PICK_YYYY_* assets + free agents (by VORP/xPts),
-   * so e.g. 2027 Pick 1 can land on keeper boards with its club chip.
+   * Each year pool = that year's national PICK_YYYY_* + remaining FAs,
+   * ranked by horizon VORP (same Through as keepers). National picks keep
+   * club chips; FA-proxied keeper slots do not inherit the proxy club.
    */
   function buildKeeperDraftPicks(unowned, cfg, seasons, rows, league, opts) {
     const yearSeasons = seasons.slice();
@@ -2331,23 +2477,19 @@
 
     for (let yi = 0; yi < yearCount; yi++) {
       const draftYear = yearSeasons[yi] || seasons[yi] || "";
-      let pool;
-      if (yi === 0) {
-        const natPicks = nationalPicksForYear(rows, draftYear);
-        pool = natPicks.concat(faRemaining);
-      } else {
-        pool = faRemaining.slice();
-      }
+      const natPicks = nationalPicksForYear(rows, draftYear);
+      const pool = natPicks.concat(faRemaining);
+      // Rank like keepers: horizon VORP first (Through), not season-yi xPoints.
       pool.sort(
         (a, b) =>
-          seasonXPoints(b, yi) - seasonXPoints(a, yi) ||
           (b.vorp || 0) - (a.vorp || 0) ||
+          seasonXPoints(b, yi) - seasonXPoints(a, yi) ||
           (a.name || "").localeCompare(b.name || "") ||
           String(a.id).localeCompare(String(b.id))
       );
       const ladder =
-        yearCount === 1 && yi === 0
-          ? projectedLadderBestToWorst(rows, league, cfg)
+        yi === 0
+          ? draftOrderBestToWorst(rows, league, cfg)
           : standings
               .slice()
               .sort(
@@ -2367,9 +2509,12 @@
         if (proxy && !isNat) usedFaIds.add(proxy.id);
         const ypts = proxy
           ? yearPointsForRow(proxy, yLen)
-          : yearSeasons.map(() => 0);
+          : Array.from({ length: yLen }, () => 0);
         const overall = i + 1;
-        const club = proxy ? proxy.teamAbbr || proxy.club || "" : "";
+        // Club only for real national picks — never inherit FA proxy club onto KD slots.
+        const club = isNat
+          ? proxy.teamAbbr || proxy.club || ""
+          : "";
         out.push({
           key: isNat
             ? "NPICK:" + proxy.id
@@ -2397,7 +2542,8 @@
           proxyRow: proxy
         });
       });
-      // Drop used free agents; never carry unused national picks into later years.
+      // Drop used free agents; unused nationals stay out of later FA pools
+      // (each later year gets its own PICK_YYYY_* class via nationalPicksForYear).
       for (let i = faRemaining.length - 1; i >= 0; i--) {
         if (usedFaIds.has(faRemaining[i].id)) faRemaining.splice(i, 1);
       }
@@ -2408,10 +2554,21 @@
   /** Synthetic roster row so planner lineups can place a pick via its proxy. */
   function plannerPlayerFromPick(pick) {
     const proxy = pick && pick.proxyRow;
-    const isNat = proxy && isNationalPickAsset(proxy);
-    const club =
-      (pick && pick.club) ||
-      (proxy ? proxy.teamAbbr || proxy.club || "" : "");
+    const isNat = !!(proxy && isNationalPickAsset(proxy));
+    const club = isNat
+      ? (pick && pick.club) || proxy.teamAbbr || proxy.club || ""
+      : "";
+    const proxyAsset = proxy && proxy._asset ? proxy._asset : null;
+    const asset = proxyAsset
+      ? proxyAsset
+      : {
+          xPoints: (pick.yearPts || []).slice(),
+          pos: isNat && proxy && proxy.pos ? proxy.pos : undefined
+        };
+    // National picks: ensure pos priors available even if only on the row
+    if (isNat && proxy && proxy.pos && !asset.pos) {
+      asset.pos = proxy.pos;
+    }
     return {
       id: pick.id,
       name: pick.name,
@@ -2420,12 +2577,10 @@
       vorp: Number(pick.vorp) || 0,
       teamAbbr: club,
       club: club,
-      fantasyPos: isNat ? "" : proxy ? proxy.fantasyPos || "" : "",
-      keeperPos: isNat ? "" : proxy ? proxy.keeperPos || "" : "",
-      _asset:
-        proxy && proxy._asset
-          ? proxy._asset
-          : { xPoints: (pick.yearPts || []).slice() },
+      fantasyPos: "",
+      keeperPos: "",
+      event: (proxy && proxy.event) || (proxyAsset && proxyAsset.event) || null,
+      _asset: asset,
       _pick: pick
     };
   }
@@ -2503,7 +2658,7 @@
   }
 
   function tradeAssetMap(rows, picks, keptSets) {
-    const yLen = state.seasons.length;
+    const yLen = horizonLen(state.seasons, state.cfg.endSeason) || state.seasons.length;
     const map = Object.create(null);
     rows.forEach((r) => {
       if (!r.id || !r.owner) return;
@@ -2520,17 +2675,20 @@
       };
     });
     (picks || []).forEach((p) => {
+      const isNat = !!(p.proxyRow && isNationalPickAsset(p.proxyRow));
       map[p.key] = {
         key: p.key,
         kind: "pick",
         name: p.name,
         vorp: p.vorp,
-        yearPts: (p.yearPts || []).slice(),
+        yearPts: (p.yearPts || []).slice(0, yLen),
         proxyName: p.proxyName,
         pick: p.pick,
         round: p.round,
         owner: p.owner,
         belowCut: false,
+        club: isNat ? p.club || "" : "",
+        proxyRow: p.proxyRow || null,
         row: null
       };
     });
@@ -2550,12 +2708,13 @@
   /**
    * Kept-player totals + owned pick proxy values.
    * Always chooses keeperCount keepers for trade math — you finalise 20
-   * before the draft even if the UI cut toggle is off. Picks sit outside
-   * that 20; trading a pick can free a roster spot so the lowest keeper drops.
+   * before the draft even if the UI cut toggle is off. League rule: always
+   * 20 keepers + 10 pick slots (30 assets). Trading picks changes which picks
+   * you hold (e.g. two 1sts, lose a late round), not keeper count or slot count.
    */
   function teamTradeTotals(rows, owner, cfg, pickOwnerByKey, picksByKey) {
     const cutOn = Math.max(0, Number(cfg.keeperCount) || 0) > 0;
-    const yLen = state.seasons.length;
+    const yLen = horizonLen(state.seasons, cfg.endSeason) || state.seasons.length;
     const players = rows.filter((r) => r.owner === owner);
     const split = splitRosterByKeepers(players, cfg, owner, cutOn);
     const yearPts = Array.from({ length: yLen }, () => 0);
@@ -2592,7 +2751,7 @@
   }
 
   function simulateTrade(rows, league, cfg, sideA, sideB, giveKeys, getKeys, picks, preCache) {
-    const yLen = state.seasons.length;
+    const yLen = horizonLen(state.seasons, cfg.endSeason) || state.seasons.length;
     const base = buildPickMaps(picks);
     const picksByKey = base.picksByKey;
     const pickOwnerByKey = Object.assign(Object.create(null), base.pickOwnerByKey);
@@ -2642,30 +2801,25 @@
     };
   }
 
-  function combinations(arr, k) {
-    if (k <= 0) return [[]];
-    if (!arr.length || k > arr.length) return [];
-    const out = [];
-    function rec(start, path) {
-      if (path.length === k) {
-        out.push(path.slice());
-        return;
-      }
-      for (let i = start; i < arr.length; i++) {
-        path.push(arr[i]);
-        rec(i + 1, path);
-        path.pop();
-      }
-    }
-    rec(0, []);
-    return out;
+  /**
+   * Relative trade fairness vs package scale (star 5y totals are ~7–10k+).
+   * Max gap ≈ 7% of the larger side; "balanced" ≈ 2%. Floors for tiny deals.
+   */
+  const TRADE_XPTS_GAP_PCT = 0.07;
+  const TRADE_BALANCED_PCT = 0.02;
+  const TRADE_XPTS_GAP_FLOOR = 80;
+  const TRADE_BALANCED_FLOOR = 40;
+  const TRADE_AFFINITY_WEIGHT = 2;
+
+  function tradeGapMax(sideA, sideB) {
+    const m = Math.max(Math.abs(sideA) || 0, Math.abs(sideB) || 0, 1);
+    return Math.max(TRADE_XPTS_GAP_FLOOR, m * TRADE_XPTS_GAP_PCT);
   }
 
-  /**
-   * Absolute |Σ give xPoints − Σ get xPoints| across all seasons must be ≤ this.
-   * Uses the same units as the year columns (not scarcity-adjusted VORP).
-   */
-  const TRADE_XPTS_GAP_MAX = 450;
+  function tradeBalancedGap(sideA, sideB) {
+    const m = Math.max(Math.abs(sideA) || 0, Math.abs(sideB) || 0, 1);
+    return Math.max(TRADE_BALANCED_FLOOR, m * TRADE_BALANCED_PCT);
+  }
 
   /** Soft buckets for plan-tag trade chemistry (bonus only). */
   const PLAN_TRADE_SIDE = {
@@ -2715,10 +2869,10 @@
   function scoreTradePackage(sim, giveKeys, getKeys, assetMap, myTeam, other) {
     const myTotal = yearPtsTotal(sim.a.yearPts);
     const theirTotal = yearPtsTotal(sim.b.yearPts);
-    const assetGap = Math.abs(
-      sumAssetYearPts(giveKeys, assetMap) - sumAssetYearPts(getKeys, assetMap)
-    );
-    if (assetGap > TRADE_XPTS_GAP_MAX) return -1e9;
+    const giveX = sumAssetYearPts(giveKeys, assetMap);
+    const getX = sumAssetYearPts(getKeys, assetMap);
+    const assetGap = Math.abs(giveX - getX);
+    if (assetGap > tradeGapMax(giveX, getX)) return -1e9;
     // Soft fairness on post-cut roster impact — prefer win-win, don't require it
     if (myTotal < -200) return -1e9;
     if (theirTotal < -800 && myTotal > 400) return -1e9;
@@ -2728,7 +2882,7 @@
     if (myTotal >= -50 && theirTotal >= -50) score += 350;
     else if (myTotal >= 0 && theirTotal >= -250) score += 180;
 
-    score += planTradeAffinity(myTeam, other) * 8;
+    score += planTradeAffinity(myTeam, other) * TRADE_AFFINITY_WEIGHT;
     return score;
   }
 
@@ -2738,9 +2892,8 @@
     return g + "||" + t;
   }
 
-  /** Package gap below this → stop suggesting fillers. */
-  const TRADE_BALANCED_GAP = 140;
   const TRADE_MAX_ASSETS = 2;
+  const TRADE_FILLER_CANDIDATES = 25;
 
   function emptyTradeSim(yLen) {
     const z = Array.from({ length: yLen }, () => 0);
@@ -2795,10 +2948,11 @@
 
     const giveX0 = sumAssetYearPts(give, assetMap);
     const getX0 = sumAssetYearPts(get, assetMap);
+    const balGap = tradeBalancedGap(giveX0, getX0);
     if (give.length || get.length) {
       const gap = Math.abs(giveX0 - getX0);
       const sim0 = runSim(give, get);
-      if (gap <= TRADE_BALANCED_GAP) {
+      if (gap <= balGap) {
         const myT = yearPtsTotal(sim0.a.yearPts);
         const theirT = yearPtsTotal(sim0.b.yearPts);
         if (myT >= -180 && theirT >= -350) {
@@ -2815,18 +2969,20 @@
       .sort(
         (a, b) =>
           yearPtsTotal(b.yearPts) - yearPtsTotal(a.yearPts) ||
+          (b.vorp || 0) - (a.vorp || 0) ||
           a.name.localeCompare(b.name)
       )
-      .slice(0, 14);
+      .slice(0, TRADE_FILLER_CANDIDATES);
     const theirAvail = Object.keys(assetMap)
       .map((k) => assetMap[k])
       .filter((a) => a.owner === other && !getSet.has(a.key))
       .sort(
         (a, b) =>
           yearPtsTotal(b.yearPts) - yearPtsTotal(a.yearPts) ||
+          (b.vorp || 0) - (a.vorp || 0) ||
           a.name.localeCompare(b.name)
       )
-      .slice(0, 14);
+      .slice(0, TRADE_FILLER_CANDIDATES);
 
     const canAddGive = give.length < TRADE_MAX_ASSETS;
     const canAddGet = get.length < TRADE_MAX_ASSETS;
@@ -2838,10 +2994,10 @@
       // Need a real trade direction after applying the suggestion
       if (!g.length && !t.length) return;
       if (g.length > TRADE_MAX_ASSETS || t.length > TRADE_MAX_ASSETS) return;
-      const assetGap = Math.abs(
-        sumAssetYearPts(g, assetMap) - sumAssetYearPts(t, assetMap)
-      );
-      if (assetGap > TRADE_XPTS_GAP_MAX) return;
+      const gSum = sumAssetYearPts(g, assetMap);
+      const tSum = sumAssetYearPts(t, assetMap);
+      const assetGap = Math.abs(gSum - tSum);
+      if (assetGap > tradeGapMax(gSum, tSum)) return;
       const sim = runSim(g, t);
       const score = scoreTradePackage(sim, g, t, assetMap, myTeam, other);
       if (score <= -1e8 || score <= best.score) return;
@@ -2855,8 +3011,8 @@
       });
     } else {
       // Prefer a single-side filler on the short side
-      const needGet = giveX0 > getX0 + TRADE_BALANCED_GAP * 0.25;
-      const needGive = getX0 > giveX0 + TRADE_BALANCED_GAP * 0.25;
+      const needGet = giveX0 > getX0 + balGap * 0.25;
+      const needGive = getX0 > giveX0 + balGap * 0.25;
       if (needGet && canAddGet) {
         theirAvail.forEach((b) => consider(null, b.key));
       } else if (needGive && canAddGive) {
@@ -2877,16 +3033,20 @@
 
   function pickPlayerRowHtml(p) {
     const proxy = p && p.proxyRow;
-    const isNat = proxy && isNationalPickAsset(proxy);
-    const abbr =
-      (p && p.club) || (proxy ? proxy.teamAbbr || proxy.club || "" : "");
+    const isNat = !!(proxy && isNationalPickAsset(proxy)) || isNationalPickAsset(p);
+    const abbr = isNat
+      ? (p && p.club) || (proxy ? proxy.teamAbbr || proxy.club || "" : "")
+      : "";
     const tip =
       "Overall #" +
       (p.pick || "") +
-      (p.proxyName ? " · proxy " + p.proxyName : "");
+      (!isNat && p.proxyName ? " · proxy " + p.proxyName : "");
+    const pUsedChip = pickUsageChipHtml(p);
     return (
       '<div class="lt-player tc-pick-row">' +
-      personIconHtml("fd-headshot fd-headshot-pick") +
+      (isNat
+        ? personIconHtml("fd-headshot fd-headshot-pick")
+        : libraryAddIconHtml()) +
       '<div class="lt-player-meta">' +
       '<div class="lt-player-name" title="' +
       escapeHtml(tip) +
@@ -2896,12 +3056,38 @@
       '<div class="lt-player-chips">' +
       teamChipHtml(abbr) +
       (isNat ? "" : '<span class="fd-pos-chip">PICK</span>') +
+      pUsedChip +
       "</div>" +
       "</div>" +
       '<div class="lt-player-vorp">' +
       fmtInt(p.vorp) +
       "</div>" +
       "</div>"
+    );
+  }
+
+  /** Chip when national pick carries usage risk (p_used &lt; 1). */
+  function pickUsageChipHtml(assetOrPick) {
+    const row =
+      (assetOrPick && assetOrPick.proxyRow) ||
+      (assetOrPick && assetOrPick.row) ||
+      assetOrPick;
+    const a = row && (row._asset || row);
+    let pUsed = null;
+    const ev = (a && a.event) || (row && row.event) || "";
+    const m = String(ev).match(/p_used\s*=\s*([0-9.]+)/i);
+    if (m) pUsed = Number(m[1]);
+    if (pUsed == null && a && a.probListed && a.probListed.length) {
+      // Late picks sometimes encode usage only in early probListed
+      const pl0 = Number(a.probListed[0]);
+      if (Number.isFinite(pl0) && pl0 > 0 && pl0 < 0.999) pUsed = pl0;
+    }
+    if (pUsed == null || !(pUsed < 0.999)) return "";
+    return (
+      '<span class="fd-pos-chip fd-pused-chip" title="Club list headroom: pick may go unused">' +
+      "p_used " +
+      Math.round(pUsed * 100) +
+      "%</span>"
     );
   }
 
@@ -3259,13 +3445,7 @@
       }
     });
 
-    el.addEventListener("input", (e) => {
-      const t = e.target;
-      if (!t || t.id !== "tc-player-search") return;
-      state.trade.search = t.value || "";
-      if (state.trade.search.trim()) {
-        // Search overrides team filter; keep otherTeam for affinity but list is search-wide
-      }
+    const debouncedTradeSearch = debounce(() => {
       renderTradeCalculator(state.rows, state.league, state.cfg);
       const inp = document.getElementById("tc-player-search");
       if (inp) {
@@ -3277,6 +3457,12 @@
           /* ignore */
         }
       }
+    }, 200);
+    el.addEventListener("input", (e) => {
+      const t = e.target;
+      if (!t || t.id !== "tc-player-search") return;
+      state.trade.search = t.value || "";
+      debouncedTradeSearch();
     });
 
     el.addEventListener("click", (e) => {
@@ -3671,6 +3857,77 @@
     });
   }
 
+  /** Current draft order for UI: explicit cfg.draftOrder or projected fallback. */
+  function currentDraftOrderList(rows, league, cfg) {
+    if (!league || !league.owners || !league.owners.length) return [];
+    if (cfg.draftOrder && cfg.draftOrder.length) {
+      return draftOrderBestToWorst(rows || state.rows, league, cfg);
+    }
+    return projectedLadderBestToWorst(rows || state.rows, league, cfg);
+  }
+
+  function renderDraftOrderEditor() {
+    const list = document.getElementById("fd-draft-order-list");
+    const block = document.getElementById("fd-draft-order-block");
+    if (!list) return;
+    const league = state.league;
+    if (!league || !league.owners || !league.owners.length) {
+      if (block) block.style.display = "none";
+      list.innerHTML = "";
+      return;
+    }
+    if (block) block.style.display = "";
+    const order = currentDraftOrderList(state.rows, league, state.cfg);
+    const usingCustom = !!(state.cfg.draftOrder && state.cfg.draftOrder.length);
+    list.innerHTML = order
+      .map((owner, i) => {
+        const n = order.length;
+        return (
+          '<li data-owner="' +
+          escapeHtml(owner) +
+          '">' +
+          '<span class="fd-do-rank">#' +
+          (i + 1) +
+          "</span>" +
+          '<span class="fd-do-name">' +
+          escapeHtml(owner) +
+          "</span>" +
+          '<button type="button" data-do-act="up"' +
+          (i === 0 ? " disabled" : "") +
+          ">Up</button>" +
+          '<button type="button" data-do-act="down"' +
+          (i >= n - 1 ? " disabled" : "") +
+          ">Down</button>" +
+          "</li>"
+        );
+      })
+      .join("");
+    const hint = block && block.querySelector(".fd-draft-order-help");
+    if (hint) {
+      hint.textContent = usingCustom
+        ? "Custom order (best → worst). Round 1 snakes worst → best."
+        : "Using projected ladder (best → worst). Reorder to lock a custom order.";
+    }
+  }
+
+  function moveDraftOrder(owner, dir) {
+    const league = state.league;
+    if (!league) return;
+    let order = (state.cfg.draftOrder && state.cfg.draftOrder.length
+      ? state.cfg.draftOrder.slice()
+      : currentDraftOrderList(state.rows, league, state.cfg)
+    ).slice();
+    const i = order.indexOf(owner);
+    if (i < 0) return;
+    const j = i + dir;
+    if (j < 0 || j >= order.length) return;
+    const tmp = order[i];
+    order[i] = order[j];
+    order[j] = tmp;
+    state.cfg.draftOrder = order;
+    refresh();
+  }
+
   function refresh() {
     if (!state.data) return Promise.resolve();
     const cfg = state.cfg;
@@ -3687,6 +3944,7 @@
       renderTeamRatings(all, state.league, cfg);
       renderTeamPlanner(all, state.league, cfg);
       renderTradeCalculator(all, state.league, cfg);
+      renderDraftOrderEditor();
       state.detailId = null;
       const asof = document.getElementById("futures-asof");
       if (asof && state.data.meta && state.data.meta.asOf) {
@@ -3833,7 +4091,8 @@
     updateOwnerDropdownLabel(cfg);
   }
 
-  function readControlsFromDom() {
+  function readControlsFromDom(opts) {
+    const o = opts || {};
     const cfg = state.cfg;
     const num = (id, fb) => {
       const el = document.getElementById(id);
@@ -3847,13 +4106,29 @@
     });
     const endSel = document.getElementById("cfg-endSeason");
     if (endSel) cfg.endSeason = parseInt(endSel.value, 10);
-    const cut = document.getElementById("cfg-keeperCut");
-    if (cut) cfg.keeperCut = cut.checked;
+    // Only persist cut when the cut checkbox itself changed (keep null auto-default)
+    if (o.includeCut) {
+      const cut = document.getElementById("cfg-keeperCut");
+      if (cut) cfg.keeperCut = cut.checked;
+    }
     const my = document.getElementById("cfg-myTeam");
     if (my) cfg.myTeam = my.value || "";
     const search = document.getElementById("cfg-search");
     if (search) cfg.search = search.value.trim();
     return cfg;
+  }
+
+  function debounce(fn, ms) {
+    let t = null;
+    return function () {
+      const args = arguments;
+      const self = this;
+      if (t) clearTimeout(t);
+      t = setTimeout(function () {
+        t = null;
+        fn.apply(self, args);
+      }, ms);
+    };
   }
 
   function bindControls() {
@@ -3866,9 +4141,7 @@
       "cfg-ruc",
       "cfg-fwd",
       "cfg-endSeason",
-      "cfg-keeperCut",
-      "cfg-myTeam",
-      "cfg-search"
+      "cfg-myTeam"
     ];
     ids.forEach((id) => {
       const el = document.getElementById(id);
@@ -3884,13 +4157,26 @@
         }
         refresh();
       });
-      if (id === "cfg-search") {
-        el.addEventListener("input", () => {
-          readControlsFromDom();
-          refresh();
-        });
-      }
     });
+    const cutEl = document.getElementById("cfg-keeperCut");
+    if (cutEl) {
+      cutEl.addEventListener("change", () => {
+        readControlsFromDom({ includeCut: true });
+        refresh();
+      });
+    }
+    const searchEl = document.getElementById("cfg-search");
+    if (searchEl) {
+      const debouncedSearch = debounce(() => {
+        readControlsFromDom();
+        refresh();
+      }, 200);
+      searchEl.addEventListener("change", () => {
+        readControlsFromDom();
+        refresh();
+      });
+      searchEl.addEventListener("input", debouncedSearch);
+    }
     document.querySelectorAll(".pos-filter-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         state.cfg.posFilter = btn.dataset.pos || "ALL";
@@ -3910,21 +4196,37 @@
     bindTradeCalculator();
     ensureClubDropdownBuilt();
 
+    function closeDropdown(panel) {
+      if (!panel) return;
+      panel.style.display = "none";
+      panel.classList.remove("is-open");
+    }
+    function openDropdown(panel) {
+      if (!panel) return;
+      panel.style.display = "grid";
+      panel.classList.add("is-open");
+    }
     function bindDropdownToggle(btnId, panelId, rootId) {
       const btn = document.getElementById(btnId);
       if (!btn) return;
       btn.addEventListener("click", (e) => {
+        e.preventDefault();
         e.stopPropagation();
         const panel = document.getElementById(panelId);
         if (!panel) return;
-        panel.style.display =
-          panel.style.display === "none" ? "grid" : "none";
+        const open = panel.classList.contains("is-open") || panel.style.display === "grid";
+        // Close sibling dropdowns
+        ["club-dropdown-panel", "owner-dropdown-panel"].forEach((id) => {
+          if (id !== panelId) closeDropdown(document.getElementById(id));
+        });
+        if (open) closeDropdown(panel);
+        else openDropdown(panel);
       });
-      document.addEventListener("click", (e) => {
+      document.addEventListener("pointerdown", (e) => {
         const root = document.getElementById(rootId);
         const panel = document.getElementById(panelId);
         if (root && panel && !root.contains(e.target)) {
-          panel.style.display = "none";
+          closeDropdown(panel);
         }
       });
     }
@@ -3950,6 +4252,39 @@
     if (keeperClear) {
       keeperClear.addEventListener("click", () => clearKeeperLeague());
     }
+
+    const doList = document.getElementById("fd-draft-order-list");
+    if (doList) {
+      doList.addEventListener("click", (e) => {
+        const btn = e.target && e.target.closest ? e.target.closest("button[data-do-act]") : null;
+        if (!btn) return;
+        const li = btn.closest("li[data-owner]");
+        if (!li) return;
+        const owner = li.getAttribute("data-owner");
+        const act = btn.getAttribute("data-do-act");
+        if (act === "up") moveDraftOrder(owner, -1);
+        else if (act === "down") moveDraftOrder(owner, 1);
+      });
+    }
+    const doProj = document.getElementById("fd-draft-order-projected");
+    if (doProj) {
+      doProj.addEventListener("click", () => {
+        if (!state.league) return;
+        state.cfg.draftOrder = projectedLadderBestToWorst(
+          state.rows,
+          state.league,
+          state.cfg
+        );
+        refresh();
+      });
+    }
+    const doClear = document.getElementById("fd-draft-order-clear");
+    if (doClear) {
+      doClear.addEventListener("click", () => {
+        state.cfg.draftOrder = [];
+        refresh();
+      });
+    }
   }
 
   // ── Boot ───────────────────────────────────────────────────────────────────
@@ -3964,14 +4299,19 @@
     const shell = document.getElementById("futures-shell");
 
     try {
-      const res = await fetch(STORAGE_URL);
+      const res = await fetch(STORAGE_URL, { cache: "no-cache" });
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
       if (!data.assets || !data.meta) throw new Error("Invalid payload");
       state.data = data;
       state.seasons = (data.meta.seasons || []).map(Number);
       if (!state.cfg.endSeason) {
-        state.cfg.endSeason = state.seasons[state.seasons.length - 1];
+        const dh = Number(data.meta.defaultHorizon);
+        if (Number.isFinite(dh) && dh > 0 && dh <= state.seasons.length) {
+          state.cfg.endSeason = state.seasons[dh - 1];
+        } else {
+          state.cfg.endSeason = state.seasons[state.seasons.length - 1];
+        }
       }
       syncControlsToDom(state.cfg, state.seasons);
       setActiveTab(state.cfg.tab || "pool");
