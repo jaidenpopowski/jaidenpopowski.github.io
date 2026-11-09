@@ -2762,7 +2762,8 @@ All models are based on over a decade of data that is collected from public sour
 </div>
 </div>
 </div>
-<script>/**
+<script>
+/**
  * AFL Fantasy draft futures
  */
 (function (global) {
@@ -3158,8 +3159,37 @@ All models are based on over a decade of data that is collected from public sour
     );
   }
 
+  /**
+   * True when every imported team already looks cut-down (roster ≤ keepers).
+   * Used to default cut=on before the draft without relying only on PICK_* assets.
+   */
+  function allImportedTeamsAtOrUnderKeepers(rows, league, cfg) {
+    if (!league || !league.owners || !league.owners.length) return false;
+    const K = Math.max(0, Number(cfg.keeperCount) || 0);
+    if (K <= 0) return false;
+    return league.owners.every((owner) => {
+      const n = (rows || []).filter(
+        (r) =>
+          r &&
+          r.owner === owner &&
+          r.type !== "pick" &&
+          !isNationalPickAsset(r) &&
+          !isKeeperLeaguePick(r)
+      ).length;
+      return n <= K;
+    });
+  }
+
   function resolveKeeperCut(cfg, data, seasons) {
     if (cfg.keeperCut === true || cfg.keeperCut === false) return cfg.keeperCut;
+    // Imported keepers-only rosters ⇒ treat as cut already finalised.
+    if (
+      state.rows &&
+      state.league &&
+      allImportedTeamsAtOrUnderKeepers(state.rows, state.league, cfg)
+    ) {
+      return true;
+    }
     return hasUpcomingDraftPicks(data, seasons);
   }
 
@@ -4062,6 +4092,43 @@ All models are based on over a decade of data that is collected from public sour
     return n ? s / n : 0;
   }
 
+  /**
+   * Horizon-mean positional weights for VORP replacement.
+   * Same uniform→fantasyPos fallback as seasonPosProbs (lineup path).
+   * Picks keep their real draft-class priors (non-uniform pos[]).
+   */
+  function assetPosWeights(asset, h) {
+    const out = { DEF: 0, MID: 0, RUC: 0, FWD: 0 };
+    let any = false;
+    POS_KEYS.forEach((p) => {
+      const v = meanPos(asset, p, h);
+      out[p] = v;
+      if (v > 0) any = true;
+    });
+    if (any) {
+      const vals = POS_KEYS.map((p) => out[p]);
+      const first = vals[0];
+      const uniform =
+        vals.every((v) => Math.abs(v - first) < 1e-6) && first > 0;
+      if (!uniform) return out;
+    }
+    const keys = (
+      Array.isArray(asset && asset.fantasyPos)
+        ? asset.fantasyPos
+        : String((asset && asset.fantasyPos) || "").split("/")
+    )
+      .map((p) => String(p || "").trim())
+      .filter((p) => POS_KEYS.indexOf(p) >= 0);
+    POS_KEYS.forEach((p) => {
+      out[p] = 0;
+    });
+    if (!keys.length) return out;
+    keys.forEach((p) => {
+      out[p] = 1;
+    });
+    return out;
+  }
+
   /** Position-weighted value: Σ probListed * xGamesPOS * xAvg over horizon. */
   function posScore(asset, pos, h) {
     const key = "xGames" + pos;
@@ -4114,10 +4181,9 @@ All models are based on over a decade of data that is collected from public sour
 
     const enriched = assets.map((a) => {
       const value = sumSlice(a.xPoints, h);
-      const P = {};
+      const P = assetPosWeights(a, h);
       const score = {};
       POS_KEYS.forEach((p) => {
-        P[p] = meanPos(a, p, h);
         score[p] = posScore(a, p, h);
       });
       const prevXp = a.prev && a.prev.xPoints ? a.prev.xPoints : null;
@@ -4652,6 +4718,75 @@ All models are based on over a decade of data that is collected from public sour
     return out;
   }
 
+  /** AFL H&A-ish season length for cover need (slots × games). */
+  const COVER_GAMES_SEASON = 23;
+  /** Cover is "enough" when Σ xGamesPOS ≥ this × slots × games. */
+  const COVER_ADEQUACY = 0.8;
+
+  /** Expected games at `pos` for one horizon year (xGamesPOS, else pos% × xGames). */
+  function seasonXGamesAtPos(row, pos, yearIdx) {
+    const a = row && row._asset;
+    const xgPos = numAt(a && a["xGames" + pos], yearIdx);
+    if (Number.isFinite(xgPos) && xgPos > 0) return xgPos;
+    const probs = seasonPosProbs(row, yearIdx);
+    const xg = numAt(a && a.xGames, yearIdx);
+    const g = Number.isFinite(xg) ? Math.max(0, xg) : 0;
+    const pl = numAt(a && a.probListed, yearIdx);
+    const pList = Number.isFinite(pl) ? pl : 1;
+    return Math.max(0, (probs[pos] || 0) * g * pList);
+  }
+
+  /**
+   * Season points with xGames cover: on-field always counts; bench/depth counts
+   * in full when that position's Σ xGamesPOS covers ~80% of slots × games.
+   * Example: 5 DEFs with strong xGamesDEF vs 4 slots → all five count.
+   */
+  function coverWeightedSeasonPoints(players, cfg, yearIdx, opts) {
+    const list = (players || []).filter(Boolean);
+    if (!list.length) return 0;
+    const lineup = buildSeasonLineup(list, cfg, yearIdx, opts || {});
+    const onFieldIds = new Set();
+    POS_KEYS.forEach((pos) => {
+      (lineup.filled[pos] || []).forEach((s) => {
+        if (s && s.player && s.player.id != null) onFieldIds.add(s.player.id);
+      });
+    });
+    const cover = { DEF: 0, MID: 0, RUC: 0, FWD: 0 };
+    list.forEach((p) => {
+      POS_KEYS.forEach((pos) => {
+        cover[pos] += seasonXGamesAtPos(p, pos, yearIdx);
+      });
+    });
+    const adequate = {};
+    POS_KEYS.forEach((pos) => {
+      const need =
+        (Number(cfg.slots && cfg.slots[pos]) || 0) * COVER_GAMES_SEASON;
+      adequate[pos] = need <= 0 || cover[pos] >= COVER_ADEQUACY * need;
+    });
+    let pts = 0;
+    list.forEach((p) => {
+      const xp = seasonXPoints(p, yearIdx);
+      if (!(xp > 0) && xp !== 0) return;
+      if (onFieldIds.has(p.id)) {
+        pts += xp;
+        return;
+      }
+      const counts = POS_KEYS.some(
+        (pos) => canPlaySeasonPos(p, pos, yearIdx) && adequate[pos]
+      );
+      if (counts) pts += xp;
+    });
+    return pts;
+  }
+
+  function coverWeightedYearPoints(players, cfg, yearCount, opts) {
+    const out = [];
+    for (let i = 0; i < yearCount; i++) {
+      out.push(coverWeightedSeasonPoints(players, cfg, i, opts));
+    }
+    return out;
+  }
+
   // ── Keeper cut: VORP order + year-1 pos probs + quotas ─────────────────────
 
   /** Fantasy eligibility labels (chips) — fallback only when year-1 pos missing. */
@@ -4915,22 +5050,15 @@ All models are based on over a decade of data that is collected from public sour
     return Math.max(0, rosterSize(cfg) - (Number(cfg.keeperCount) || 0));
   }
 
-  /** Per-team kept roster + year xPoints / VORP. Year columns follow Through (endSeason). */
+  /** Per-team kept roster + cover-weighted year xPoints / VORP. Through = endSeason. */
   function buildTeamStandings(rows, league, cfg) {
     const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
     const yLen = horizonLen(state.seasons, cfg.endSeason) || state.seasons.length;
-    const yearSeasons = state.seasons.slice(0, yLen);
     return (league.owners || []).map((owner) => {
       const players = rows.filter((r) => r.owner === owner);
       const split = splitRosterByKeepers(players, cfg, owner, cutOn);
       const counted = split.kept;
-      const yearPts = yearSeasons.map(() => 0);
-      counted.forEach((p) => {
-        const yp = yearPointsForRow(p, yLen);
-        yp.forEach((v, i) => {
-          yearPts[i] += v;
-        });
-      });
+      const yearPts = coverWeightedYearPoints(counted, cfg, yLen);
       const vorp = counted.reduce((s, p) => s + (Number(p.vorp) || 0), 0);
       return { owner, players: split.kept.concat(split.cut), counted, yearPts, vorp, split };
     });
@@ -5767,11 +5895,10 @@ All models are based on over a decade of data that is collected from public sour
           ? proxy.teamAbbr || proxy.club || ""
           : "";
         out.push({
-          key: isNat
-            ? "NPICK:" + proxy.id
-            : singleYear
-              ? "PICK:" + overall
-              : "PICK:" + draftYear + ":" + overall,
+          // Slot-stable keys (not proxy id) so trades survive pool re-rank.
+          key: singleYear
+            ? "PICK:" + overall
+            : "PICK:" + draftYear + ":" + overall,
           pick: overall,
           round: slot.round,
           owner: slot.owner,
@@ -5789,7 +5916,7 @@ All models are based on over a decade of data that is collected from public sour
           yearPts: ypts,
           club: club,
           proxyName: isNat ? null : proxy ? proxy.name : null,
-          proxyId: isNat ? null : proxy ? proxy.id : null,
+          proxyId: proxy ? proxy.id : null,
           proxyRow: proxy
         });
       });
@@ -5880,10 +6007,9 @@ All models are based on over a decade of data that is collected from public sour
       }
       const newPicks = (picksBySeason[yi] || []).map(plannerPlayerFromPick);
       const active = kept.concat(newPicks);
-      const lineup = buildSeasonLineup(active, cfg, yi, {
-        mustInclude: newPicks
-      });
-      const pts = active.reduce((s, p) => s + seasonXPoints(p, yi), 0);
+      const lineupOpts = { mustInclude: newPicks };
+      const lineup = buildSeasonLineup(active, cfg, yi, lineupOpts);
+      const pts = coverWeightedSeasonPoints(active, cfg, yi, lineupOpts);
       yearPts.push(pts);
       prevRoster = active;
       boards.push({
@@ -5958,25 +6084,17 @@ All models are based on over a decade of data that is collected from public sour
 
   /**
    * Kept-player totals + owned pick proxy values.
-   * Always chooses keeperCount keepers for trade math — you finalise 20
-   * before the draft even if the UI cut toggle is off. League rule: always
-   * 20 keepers + 10 pick slots (30 assets). Trading picks changes which picks
+   * Cut follows resolveKeeperCut (toggle / imported ≤ keepers / upcoming picks).
+   * League rule: nPicks = roster − keepers; trading picks changes which picks
    * you hold (e.g. two 1sts, lose a late round), not keeper count or slot count.
    */
   function teamTradeTotals(rows, owner, cfg, pickOwnerByKey, picksByKey) {
-    const cutOn = Math.max(0, Number(cfg.keeperCount) || 0) > 0;
+    const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
     const yLen = horizonLen(state.seasons, cfg.endSeason) || state.seasons.length;
     const players = rows.filter((r) => r.owner === owner);
     const split = splitRosterByKeepers(players, cfg, owner, cutOn);
-    const yearPts = Array.from({ length: yLen }, () => 0);
-    let vorp = 0;
-    split.kept.forEach((p) => {
-      const yp = yearPointsForRow(p, yLen);
-      yp.forEach((v, i) => {
-        yearPts[i] += v;
-      });
-      vorp += Number(p.vorp) || 0;
-    });
+    const yearPts = coverWeightedYearPoints(split.kept, cfg, yLen);
+    let vorp = split.kept.reduce((s, p) => s + (Number(p.vorp) || 0), 0);
     Object.keys(pickOwnerByKey || {}).forEach((k) => {
       if (pickOwnerByKey[k] !== owner) return;
       const pk = picksByKey[k];
@@ -5985,6 +6103,39 @@ All models are based on over a decade of data that is collected from public sour
       for (let i = 0; i < yLen; i++) yearPts[i] += (pk.yearPts && pk.yearPts[i]) || 0;
     });
     return { yearPts, vorp, split };
+  }
+
+  /** Draft picks each team may hold: rosterSize − keepers (default 10). */
+  function nPicksCap(cfg) {
+    return Math.max(0, rosterSize(cfg) - (Number(cfg.keeperCount) || 0));
+  }
+
+  /**
+   * If owner holds more than nPicks, drop highest overall pick numbers first
+   * (e.g. #96 before #50). Dropped keys are removed from pickOwnerByKey.
+   */
+  function trimOwnerPicksToCap(pickOwnerByKey, picksByKey, owner, cap) {
+    if (!pickOwnerByKey || !owner || !(cap >= 0)) return [];
+    const owned = Object.keys(pickOwnerByKey).filter(
+      (k) => pickOwnerByKey[k] === owner
+    );
+    if (owned.length <= cap) return [];
+    owned.sort((a, b) => {
+      const pa = picksByKey && picksByKey[a];
+      const pb = picksByKey && picksByKey[b];
+      return (
+        (Number(pb && pb.pick) || 0) - (Number(pa && pa.pick) || 0) ||
+        String(b).localeCompare(String(a))
+      );
+    });
+    const dropped = [];
+    const nDrop = owned.length - cap;
+    for (let i = 0; i < nDrop; i++) {
+      const k = owned[i];
+      delete pickOwnerByKey[k];
+      dropped.push(k);
+    }
+    return dropped;
   }
 
   /**
@@ -6032,6 +6183,11 @@ All models are based on over a decade of data that is collected from public sour
             if (!ownerOverride[r.id]) return r;
             return Object.assign({}, r, { owner: ownerOverride[r.id] });
           });
+
+    // Unequal pick hauls: keep nPicks = roster − keepers; drop highest #s (e.g. #96).
+    const pickCap = nPicksCap(cfg);
+    trimOwnerPicksToCap(pickOwnerByKey, picksByKey, sideA, pickCap);
+    trimOwnerPicksToCap(pickOwnerByKey, picksByKey, sideB, pickCap);
 
     const postA = teamTradeTotals(simRows, sideA, cfg, pickOwnerByKey, picksByKey);
     const postB = teamTradeTotals(simRows, sideB, cfg, pickOwnerByKey, picksByKey);
@@ -6317,19 +6473,34 @@ All models are based on over a decade of data that is collected from public sour
     );
   }
 
-  /** Chip when national pick carries usage risk (p_used &lt; 1). */
+  /** Chip when national pick carries usage risk (p_used &lt; 1). Never for KD/FA proxies. */
   function pickUsageChipHtml(assetOrPick) {
-    const row =
+    const proxy =
       (assetOrPick && assetOrPick.proxyRow) ||
       (assetOrPick && assetOrPick.row) ||
-      assetOrPick;
-    const a = row && (row._asset || row);
+      null;
+    const self = assetOrPick;
+    const isNat =
+      isNationalPickAsset(self) ||
+      isNationalPickAsset(proxy) ||
+      !!(self && self.proxyRow && isNationalPickAsset(self.proxyRow)) ||
+      (self && String(self.id || "").indexOf("PICK_") === 0);
+    if (!isNat) return "";
+    // Prefer the national asset itself; do not fall through to an FA proxy player.
+    const row = isNationalPickAsset(self)
+      ? self
+      : isNationalPickAsset(proxy)
+        ? proxy
+        : self && String(self.id || "").indexOf("PICK_") === 0
+          ? self
+          : null;
+    if (!row) return "";
+    const a = row._asset || row;
     let pUsed = null;
     const ev = (a && a.event) || (row && row.event) || "";
     const m = String(ev).match(/p_used\s*=\s*([0-9.]+)/i);
     if (m) pUsed = Number(m[1]);
     if (pUsed == null && a && a.probListed && a.probListed.length) {
-      // Late picks sometimes encode usage only in early probListed
       const pl0 = Number(a.probListed[0]);
       if (Number.isFinite(pl0) && pl0 > 0 && pl0 < 0.999) pUsed = pl0;
     }
@@ -7626,6 +7797,7 @@ All models are based on over a decade of data that is collected from public sour
 document.addEventListener("DOMContentLoaded", function () {
   if (window.FantasyDraftFutures) window.FantasyDraftFutures.init();
 });
+
 </script>
 
 <hr>
