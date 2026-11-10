@@ -185,6 +185,8 @@
      */
     league: null,
     accountUser: null,
+    /** Session flag: user closed the empty-state Import modal. */
+    importModalDismissed: false,
     trade: {
       otherTeam: "",
       search: "",
@@ -373,6 +375,8 @@
       panel.hidden = !on;
     });
     writeCfgToUrl(state.cfg);
+    if (next === "import") syncImportTabUi();
+    else hideImportModal();
     if (next === "pool" && state.table) {
       try {
         state.table.redraw(true);
@@ -380,6 +384,64 @@
         /* ignore */
       }
     }
+  }
+
+  function setImportModalStatus(msg, isError) {
+    const el = document.getElementById("fd-import-modal-status");
+    if (!el) return;
+    el.textContent = msg || "";
+    el.classList.toggle("is-error", !!isError);
+  }
+
+  function hideImportModal() {
+    const modal = document.getElementById("fd-import-modal");
+    if (modal) modal.hidden = true;
+  }
+
+  function showImportModal(mode) {
+    const modal = document.getElementById("fd-import-modal");
+    const guest = document.getElementById("fd-import-modal-guest");
+    const authed = document.getElementById("fd-import-modal-authed");
+    if (!modal) return;
+    const isGuest = mode !== "authed";
+    if (guest) guest.hidden = !isGuest;
+    if (authed) authed.hidden = isGuest;
+    modal.hidden = false;
+    setImportModalStatus("");
+  }
+
+  function syncImportManageVisibility() {
+    const manage = document.getElementById("fd-import-manage");
+    if (!manage) return;
+    manage.hidden = !leagueHasTeams(state.league);
+  }
+
+  function syncImportTabUi() {
+    syncImportManageVisibility();
+    if (leagueHasTeams(state.league)) {
+      hideImportModal();
+      return;
+    }
+    if (state.importModalDismissed) {
+      hideImportModal();
+      return;
+    }
+    showImportModal(state.accountUser ? "authed" : "guest");
+  }
+
+  function dismissImportModal() {
+    state.importModalDismissed = true;
+    hideImportModal();
+    syncImportManageVisibility();
+  }
+
+  function afterModalImportSuccess() {
+    state.importModalDismissed = false;
+    hideImportModal();
+    syncImportManageVisibility();
+    setImportModalStatus("League imported — opening Teams…");
+    setLeagueStatus("League imported — opening Teams…");
+    window.setTimeout(() => setActiveTab("teams"), 1000);
   }
 
   /** True when model still has draft picks for the first horizon season (e.g. PICK_2027_01). */
@@ -710,9 +772,12 @@
 
   function setLeagueStatus(msg, isError) {
     const el = document.getElementById("keeper-import-status");
-    if (!el) return;
-    el.textContent = msg || "";
-    el.classList.toggle("is-error", !!isError);
+    if (el) {
+      el.textContent = msg || "";
+      el.classList.toggle("is-error", !!isError);
+    }
+    const modalOpen = document.getElementById("fd-import-modal");
+    if (modalOpen && !modalOpen.hidden) setImportModalStatus(msg, isError);
   }
 
   function syncOwnerDropdownVisibility(league) {
@@ -776,6 +841,9 @@
     applyLeagueTypeUi(state.cfg);
     syncMyTeamSelect(null, state.cfg);
     updateAccountSyncUi();
+    state.importModalDismissed = false;
+    if (state.cfg.tab === "import") syncImportTabUi();
+    else syncImportManageVisibility();
     refresh();
   }
 
@@ -798,72 +866,81 @@
     syncMyTeamSelect(state.league, state.cfg);
     syncControlsToDom(state.cfg, state.seasons);
     updateAccountSyncUi();
+    syncImportManageVisibility();
   }
 
-  function handleKeeperCsvFile(file) {
-    if (!file) return;
+  function handleKeeperCsvFile(file, opts) {
+    const o = opts || {};
+    if (!file) return Promise.resolve(false);
     if (!state.data || !state.data.assets) {
       setLeagueStatus("Player data still loading — try again in a moment.", true);
-      return;
+      return Promise.resolve(false);
     }
-    const reader = new FileReader();
-    reader.onload = function () {
-      try {
-        const text = String(reader.result || "");
-        const matrix = parseCsvText(text);
-        const objects = csvRowsToObjects(matrix);
-        if (!objects.length) throw new Error("CSV has no data rows");
-        const cols = Object.keys(objects[0]);
-        if (!cols.some((c) => /^name$/i.test(c)) || !cols.some((c) => /^owner$/i.test(c))) {
-          throw new Error('Expected columns include "name" and "owner"');
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = async function () {
+        try {
+          const text = String(reader.result || "");
+          const matrix = parseCsvText(text);
+          const objects = csvRowsToObjects(matrix);
+          if (!objects.length) throw new Error("CSV has no data rows");
+          const cols = Object.keys(objects[0]);
+          if (!cols.some((c) => /^name$/i.test(c)) || !cols.some((c) => /^owner$/i.test(c))) {
+            throw new Error('Expected columns include "name" and "owner"');
+          }
+          const matched = matchKeeperPlayers(objects, state.data.assets);
+          if (!Object.keys(matched.teams).length) {
+            throw new Error("No fantasy teams found (every row was Free Agent?)");
+          }
+          const league = {
+            source: "keeper",
+            teams: matched.teams,
+            ownership: matched.ownership,
+            positions: matched.positions,
+            platform: { fileName: file.name || "players.csv", leagueType: "keeper" },
+            matchedOwned: matched.matchedOwned,
+            totalOwned: matched.totalOwned,
+            unmatchedOwnedCount: matched.unmatchedOwnedCount,
+            fromAccount: false
+          };
+          state.cfg.leagueType = "keeper";
+          applyImportedLeague(league, {
+            infer: { leagueType: "keeper" }
+          });
+          const missN = matched.unmatchedOwnedCount;
+          setLeagueStatus(
+            "Loaded " +
+              league.owners.length +
+              " teams · matched " +
+              matched.matchedOwned +
+              "/" +
+              matched.totalOwned +
+              " rostered players" +
+              (missN
+                ? " · " + missN + " owned unmatched (often delisted / not in model)"
+                : "")
+          );
+          await refresh();
+          if (o.autoSave) await saveLeagueToAccount();
+          if (o.redirectToTeams) afterModalImportSuccess();
+          resolve(true);
+        } catch (e) {
+          console.error(e);
+          state.league = null;
+          setLeagueStatus(
+            "Could not import CSV — " + (e && e.message ? e.message : "unknown error"),
+            true
+          );
+          refresh();
+          resolve(false);
         }
-        const matched = matchKeeperPlayers(objects, state.data.assets);
-        if (!Object.keys(matched.teams).length) {
-          throw new Error("No fantasy teams found (every row was Free Agent?)");
-        }
-        const league = {
-          source: "keeper",
-          teams: matched.teams,
-          ownership: matched.ownership,
-          positions: matched.positions,
-          platform: { fileName: file.name || "players.csv", leagueType: "keeper" },
-          matchedOwned: matched.matchedOwned,
-          totalOwned: matched.totalOwned,
-          unmatchedOwnedCount: matched.unmatchedOwnedCount,
-          fromAccount: false
-        };
-        state.cfg.leagueType = "keeper";
-        applyImportedLeague(league, {
-          infer: { leagueType: "keeper" }
-        });
-        const missN = matched.unmatchedOwnedCount;
-        setLeagueStatus(
-          "Loaded " +
-            league.owners.length +
-            " teams · matched " +
-            matched.matchedOwned +
-            "/" +
-            matched.totalOwned +
-            " rostered players" +
-            (missN
-              ? " · " + missN + " owned unmatched (often delisted / not in model)"
-              : "")
-        );
-        refresh();
-      } catch (e) {
-        console.error(e);
-        state.league = null;
-        setLeagueStatus(
-          "Could not import CSV — " + (e && e.message ? e.message : "unknown error"),
-          true
-        );
-        refresh();
-      }
-    };
-    reader.onerror = function () {
-      setLeagueStatus("Failed to read file.", true);
-    };
-    reader.readAsText(file);
+      };
+      reader.onerror = function () {
+        setLeagueStatus("Failed to read file.", true);
+        resolve(false);
+      };
+      reader.readAsText(file);
+    });
   }
 
   // ── League type defaults / account sync / AFL import ───────────────────────
@@ -1141,6 +1218,7 @@
     const { user } = await sbj.authReady;
     state.accountUser = user || null;
     updateAccountSyncUi();
+    if (state.cfg.tab === "import") syncImportTabUi();
     if (!user) return;
     try {
       const { doc, getDoc } = await import(
@@ -1177,12 +1255,12 @@
     const sbj = await waitForSbjAuth();
     if (!sbj || !sbj.currentUser) {
       setLeagueStatus("Log in to import an AFL Fantasy league.", true);
-      return;
+      return false;
     }
     const leagueHash = parseAflShareInput(urlOrHash);
     if (!leagueHash) {
       setLeagueStatus("Paste a valid AFL Fantasy draft share URL.", true);
-      return;
+      return false;
     }
     setLeagueStatus("Fetching AFL Fantasy league…");
     try {
@@ -1221,12 +1299,15 @@
       );
       await refresh();
       if (o.autoSave) await saveLeagueToAccount();
+      if (o.redirectToTeams) afterModalImportSuccess();
+      return true;
     } catch (e) {
       console.error(e);
       setLeagueStatus(
         "AFL import failed — " + (e && e.message ? e.message : "unknown error"),
         true
       );
+      return false;
     }
   }
 
@@ -4923,6 +5004,61 @@
       });
     }
 
+    const importModalClose = document.getElementById("fd-import-modal-close");
+    if (importModalClose) {
+      importModalClose.addEventListener("click", () => dismissImportModal());
+    }
+    const importModalBackdrop = document.getElementById("fd-import-modal-backdrop");
+    if (importModalBackdrop) {
+      importModalBackdrop.addEventListener("click", () => dismissImportModal());
+    }
+    const getStarted = document.getElementById("fd-import-get-started");
+    if (getStarted) {
+      getStarted.addEventListener("click", (e) => {
+        e.preventDefault();
+        const q = new URLSearchParams(window.location.search);
+        q.set("tab", "import");
+        const redirect = encodeURIComponent(
+          window.location.pathname + "?" + q.toString()
+        );
+        window.location.href = "/login.html?redirect=" + redirect;
+      });
+    }
+    const aflModalBtn = document.getElementById("afl-import-btn-modal");
+    const aflModalInput = document.getElementById("afl-share-url-modal");
+    const runModalAflImport = () => {
+      if (!aflModalInput) return;
+      importAflLeagueFromShare(aflModalInput.value, {
+        autoSave: true,
+        redirectToTeams: true
+      });
+    };
+    if (aflModalBtn) aflModalBtn.addEventListener("click", runModalAflImport);
+    if (aflModalInput) {
+      aflModalInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          runModalAflImport();
+        }
+      });
+      aflModalInput.addEventListener("paste", () => {
+        window.setTimeout(runModalAflImport, 0);
+      });
+    }
+    const keeperModalInput = document.getElementById("keeper-csv-input-modal");
+    const keeperModalBtn = document.getElementById("keeper-import-btn-modal");
+    const runModalKeeperImport = () => {
+      const file = keeperModalInput && keeperModalInput.files && keeperModalInput.files[0];
+      if (!file) {
+        setLeagueStatus("Choose a Keeper Fantasy CSV to import.", true);
+        return;
+      }
+      handleKeeperCsvFile(file, { autoSave: true, redirectToTeams: true });
+    };
+    if (keeperModalBtn) {
+      keeperModalBtn.addEventListener("click", runModalKeeperImport);
+    }
+
     const doList = document.getElementById("fd-draft-order-list");
     if (doList) {
       doList.addEventListener("click", (e) => {
@@ -4987,6 +5123,7 @@
       await loadLeagueFromAccount();
       syncControlsToDom(state.cfg, state.seasons);
       applyLeagueTypeUi(state.cfg);
+      syncImportManageVisibility();
       setActiveTab(state.cfg.tab || "pool");
       if (loading) loading.style.display = "none";
       if (shell) {
