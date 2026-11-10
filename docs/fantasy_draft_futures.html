@@ -2407,17 +2407,6 @@ display: none;
       text-align: right; font-weight: 700; font-size: 11px;
       font-variant-numeric: tabular-nums;
     }
-    }
-    #fd-import-source[hidden],
-    #fd-draft-order-block[hidden],
-    #fd-import-actions[hidden],
-    #fd-keepers-finalised-row[hidden],
-    #fd-keepers-stepper-row[hidden],
-    #fd-pick-trading-row[hidden],
-    #fd-import-pane-guest[hidden],
-    #fd-import-pane-empty[hidden],
-    #fd-import-pane-league[hidden],
-    #fd-import-refresh-tip[hidden] { display: none !important; }
     .fd-import-refresh-wrap {
       display: inline-flex; align-items: center; gap: 6px;
     }
@@ -2448,9 +2437,21 @@ display: none;
     .fd-import-guest-card p {
       margin: 0 0 14px; font-size: 13px; line-height: 1.5; color: #555;
     }
-    .fd-import-empty-split {
+    .fd-import-empty-split:not([hidden]) {
       display: grid; grid-template-columns: 1fr; gap: 10px;
     }
+    #fd-import-source[hidden],
+    #fd-import-squad[hidden],
+    #fd-import-options[hidden],
+    #fd-draft-order-block[hidden],
+    #fd-import-actions[hidden],
+    #fd-keepers-finalised-row[hidden],
+    #fd-keepers-stepper-row[hidden],
+    #fd-pick-trading-row[hidden],
+    #fd-import-pane-guest[hidden],
+    #fd-import-pane-empty[hidden],
+    #fd-import-pane-league[hidden],
+    #fd-import-refresh-tip[hidden] { display: none !important; }
     #fd-import-layout {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

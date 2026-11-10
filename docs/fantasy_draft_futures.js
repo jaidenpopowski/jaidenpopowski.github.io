@@ -416,10 +416,14 @@
     const leaguePane = document.getElementById("fd-import-pane-league");
     const draft = document.getElementById("fd-draft-order-block");
     const source = document.getElementById("fd-import-source");
+    const squad = document.getElementById("fd-import-squad");
+    const options = document.getElementById("fd-import-options");
     if (source) source.hidden = false;
     if (guest) guest.hidden = !(!hasLeague && !loggedIn);
     if (empty) empty.hidden = !(!hasLeague && loggedIn);
     if (leaguePane) leaguePane.hidden = !hasLeague;
+    if (squad) squad.hidden = !hasLeague;
+    if (options) options.hidden = !hasLeague;
     if (draft) draft.hidden = !hasLeague;
     if (hasLeague) renderImportSourceCard();
   }
@@ -1362,26 +1366,31 @@
     if (!sbj) return;
     const { user } = await sbj.authReady;
     state.accountUser = user || null;
-    updateAccountSyncUi();
-    if (state.cfg.tab === "import") syncImportTabUi();
-    if (!user) return;
+    if (!user) {
+      updateAccountSyncUi();
+      return;
+    }
     try {
       const { doc, getDoc } = await import(
         "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
       );
       const snap = await getDoc(doc(sbj.db, "users", user.uid));
-      if (!snap.exists()) return;
-      const data = snap.data() || {};
-      if (!data.league) return;
-      hydrateLeagueFromPersist(data.league);
-      setLeagueStatus("Loaded league from your account.");
-      await refresh();
+      if (snap.exists()) {
+        const data = snap.data() || {};
+        if (data.league) {
+          hydrateLeagueFromPersist(data.league);
+          setLeagueStatus("Loaded league from your account.");
+          await refresh();
+        }
+      }
     } catch (e) {
       console.error(e);
       setLeagueStatus(
         "Could not load saved league — " + (e && e.message ? e.message : "error"),
         true
       );
+    } finally {
+      updateAccountSyncUi();
     }
   }
 
