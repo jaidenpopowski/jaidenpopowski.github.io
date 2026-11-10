@@ -5,6 +5,8 @@
   "use strict";
 
   const POS_KEYS = ["DEF", "MID", "RUC", "FWD"];
+  /** Squad slots shown in Import steppers (VORP still uses POS_KEYS only). */
+  const SLOT_KEYS = ["DEF", "MID", "RUC", "FWD", "FLX"];
   const STORAGE_URL =
     "https://firebasestorage.googleapis.com/v0/b/statsbyjaiden.firebasestorage.app/o/fantasy_draft_futures.json?alt=media";
   const HEADSHOT_BASE =
@@ -16,10 +18,14 @@
   /** Keeper CSV owner strings treated as unowned (not a fantasy team). */
   const UNOWNED_OWNER_RE =
     /^(free\s*agents?|fa|rfa|waivers?|restricted\s*free\s*agent)$/i;
+  const MONTH_NAMES = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ];
 
   const DEFAULT_CFG = {
     teams: 10,
-    slots: { DEF: 5, MID: 7, RUC: 1, FWD: 5 },
+    slots: { DEF: 5, MID: 7, RUC: 1, FWD: 5, FLX: 0 },
     bench: 12,
     keeperCount: 20,
     keeperCut: null,
@@ -33,7 +39,10 @@
     search: "",
     tab: "pool",
     /** redraft | keeper | dynasty | null */
-    leagueType: null
+    leagueType: null,
+    /** snake | linear */
+    draftFormat: "snake",
+    pickTrading: true
   };
 
   const FD_TABS = ["pool", "planner", "teams", "trades", "ladder", "import", "help"];
@@ -411,9 +420,14 @@
   }
 
   function syncImportManageVisibility() {
-    const manage = document.getElementById("fd-import-manage");
-    if (!manage) return;
-    manage.hidden = !leagueHasTeams(state.league);
+    const hasLeague = leagueHasTeams(state.league);
+    const source = document.getElementById("fd-import-source");
+    const draft = document.getElementById("fd-draft-order-block");
+    const actions = document.getElementById("fd-import-actions");
+    if (source) source.hidden = !hasLeague;
+    if (draft) draft.hidden = !hasLeague;
+    if (actions) actions.hidden = !hasLeague;
+    if (hasLeague) renderImportSourceCard();
   }
 
   function syncImportTabUi() {
@@ -433,6 +447,123 @@
     state.importModalDismissed = true;
     hideImportModal();
     syncImportManageVisibility();
+  }
+
+  function parseKeeperCsvMeta(fileName) {
+    const raw = String(fileName || "").replace(/\.csv$/i, "").trim();
+    const stampRe = /_(\d{8})_(\d{4})$/;
+    const m = raw.match(stampRe);
+    let leagueName = raw;
+    let fileStamp = "";
+    let updatedAt = "";
+    if (m) {
+      fileStamp = m[1] + "_" + m[2];
+      leagueName = raw.slice(0, m.index).replace(/_players$/i, "");
+      const y = Number(m[1].slice(0, 4));
+      const mo = Number(m[1].slice(4, 6));
+      const d = Number(m[1].slice(6, 8));
+      const hh = m[2].slice(0, 2);
+      const mm = m[2].slice(2, 4);
+      if (y && mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+        updatedAt = y + "-" + String(mo).padStart(2, "0") + "-" +
+          String(d).padStart(2, "0") + "T" + hh + ":" + mm + ":00";
+      }
+    }
+    leagueName = leagueName.replace(/_/g, " ").replace(/\s+/g, " ").trim() || "Keeper league";
+    return { leagueName, fileStamp, updatedAt, fileName: fileName || "" };
+  }
+
+  function formatImportDate(isoOrStamp) {
+    if (!isoOrStamp) return "—";
+    const s = String(isoOrStamp);
+    let dt = null;
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+      dt = new Date(s);
+    } else if (/^\d{8}_\d{4}$/.test(s)) {
+      const y = Number(s.slice(0, 4));
+      const mo = Number(s.slice(4, 6));
+      const d = Number(s.slice(6, 8));
+      dt = new Date(y, mo - 1, d);
+    }
+    if (!dt || !Number.isFinite(dt.getTime())) return "—";
+    return dt.getDate() + " " + MONTH_NAMES[dt.getMonth()] + " " + dt.getFullYear();
+  }
+
+  function ensureDefaultMyTeam(league, cfg) {
+    if (!league || !league.owners || !league.owners.length) return;
+    if (cfg.myTeam && league.owners.indexOf(cfg.myTeam) >= 0) return;
+    cfg.myTeam = league.owners[0];
+  }
+
+  function renderImportSourceCard() {
+    const league = state.league;
+    const card = document.getElementById("fd-import-source-card");
+    const title = document.getElementById("fd-import-source-title");
+    const nameEl = document.getElementById("fd-import-league-name");
+    const updatedEl = document.getElementById("fd-import-last-updated");
+    const countEl = document.getElementById("fd-import-team-count");
+    const refreshBtn = document.getElementById("fd-league-refresh");
+    if (!card || !leagueHasTeams(league)) return;
+
+    const isAfl = league.source === "afl";
+    card.classList.toggle("fd-import-panel-afl", isAfl);
+    card.classList.toggle("fd-import-panel-keeper", !isAfl);
+    if (title) title.textContent = isAfl ? "AFL Fantasy" : "Keeper Fantasy";
+
+    const platform = league.platform || {};
+    let leagueName = platform.leagueName || "";
+    if (!leagueName && platform.fileName) {
+      leagueName = parseKeeperCsvMeta(platform.fileName).leagueName;
+    }
+    if (nameEl) nameEl.textContent = leagueName || "—";
+
+    const updatedRaw =
+      league.updatedAt ||
+      platform.fileStamp ||
+      platform.updatedAt ||
+      "";
+    if (updatedEl) updatedEl.textContent = formatImportDate(updatedRaw);
+
+    const nTeams = (league.owners && league.owners.length) || 0;
+    if (countEl) countEl.textContent = String(nTeams);
+
+    syncImportMyTeamSelect(league, state.cfg);
+
+    if (refreshBtn) {
+      const canRefresh =
+        isAfl
+          ? !!(platform.leagueHash)
+          : true;
+      refreshBtn.style.display = canRefresh ? "" : "none";
+      refreshBtn.disabled = !canRefresh;
+      refreshBtn.textContent = "Refresh";
+    }
+  }
+
+  function syncImportMyTeamSelect(league, cfg) {
+    const sel = document.getElementById("fd-import-myTeam");
+    if (!sel) return;
+    const hasLeague = leagueHasTeams(league);
+    if (!hasLeague) {
+      sel.innerHTML = "";
+      return;
+    }
+    const names = league.owners || [];
+    ensureDefaultMyTeam(league, cfg);
+    const cur = cfg.myTeam && names.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : names[0] || "";
+    cfg.myTeam = cur;
+    sel.innerHTML = names
+      .map(
+        (o) =>
+          '<option value="' +
+          escapeHtml(o) +
+          '"' +
+          (o === cur ? " selected" : "") +
+          ">" +
+          escapeHtml(o) +
+          "</option>"
+      )
+      .join("");
   }
 
   function afterModalImportSuccess() {
@@ -796,30 +927,33 @@
     const sel = document.getElementById("cfg-myTeam");
     syncOwnerDropdownVisibility(league);
     rebuildOwnerDropdown(league, cfg);
-    if (!wrap || !sel) return;
-    const hasLeague = leagueHasTeams(league);
-    wrap.classList.toggle("is-visible", hasLeague);
-    if (!hasLeague) {
-      sel.innerHTML = "";
-      return;
+    if (wrap && sel) {
+      const hasLeague = leagueHasTeams(league);
+      wrap.classList.toggle("is-visible", hasLeague);
+      if (!hasLeague) {
+        sel.innerHTML = "";
+      } else {
+        const names = league.owners || [];
+        ensureDefaultMyTeam(league, cfg);
+        const cur = cfg.myTeam && names.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : names[0] || "";
+        cfg.myTeam = cur;
+        sel.innerHTML =
+          '<option value="">— Select —</option>' +
+          names
+            .map(
+              (o) =>
+                '<option value="' +
+                escapeHtml(o) +
+                '"' +
+                (o === cur ? " selected" : "") +
+                ">" +
+                escapeHtml(o) +
+                "</option>"
+            )
+            .join("");
+      }
     }
-    const names = league.owners || [];
-    const cur = cfg.myTeam && names.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : "";
-    if (cfg.myTeam && !cur) cfg.myTeam = "";
-    sel.innerHTML =
-      '<option value="">— Select —</option>' +
-      names
-        .map(
-          (o) =>
-            '<option value="' +
-            escapeHtml(o) +
-            '"' +
-            (o === cur ? " selected" : "") +
-            ">" +
-            escapeHtml(o) +
-            "</option>"
-        )
-        .join("");
+    syncImportMyTeamSelect(league, cfg);
   }
 
   function clearKeeperLeague() {
@@ -833,10 +967,8 @@
     state.trade.give = [];
     state.trade.get = [];
     state.teamLabels = Object.create(null);
-    const input = document.getElementById("keeper-csv-input");
-    if (input) input.value = "";
-    const aflUrl = document.getElementById("afl-share-url");
-    if (aflUrl) aflUrl.value = "";
+    const refreshInput = document.getElementById("keeper-csv-refresh-input");
+    if (refreshInput) refreshInput.value = "";
     setLeagueStatus("");
     applyLeagueTypeUi(state.cfg);
     syncMyTeamSelect(null, state.cfg);
@@ -850,6 +982,9 @@
   function applyImportedLeague(league, opts) {
     const o = opts || {};
     syncLeagueOwnersFromTeams(league);
+    const nowIso = new Date().toISOString();
+    if (!league.createdAt) league.createdAt = nowIso;
+    league.updatedAt = o.updatedAt || nowIso;
     state.league = league;
     const nTeams = (league.owners && league.owners.length) || 0;
     if (nTeams >= 2) {
@@ -860,6 +995,7 @@
     if (state.cfg.myTeam && league.owners.indexOf(state.cfg.myTeam) < 0) {
       state.cfg.myTeam = "";
     }
+    ensureDefaultMyTeam(league, state.cfg);
     if (o.settings) applyLeagueSettingsToCfg(o.settings, state.cfg);
     applyLeagueTypeDefaults(state.cfg, league, o.infer || null);
     applyLeagueTypeUi(state.cfg);
@@ -892,20 +1028,32 @@
           if (!Object.keys(matched.teams).length) {
             throw new Error("No fantasy teams found (every row was Free Agent?)");
           }
+          const meta = parseKeeperCsvMeta(file.name || "players.csv");
+          const prevCreated =
+            state.league && state.league.source === "keeper"
+              ? state.league.createdAt
+              : null;
           const league = {
             source: "keeper",
             teams: matched.teams,
             ownership: matched.ownership,
             positions: matched.positions,
-            platform: { fileName: file.name || "players.csv", leagueType: "keeper" },
+            platform: {
+              fileName: meta.fileName || file.name || "players.csv",
+              leagueName: meta.leagueName,
+              fileStamp: meta.fileStamp,
+              leagueType: "keeper"
+            },
             matchedOwned: matched.matchedOwned,
             totalOwned: matched.totalOwned,
             unmatchedOwnedCount: matched.unmatchedOwnedCount,
-            fromAccount: false
+            fromAccount: false,
+            createdAt: prevCreated || undefined
           };
           state.cfg.leagueType = "keeper";
           applyImportedLeague(league, {
-            infer: { leagueType: "keeper" }
+            infer: { leagueType: "keeper" },
+            updatedAt: meta.updatedAt || undefined
           });
           const missN = matched.unmatchedOwnedCount;
           setLeagueStatus(
@@ -967,7 +1115,7 @@
       cfg.keeperCut = settings.keeperCut;
     }
     if (settings.slots && typeof settings.slots === "object") {
-      POS_KEYS.forEach((k) => {
+      SLOT_KEYS.forEach((k) => {
         if (settings.slots[k] != null) cfg.slots[k] = Number(settings.slots[k]) || 0;
       });
     }
@@ -975,6 +1123,12 @@
     if (Array.isArray(settings.draftOrder)) cfg.draftOrder = settings.draftOrder.slice();
     if (settings.myTeam != null) cfg.myTeam = settings.myTeam || "";
     if (settings.leagueType) cfg.leagueType = settings.leagueType;
+    if (settings.draftFormat === "linear" || settings.draftFormat === "snake") {
+      cfg.draftFormat = settings.draftFormat;
+    }
+    if (settings.pickTrading === true || settings.pickTrading === false) {
+      cfg.pickTrading = settings.pickTrading;
+    }
     return cfg;
   }
 
@@ -1000,7 +1154,7 @@
     };
 
     if (infer && infer.slots) {
-      POS_KEYS.forEach((k) => {
+      SLOT_KEYS.forEach((k) => {
         if (infer.slots[k] != null) cfg.slots[k] = Number(infer.slots[k]) || 0;
       });
     }
@@ -1034,7 +1188,7 @@
   function applyLeagueTypeUi(cfg) {
     const lt = cfg && cfg.leagueType;
     const hidePlanner = lt === "redraft";
-    const hideCut = lt === "dynasty" || lt === "redraft";
+    const hideCut = lt !== "keeper";
 
     document.querySelectorAll('.fd-tab-btn[data-tab="planner"]').forEach((btn) => {
       btn.style.display = hidePlanner ? "none" : "";
@@ -1043,18 +1197,14 @@
       setActiveTab("pool");
     }
 
-    const cutLabel = document.getElementById("cfg-keeperCut");
-    const cutWrap = cutLabel && cutLabel.closest ? cutLabel.closest("label") : null;
-    if (cutWrap) cutWrap.style.display = hideCut ? "none" : "";
+    const finalisedRow = document.getElementById("fd-keepers-finalised-row");
+    if (finalisedRow) finalisedRow.hidden = hideCut;
 
-    const keepersInput = document.getElementById("cfg-keepers");
-    const keepersWrap =
-      keepersInput && keepersInput.closest ? keepersInput.closest("label") : null;
-    if (keepersWrap && lt === "redraft") {
-      keepersWrap.style.display = "none";
-    } else if (keepersWrap) {
-      keepersWrap.style.display = "";
-    }
+    const keepersRow = document.getElementById("fd-keepers-stepper-row");
+    if (keepersRow) keepersRow.style.display = lt === "redraft" ? "none" : "";
+
+    const typeSel = document.getElementById("cfg-leagueType");
+    if (typeSel && lt) typeSel.value = lt;
   }
 
   function buildLeaguePersistPayload() {
@@ -1066,10 +1216,15 @@
       .map((name) => teamIdByName(league, name))
       .filter(Boolean);
     const myTeamId = teamIdByName(league, cfg.myTeam);
+    const nowIso = new Date().toISOString();
+    const createdAt = league.createdAt || nowIso;
+    league.createdAt = createdAt;
+    league.updatedAt = nowIso;
 
     return {
       source: league.source || "keeper",
-      updatedAt: new Date().toISOString(),
+      createdAt,
+      updatedAt: nowIso,
       platform: league.platform || {},
       teams: league.teams,
       ownership: league.ownership || {},
@@ -1082,7 +1237,9 @@
         endSeason: cfg.endSeason,
         draftOrder: draftOrderIds,
         myTeam: myTeamId || "",
-        leagueType: cfg.leagueType || null
+        leagueType: cfg.leagueType || null,
+        draftFormat: cfg.draftFormat || "snake",
+        pickTrading: cfg.pickTrading !== false
       }
     };
   }
@@ -1095,7 +1252,9 @@
       ownership: raw.ownership || {},
       positions: raw.positions || {},
       platform: raw.platform || {},
-      fromAccount: true
+      fromAccount: true,
+      createdAt: raw.createdAt || null,
+      updatedAt: raw.updatedAt || null
     };
     syncLeagueOwnersFromTeams(league);
 
@@ -1116,39 +1275,29 @@
         endSeason: settings.endSeason,
         leagueType: settings.leagueType,
         draftOrder: draftNames,
-        myTeam: myName
+        myTeam: myName,
+        draftFormat: settings.draftFormat,
+        pickTrading: settings.pickTrading
       },
       state.cfg
     );
+    ensureDefaultMyTeam(league, state.cfg);
     applyLeagueTypeUi(state.cfg);
     syncMyTeamSelect(state.league, state.cfg);
     syncControlsToDom(state.cfg, state.seasons);
     updateAccountSyncUi();
+    syncImportManageVisibility();
     return league;
   }
 
   function updateAccountSyncUi() {
-    const guest = document.getElementById("fd-account-guest");
-    const authed = document.getElementById("fd-account-authed");
     const saveBtn = document.getElementById("fd-league-save");
     const delBtn = document.getElementById("fd-league-delete");
-    const refreshBtn = document.getElementById("fd-league-refresh");
-    const loggedIn = !!state.accountUser;
-    if (guest) guest.style.display = loggedIn ? "none" : "";
-    if (authed) authed.style.display = loggedIn ? "" : "none";
     const hasLeague = leagueHasTeams(state.league);
-    if (saveBtn) saveBtn.disabled = !hasLeague;
+    const loggedIn = !!state.accountUser;
+    if (saveBtn) saveBtn.disabled = !hasLeague || !loggedIn;
     if (delBtn) delBtn.disabled = !hasLeague;
-    if (refreshBtn) {
-      const canRefresh =
-        hasLeague &&
-        state.league &&
-        state.league.source === "afl" &&
-        state.league.platform &&
-        state.league.platform.leagueHash;
-      refreshBtn.style.display = canRefresh ? "" : "none";
-      refreshBtn.disabled = !canRefresh;
-    }
+    syncImportManageVisibility();
   }
 
   async function waitForSbjAuth(timeoutMs) {
@@ -1178,9 +1327,14 @@
       );
       const userRef = doc(sbj.db, "users", sbj.currentUser.uid);
       await setDoc(userRef, { league: payload }, { merge: true });
-      if (state.league) state.league.fromAccount = true;
+      if (state.league) {
+        state.league.fromAccount = true;
+        state.league.createdAt = payload.createdAt;
+        state.league.updatedAt = payload.updatedAt;
+      }
       setLeagueStatus("Saved league to your account.");
       updateAccountSyncUi();
+      renderImportSourceCard();
       writeCfgToUrl(state.cfg);
     } catch (e) {
       console.error(e);
@@ -1277,13 +1431,18 @@
       if (!res.ok) {
         throw new Error((body && body.error) || "HTTP " + res.status);
       }
+      const prevCreated =
+        state.league && state.league.source === "afl"
+          ? state.league.createdAt
+          : null;
       const league = {
         source: "afl",
         teams: body.teams || {},
         ownership: body.ownership || {},
         positions: {},
         platform: body.platform || { leagueHash },
-        fromAccount: !!o.fromAccount
+        fromAccount: !!o.fromAccount,
+        createdAt: prevCreated || undefined
       };
       applyImportedLeague(league, { infer: body.infer || null });
       const nOwn = Object.keys(league.ownership).length;
@@ -3139,13 +3298,14 @@
     return projectedLadderBestToWorst(rows, league, cfg);
   }
 
-  function snakeDraftSlots(ownersBestToWorst, rounds) {
+  function snakeDraftSlots(ownersBestToWorst, rounds, draftFormat) {
     const slots = [];
+    const linear = draftFormat === "linear";
     for (let r = 0; r < rounds; r++) {
       const order =
-        r % 2 === 0
-          ? ownersBestToWorst.slice().reverse() // R1: worst picks first
-          : ownersBestToWorst.slice(); // R2: best picks first
+        linear || r % 2 === 0
+          ? ownersBestToWorst.slice().reverse() // R1 / linear: worst picks first
+          : ownersBestToWorst.slice(); // Snake even rounds: best picks first
       order.forEach((owner) => {
         slots.push({ owner, round: r + 1 });
       });
@@ -3198,7 +3358,7 @@
                   a.owner.localeCompare(b.owner)
               )
               .map((t) => t.owner);
-      const slots = snakeDraftSlots(ladder, perTeam);
+      const slots = snakeDraftSlots(ladder, perTeam, cfg.draftFormat || "snake");
       const singleYear = yearCount === 1;
       const usedFaIds = new Set();
       slots.forEach((slot, i) => {
@@ -4599,32 +4759,27 @@
     if (!list) return;
     const league = state.league;
     if (!league || !league.owners || !league.owners.length) {
-      if (block) block.style.display = "none";
+      if (block) block.hidden = true;
       list.innerHTML = "";
       return;
     }
-    if (block) block.style.display = "";
+    if (block && state.cfg.tab === "import") block.hidden = false;
     const order = currentDraftOrderList(state.rows, league, state.cfg);
     const usingCustom = !!(state.cfg.draftOrder && state.cfg.draftOrder.length);
+    const fmt = state.cfg.draftFormat === "linear" ? "linear" : "snake";
     list.innerHTML = order
       .map((owner, i) => {
-        const n = order.length;
         return (
           '<li data-owner="' +
           escapeHtml(owner) +
-          '">' +
+          '" draggable="true">' +
           '<span class="fd-do-rank">#' +
           (i + 1) +
           "</span>" +
           '<span class="fd-do-name">' +
           escapeHtml(owner) +
           "</span>" +
-          '<button type="button" data-do-act="up"' +
-          (i === 0 ? " disabled" : "") +
-          ">Up</button>" +
-          '<button type="button" data-do-act="down"' +
-          (i >= n - 1 ? " disabled" : "") +
-          ">Down</button>" +
+          '<button type="button" class="fd-do-handle" aria-label="Drag to reorder" title="Drag to reorder">⠿</button>' +
           "</li>"
         );
       })
@@ -4632,25 +4787,67 @@
     const hint = block && block.querySelector(".fd-draft-order-help");
     if (hint) {
       hint.textContent = usingCustom
-        ? "Custom order (best → worst). Round 1 snakes worst → best."
-        : "Using projected ladder (best → worst). Reorder to lock a custom order.";
+        ? "Custom order (best → worst)" +
+          (fmt === "snake" ? ". Snake reverses odd rounds." : ". Linear keeps the same order each round.")
+        : "Using projected ladder (best → worst). Drag to lock a custom order.";
     }
+    bindDraftOrderDrag(list);
   }
 
-  function moveDraftOrder(owner, dir) {
+  function bindDraftOrderDrag(list) {
+    if (!list || list.dataset.dndBound === "1") return;
+    list.dataset.dndBound = "1";
+    let dragOwner = null;
+
+    list.addEventListener("dragstart", (e) => {
+      const li = e.target && e.target.closest ? e.target.closest("li[data-owner]") : null;
+      if (!li) return;
+      dragOwner = li.getAttribute("data-owner");
+      li.classList.add("fd-do-dragging");
+      if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", dragOwner || "");
+      }
+    });
+    list.addEventListener("dragend", () => {
+      list.querySelectorAll(".fd-do-dragging, .fd-do-drag-over").forEach((el) => {
+        el.classList.remove("fd-do-dragging", "fd-do-drag-over");
+      });
+      dragOwner = null;
+    });
+    list.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      const li = e.target && e.target.closest ? e.target.closest("li[data-owner]") : null;
+      list.querySelectorAll(".fd-do-drag-over").forEach((el) => el.classList.remove("fd-do-drag-over"));
+      if (li) li.classList.add("fd-do-drag-over");
+      if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+    });
+    list.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const li = e.target && e.target.closest ? e.target.closest("li[data-owner]") : null;
+      list.querySelectorAll(".fd-do-dragging, .fd-do-drag-over").forEach((el) => {
+        el.classList.remove("fd-do-dragging", "fd-do-drag-over");
+      });
+      if (!li || !dragOwner) return;
+      const targetOwner = li.getAttribute("data-owner");
+      if (!targetOwner || targetOwner === dragOwner) return;
+      reorderDraftOrder(dragOwner, targetOwner);
+      dragOwner = null;
+    });
+  }
+
+  function reorderDraftOrder(fromOwner, toOwner) {
     const league = state.league;
     if (!league) return;
     let order = (state.cfg.draftOrder && state.cfg.draftOrder.length
       ? state.cfg.draftOrder.slice()
       : currentDraftOrderList(state.rows, league, state.cfg)
     ).slice();
-    const i = order.indexOf(owner);
-    if (i < 0) return;
-    const j = i + dir;
-    if (j < 0 || j >= order.length) return;
-    const tmp = order[i];
-    order[i] = order[j];
-    order[j] = tmp;
+    const from = order.indexOf(fromOwner);
+    const to = order.indexOf(toOwner);
+    if (from < 0 || to < 0 || from === to) return;
+    order.splice(from, 1);
+    order.splice(to, 0, fromOwner);
     state.cfg.draftOrder = order;
     refresh();
   }
@@ -4692,7 +4889,10 @@
     setVal("cfg-teams", cfg.teams);
     setVal("cfg-bench", cfg.bench);
     setVal("cfg-keepers", cfg.keeperCount);
-    POS_KEYS.forEach((k) => setVal("cfg-" + k.toLowerCase(), cfg.slots[k]));
+    SLOT_KEYS.forEach((k) => {
+      if (cfg.slots[k] == null) cfg.slots[k] = k === "FLX" ? 0 : cfg.slots[k] || 0;
+      setVal("cfg-" + k.toLowerCase(), cfg.slots[k] || 0);
+    });
     const endSel = document.getElementById("cfg-endSeason");
     if (endSel && seasons.length) {
       endSel.innerHTML = seasons
@@ -4701,14 +4901,25 @@
       cfg.endSeason = cfg.endSeason || seasons[seasons.length - 1];
       endSel.value = String(cfg.endSeason);
     }
-    const cut = document.getElementById("cfg-keeperCut");
-    if (cut) cut.checked = !!resolveKeeperCut(cfg, state.data, seasons);
+    const finalised = document.getElementById("cfg-keepersFinalised");
+    if (finalised) {
+      // Keepers finalised ON ⇔ keeperCut false
+      const cut = resolveKeeperCut(cfg, state.data, seasons);
+      finalised.checked = cut === false;
+    }
+    const typeSel = document.getElementById("cfg-leagueType");
+    if (typeSel) typeSel.value = cfg.leagueType || "keeper";
+    const fmtSel = document.getElementById("cfg-draftFormat");
+    if (fmtSel) fmtSel.value = cfg.draftFormat === "linear" ? "linear" : "snake";
+    const pickEl = document.getElementById("cfg-pickTrading");
+    if (pickEl) pickEl.checked = cfg.pickTrading !== false;
     setVal("cfg-search", cfg.search || "");
     document.querySelectorAll(".pos-filter-btn").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.pos === (cfg.posFilter || "ALL"));
     });
     syncClubDropdown(cfg);
     syncMyTeamSelect(state.league, cfg);
+    applyLeagueTypeUi(cfg);
   }
 
   function updateClubDropdownLabel(cfg) {
@@ -4828,18 +5039,25 @@
     cfg.teams = Math.max(2, num("cfg-teams", cfg.teams));
     cfg.bench = Math.max(0, num("cfg-bench", cfg.bench));
     cfg.keeperCount = Math.max(0, num("cfg-keepers", cfg.keeperCount));
-    POS_KEYS.forEach((k) => {
-      cfg.slots[k] = Math.max(0, num("cfg-" + k.toLowerCase(), cfg.slots[k]));
+    SLOT_KEYS.forEach((k) => {
+      cfg.slots[k] = Math.max(0, num("cfg-" + k.toLowerCase(), cfg.slots[k] || 0));
     });
     const endSel = document.getElementById("cfg-endSeason");
     if (endSel) cfg.endSeason = parseInt(endSel.value, 10);
-    // Only persist cut when the cut checkbox itself changed (keep null auto-default)
     if (o.includeCut) {
-      const cut = document.getElementById("cfg-keeperCut");
-      if (cut) cfg.keeperCut = cut.checked;
+      const finalised = document.getElementById("cfg-keepersFinalised");
+      if (finalised) cfg.keeperCut = !finalised.checked;
     }
+    const typeSel = document.getElementById("cfg-leagueType");
+    if (typeSel && typeSel.value) cfg.leagueType = typeSel.value;
+    const fmtSel = document.getElementById("cfg-draftFormat");
+    if (fmtSel) cfg.draftFormat = fmtSel.value === "linear" ? "linear" : "snake";
+    const pickEl = document.getElementById("cfg-pickTrading");
+    if (pickEl) cfg.pickTrading = !!pickEl.checked;
     const my = document.getElementById("cfg-myTeam");
     if (my) cfg.myTeam = my.value || "";
+    const importMy = document.getElementById("fd-import-myTeam");
+    if (importMy && importMy.value) cfg.myTeam = importMy.value;
     const search = document.getElementById("cfg-search");
     if (search) cfg.search = search.value.trim();
     return cfg;
@@ -4858,6 +5076,12 @@
     };
   }
 
+  function onImportSettingsChanged(extra) {
+    readControlsFromDom(extra || {});
+    applyLeagueTypeUi(state.cfg);
+    refresh();
+  }
+
   function bindControls() {
     const ids = [
       "cfg-teams",
@@ -4867,30 +5091,53 @@
       "cfg-mid",
       "cfg-ruc",
       "cfg-fwd",
+      "cfg-flx",
       "cfg-endSeason",
-      "cfg-myTeam"
+      "cfg-myTeam",
+      "fd-import-myTeam",
+      "cfg-leagueType",
+      "cfg-draftFormat"
     ];
     ids.forEach((id) => {
       const el = document.getElementById(id);
       if (!el) return;
       el.addEventListener("change", () => {
-        readControlsFromDom();
-        if (id === "cfg-myTeam") {
+        onImportSettingsChanged();
+        if (id === "cfg-myTeam" || id === "fd-import-myTeam") {
+          const importMy = document.getElementById("fd-import-myTeam");
+          const headerMy = document.getElementById("cfg-myTeam");
+          if (id === "fd-import-myTeam" && headerMy) headerMy.value = state.cfg.myTeam;
+          if (id === "cfg-myTeam" && importMy) importMy.value = state.cfg.myTeam;
           rebuildOwnerDropdown(state.league, state.cfg);
           state.trade.otherTeam = "";
           state.trade.search = "";
           state.trade.give = [];
           state.trade.get = [];
         }
-        refresh();
       });
     });
-    const cutEl = document.getElementById("cfg-keeperCut");
-    if (cutEl) {
-      cutEl.addEventListener("change", () => {
-        readControlsFromDom({ includeCut: true });
-        refresh();
+    document.querySelectorAll(".fd-stepper-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.getAttribute("data-target");
+        const dir = Number(btn.getAttribute("data-dir")) || 0;
+        const input = targetId ? document.getElementById(targetId) : null;
+        if (!input) return;
+        const min = input.min !== "" ? Number(input.min) : 0;
+        const max = input.max !== "" ? Number(input.max) : 99;
+        const next = Math.max(min, Math.min(max, (Number(input.value) || 0) + dir));
+        input.value = String(next);
+        onImportSettingsChanged();
       });
+    });
+    const finalisedEl = document.getElementById("cfg-keepersFinalised");
+    if (finalisedEl) {
+      finalisedEl.addEventListener("change", () => {
+        onImportSettingsChanged({ includeCut: true });
+      });
+    }
+    const pickEl = document.getElementById("cfg-pickTrading");
+    if (pickEl) {
+      pickEl.addEventListener("change", () => onImportSettingsChanged());
     }
     const searchEl = document.getElementById("cfg-search");
     if (searchEl) {
@@ -4968,39 +5215,28 @@
       "owner-dropdown"
     );
 
-    const keeperInput = document.getElementById("keeper-csv-input");
-    if (keeperInput) {
-      keeperInput.addEventListener("change", () => {
-        const file = keeperInput.files && keeperInput.files[0];
-        if (file) handleKeeperCsvFile(file);
-      });
-    }
-    const keeperClear = document.getElementById("keeper-csv-clear");
-    if (keeperClear) {
-      keeperClear.addEventListener("click", () => clearKeeperLeague());
-    }
-
-    const aflImportBtn = document.getElementById("afl-import-btn");
-    if (aflImportBtn) {
-      aflImportBtn.addEventListener("click", () => {
-        const input = document.getElementById("afl-share-url");
-        importAflLeagueFromShare(input && input.value);
-      });
-    }
     const saveBtn = document.getElementById("fd-league-save");
     if (saveBtn) saveBtn.addEventListener("click", () => saveLeagueToAccount());
     const delBtn = document.getElementById("fd-league-delete");
     if (delBtn) delBtn.addEventListener("click", () => deleteLeagueFromAccount());
     const refreshBtn = document.getElementById("fd-league-refresh");
-    if (refreshBtn) refreshBtn.addEventListener("click", () => refreshAflLeague());
-    const loginSave = document.getElementById("fd-login-to-save");
-    if (loginSave) {
-      loginSave.addEventListener("click", (e) => {
-        e.preventDefault();
-        const redirect = encodeURIComponent(
-          window.location.pathname + window.location.search
-        );
-        window.location.href = "/login.html?redirect=" + redirect;
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", () => {
+        if (state.league && state.league.source === "afl") {
+          refreshAflLeague();
+          return;
+        }
+        const input = document.getElementById("keeper-csv-refresh-input");
+        if (input) input.click();
+      });
+    }
+    const keeperRefresh = document.getElementById("keeper-csv-refresh-input");
+    if (keeperRefresh) {
+      keeperRefresh.addEventListener("change", () => {
+        const file = keeperRefresh.files && keeperRefresh.files[0];
+        if (file) {
+          handleKeeperCsvFile(file, { autoSave: !!state.accountUser });
+        }
       });
     }
 
@@ -5059,19 +5295,6 @@
       keeperModalBtn.addEventListener("click", runModalKeeperImport);
     }
 
-    const doList = document.getElementById("fd-draft-order-list");
-    if (doList) {
-      doList.addEventListener("click", (e) => {
-        const btn = e.target && e.target.closest ? e.target.closest("button[data-do-act]") : null;
-        if (!btn) return;
-        const li = btn.closest("li[data-owner]");
-        if (!li) return;
-        const owner = li.getAttribute("data-owner");
-        const act = btn.getAttribute("data-do-act");
-        if (act === "up") moveDraftOrder(owner, -1);
-        else if (act === "down") moveDraftOrder(owner, 1);
-      });
-    }
     const doProj = document.getElementById("fd-draft-order-projected");
     if (doProj) {
       doProj.addEventListener("click", () => {
@@ -5081,13 +5304,6 @@
           state.league,
           state.cfg
         );
-        refresh();
-      });
-    }
-    const doClear = document.getElementById("fd-draft-order-clear");
-    if (doClear) {
-      doClear.addEventListener("click", () => {
-        state.cfg.draftOrder = [];
         refresh();
       });
     }

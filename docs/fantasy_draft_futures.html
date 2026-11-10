@@ -1887,520 +1887,661 @@ display: none;
   </div>
 </div>
 <style>
-.futures-controls {
-display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end;
-margin: 0; padding: 10px 12px; background: #f7f7f7; border-radius: 4px;
-border: 1px solid #e2e2e2; font-size: 12px;
-}
-.futures-controls label { display: flex; flex-direction: column; gap: 2px; font-weight: 600; color: #444; }
-.futures-controls input[type=number], .futures-controls select {
-font-size: 12px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; min-width: 64px;
-}
-.futures-controls .row-inline { display: flex; gap: 8px; align-items: flex-end; }
-.futures-import-row {
-flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center;
-padding-top: 8px; margin-top: 4px; border-top: 1px dashed #ddd;
-}
-.keeper-import-inline {
-display: flex; flex-wrap: nowrap; align-items: center; gap: 8px 10px; min-width: 0;
-}
-.keeper-import-title {
-display: inline-flex; align-items: center; gap: 4px;
-font-weight: 600; color: #444; white-space: nowrap;
-}
-.keeper-tip {
-display: inline-flex; align-items: center; justify-content: center;
-width: 14px; height: 14px; border-radius: 50%;
-background: #888; color: #fff; font-size: 10px; font-weight: 700;
-cursor: help; vertical-align: middle; position: relative; flex: 0 0 auto;
-}
-.keeper-tip:hover::after, .keeper-tip:focus::after {
-content: attr(data-tip);
-position: absolute; left: 0; bottom: calc(100% + 8px); transform: none;
-width: 240px; padding: 8px 10px; background: #222; color: #fff;
-font-size: 11px; font-weight: 400; line-height: 1.45; text-align: left;
-border-radius: 4px; white-space: pre-line; z-index: 20;
-box-shadow: 0 4px 12px rgba(0,0,0,.18);
-}
-.keeper-tip:hover::before, .keeper-tip:focus::before {
-content: ''; position: absolute; left: 6px; bottom: calc(100% + 2px);
-transform: none; border: 6px solid transparent; border-top-color: #222;
-}
-#keeper-csv-input { font-size: 12px; max-width: 200px; }
-#keeper-csv-clear, #afl-import-btn, #fd-league-save, #fd-league-delete, #fd-league-refresh {
-font-size: 11px; padding: 3px 8px; border: 1px solid #ccc; border-radius: 4px;
-background: #fff; cursor: pointer; color: #444; white-space: nowrap;
-}
-#afl-import-btn, #fd-league-save { border-color: #1565c0; color: #1565c0; }
-#fd-league-delete { border-color: #c62828; color: #c62828; }
-#afl-share-url {
-font-size: 12px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px;
-min-width: 220px; flex: 1 1 220px;
-}
-#keeper-import-status {
-flex: 1 1 100%; font-size: 11px; font-weight: 400; color: #555; margin: 0;
-}
-#keeper-import-status.is-error { color: #c62828; }
-.fd-account-sync {
-flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-margin-top: 4px;
-}
-.fd-account-sync a { font-size: 12px; font-weight: 600; }
-@media (max-width: 720px) {
-.keeper-import-inline { flex-wrap: wrap; }
-}
-#team-ratings {
-display: none; margin: 14px 0 0; padding: 10px 12px;
-border: 1px solid #e2e2e2; border-radius: 4px; background: #fafafa; font-size: 12px;
-}
-#team-ratings h3 { margin: 0 0 4px; font-size: 13px; }
-#team-ratings h3.lt-boards-heading { margin-top: 16px; }
-#team-ratings > .muted { margin: 0 0 8px; font-size: 11px; }
-.lt-ladder-wrap { overflow-x: auto; margin-bottom: 4px; }
-.lt-ladder {
-border-collapse: collapse; width: 100%; min-width: 480px; font-size: 12px;
-font-variant-numeric: tabular-nums;
-}
-.lt-ladder th, .lt-ladder td {
-padding: 5px 8px; border-bottom: 1px solid #eee; text-align: right;
-}
-.lt-ladder th { font-weight: 700; color: #444; background: #f3f3f3; }
-.lt-ladder .lt-ladder-team { text-align: left; white-space: nowrap; }
-.lt-ladder .tr-rank { color: #888; font-weight: 700; margin-right: 4px; }
-.lt-ladder .lt-vorp-col { font-weight: 700; }
-.lt-ladder .medal-1 { background: #ffe082; }
-.lt-ladder .medal-2 { background: #e8e8e8; }
-.lt-ladder .medal-3 { background: #ffcc80; }
-.lt-mine-row td { background: #e3f2fd; }
-.lt-mine-row .medal-1 { background: #ffe082; }
-.lt-mine-row .medal-2 { background: #e8e8e8; }
-.lt-mine-row .medal-3 { background: #ffcc80; }
-.lt-you {
-display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.04em;
-text-transform: uppercase; color: #1565c0; background: #bbdefb;
-padding: 1px 5px; border-radius: 3px; vertical-align: middle;
-}
-.lt-mine-board { border-color: #64b5f6; box-shadow: 0 0 0 2px rgba(33,150,243,.25); }
-.lt-mine-board .lt-board-head { background: #e3f2fd; }
-#futures-table .fd-my-team-row .tabulator-cell { background: #e3f2fd !important; }
-#trade-calculator {
-display: none; margin: 14px 0 0; padding: 10px 12px;
-border: 1px solid #e2e2e2; border-radius: 4px; background: #fafafa; font-size: 12px;
-}
-#trade-calculator h3 { margin: 0 0 8px; font-size: 13px; }
-#trade-calculator > .muted { margin: 0 0 10px; font-size: 11px; }
-.tc-board {
-display: grid;
-grid-template-columns: minmax(200px, 1fr) minmax(300px, 1.35fr) minmax(200px, 1fr);
-gap: 12px; align-items: stretch;
-}
-@media (max-width: 900px) {
-.tc-board { grid-template-columns: 1fr; }
-}
-.tc-col {
-background: #fff; border: 1px solid #e2e2e2; border-radius: 4px; padding: 6px 8px;
-min-width: 0;
-}
-.tc-roster { display: flex; flex-direction: column; min-height: 0; }
-.tc-col-head {
-display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px;
-}
-.tc-col-title { font-weight: 700; font-size: 12px; }
-.tc-col-head select, .tc-col-head input[type='search'] {
-font-size: 12px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; width: 100%;
-box-sizing: border-box;
-}
-.tc-list {
-display: flex; flex-direction: column; gap: 2px;
-max-height: min(70vh, 640px); overflow: auto; flex: 1 1 auto;
-}
-.tc-center { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-.tc-diff {
-background: #fff; border: 1px solid #e2e2e2; border-radius: 4px; padding: 8px 10px;
-}
-.tc-diff-empty, .tc-balanced, .tc-slot-hint { margin: 4px 0 0; font-size: 11px; }
-.tc-inputs {
-display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-}
-@media (max-width: 560px) {
-.tc-inputs { grid-template-columns: 1fr; }
-}
-.tc-tray { min-height: 120px; }
-.tc-asset-btn {
-display: block; width: 100%; border: 1px solid transparent; border-radius: 4px;
-background: transparent; padding: 0; margin: 0; cursor: pointer; text-align: left;
-font: inherit; color: inherit;
-}
-.tc-asset-btn:hover { background: #f5f5f5; }
-.tc-asset-btn.is-selected {
-border-color: #64b5f6; background: #e3f2fd;
-}
-.tc-asset-btn.is-suggested {
-opacity: 0.48; border-style: dashed; border-color: #bdbdbd;
-}
-.tc-asset-btn.is-suggested:hover { opacity: 0.72; background: #fafafa; }
-.tc-asset-btn .lt-player { pointer-events: none; }
-.tc-pick-icon {
-display: inline-flex; align-items: center; justify-content: center;
-width: 28px; height: 28px; color: #666; flex: 0 0 28px;
-}
-.fd-headshot-pick {
-display: inline-flex !important; align-items: center; justify-content: center;
-color: #666; background: #eceff1;
-flex: 0 0 44px; width: 44px; height: 44px; border-radius: 50%;
-overflow: hidden; border: 1px solid #ddd; box-sizing: border-box;
-}
-.fd-headshot-pick svg {
-width: 100%; height: 100%; display: block; padding: 6px; box-sizing: border-box;
-}
-.fd-pused-chip { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
-.tc-suggest-label {
-font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase;
-letter-spacing: 0.03em; margin: 8px 0 4px;
-}
-.tc-overview-wrap { overflow-x: auto; }
-.tc-overview {
-border-collapse: collapse; width: 100%; min-width: 360px; font-size: 11px;
-font-variant-numeric: tabular-nums;
-}
-.tc-overview th, .tc-overview td {
-padding: 4px 6px; border-bottom: 1px solid #eee; text-align: right;
-}
-.tc-overview th { font-weight: 700; color: #444; background: #f3f3f3; }
-.tc-overview .tc-team-col { text-align: left; white-space: nowrap; }
-.tc-overview .tc-num.up { color: #2e7d32; font-weight: 700; }
-.tc-overview .tc-num.down { color: #c62828; font-weight: 700; }
-.tc-overview .tc-emph { background: #eceff1; font-weight: 700; }
-.tc-overview .tc-row-a td:first-child { background: #e3f2fd; }
-.lt-team-plan {
-font-size: 10px; font-weight: 600; color: #666; line-height: 1.2;
-margin-top: 1px; max-width: 160px;
-overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.lt-team-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
-.lt-team-name-row { white-space: nowrap; }
-.lt-board-title .lt-team-plan { margin-top: 2px; }
-.tc-owner-head {
-display: flex; flex-direction: column; gap: 1px;
-padding: 8px 6px 4px; margin-top: 4px;
-font-weight: 700; font-size: 11px; color: #333;
-border-top: 1px solid #eee;
-}
-.tc-owner-head:first-child { border-top: 0; margin-top: 0; padding-top: 4px; }
-.tc-owner-head .lt-team-plan { font-weight: 600; }
-#my-team-wrap { display: none; }
-#my-team-wrap.is-visible { display: flex; }
-.fd-heading-controls {
-display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; justify-content: flex-end;
-}
-#owner-dropdown { display: none; }
-#owner-dropdown.is-visible { display: inline-block; }
-#owner-dropdown-panel {
-grid-template-columns: 1fr; max-height: 280px; overflow: auto; min-width: 160px;
-}
-.team-dropdown { position: relative; display: inline-block; margin-left: 4px; }
-.team-dropdown-btn {
-font-size: 12px; padding: 3px 8px; border-radius: 4px; border: 1px solid #ccc;
-background: #666; color: #fff; cursor: pointer; min-width: 90px; text-align: left;
-}
-.team-dropdown-panel {
-position: absolute; z-index: 999; top: 100%; left: 0; margin-top: 2px;
-background: #fff; border: 1px solid #ccc; border-radius: 4px;
-padding: 6px 10px; display: grid; grid-template-columns: repeat(3, max-content);
-gap: 2px 10px; box-shadow: 0 2px 8px rgba(0,0,0,.15);
-width: max-content; max-width: calc(100vw - 32px);
-}
-@media (max-width: 480px) {
-.team-dropdown-panel { grid-template-columns: repeat(2, max-content); }
-}
-.team-option {
-font-size: 12px; display: flex; align-items: center; gap: 4px;
-cursor: pointer; color: #333; white-space: nowrap; font-weight: 400;
-}
-.lt-boards {
-display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-gap: 12px; margin-top: 4px;
-}
-.lt-board {
-background: #fff; border: 1px solid #e2e2e2; border-radius: 4px; overflow: hidden;
-display: flex; flex-direction: column; min-width: 0;
-}
-.lt-board-head {
-display: flex; justify-content: space-between; gap: 8px; align-items: baseline;
-padding: 8px 10px; background: #f3f3f3; border-bottom: 1px solid #e2e2e2;
-}
-.lt-board-title {
-font-weight: 700; font-size: 12px; min-width: 0;
-overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.lt-board-rank { color: #888; font-weight: 700; }
-.lt-board-stats {
-display: flex; gap: 8px; flex-shrink: 0; font-variant-numeric: tabular-nums; font-size: 11px;
-}
-.lt-stat { color: #666; }
-.lt-stat-total { font-weight: 700; color: #222; }
-.lt-board-body { padding: 4px 0; max-height: 520px; overflow: auto; }
-.lt-player {
-display: grid; grid-template-columns: 28px minmax(0, 1fr) 44px;
-gap: 6px; align-items: center; padding: 3px 8px;
-}
-.lt-player .fd-headshot, .lt-player .fd-headshot-empty, .lt-player .fd-headshot-pick {
-width: 28px; height: 28px; flex: 0 0 28px;
-}
-.lt-player-meta { min-width: 0; }
-.lt-player-name {
-font-weight: 600; font-size: 11px; line-height: 1.2;
-overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.lt-player-chips { display: flex; flex-wrap: nowrap; gap: 3px; margin-top: 2px; }
-.lt-player-chips .fd-team-chip, .lt-player-chips .fd-pos-chip {
-font-size: 8px; padding: 2px 4px;
-}
-.lt-player-vorp {
-text-align: right; font-weight: 700; font-size: 11px;
-font-variant-numeric: tabular-nums;
-}
-.lt-below-cut { opacity: 0.55; }
-.lt-cut {
-display: flex; align-items: center; gap: 8px; margin: 4px 8px;
-color: #c62828; font-size: 10px; font-weight: 700; letter-spacing: 0.02em;
-}
-.lt-cut::before, .lt-cut::after {
-content: ''; flex: 1 1 auto; height: 2px; background: #c62828; border-radius: 1px;
-}
-#futures-settings {
-margin: 12px 0 8px; border: 1px solid #e2e2e2; border-radius: 4px; background: #fafafa;
-}
-#futures-settings > summary {
-cursor: pointer; padding: 8px 12px; font-size: 12px; font-weight: 700; color: #333;
-list-style: none; user-select: none;
-}
-#futures-settings > summary::-webkit-details-marker { display: none; }
-#futures-settings > summary::before {
-content: '▸'; display: inline-block; margin-right: 6px; transition: transform .15s ease;
-}
-#futures-settings[open] > summary::before { transform: rotate(90deg); }
-.filter-bar-futures {
-display: flex; flex-direction: column; gap: 8px; margin: 8px 0 12px; font-size: 12px;
-}
-.filter-bar-top {
-display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-}
-.filter-bar-pos {
-display: flex; flex-wrap: nowrap; gap: 6px; align-items: center;
-overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px;
-}
-.filter-btn {
-padding: 4px 12px; border: 1px solid #ccc; border-radius: 4px;
-background: #666; color: #fff; cursor: pointer; font-size: 12px;
-flex: 0 0 auto;
-}
-.filter-btn.active { background: darkblue; border-color: #1a73e8; }
-.filter-label { font-weight: bold; margin-right: 2px; }
-#cfg-search {
-font-size: 12px; padding: 3px 6px; border-radius: 4px; border: 1px solid #ccc; width: 160px;
-max-width: 40vw;
-}
-.team-dropdown-panel.is-open { display: grid !important; }
-@media (max-width: 640px) {
-.team-dropdown-panel {
-position: fixed; left: 12px; right: 12px; top: auto; width: auto;
-max-width: none; max-height: 50vh; overflow: auto;
-grid-template-columns: repeat(2, 1fr) !important;
-}
-#owner-dropdown-panel { grid-template-columns: 1fr !important; }
-}
-.fd-draft-order {
-margin-top: 16px; padding-top: 12px; border-top: 1px solid #e2e2e2;
-}
-.fd-draft-order h3 { margin: 0 0 6px; font-size: 14px; }
-.fd-draft-order-help { margin: 0 0 8px; font-size: 12px; color: #666; }
-.fd-draft-order-list {
-list-style: none; margin: 0; padding: 0; max-width: 420px;
-}
-.fd-draft-order-list li {
-display: flex; align-items: center; gap: 8px; padding: 6px 8px;
-border: 1px solid #e2e2e2; border-radius: 4px; margin-bottom: 4px;
-background: #fff; font-size: 13px;
-}
-.fd-draft-order-list .fd-do-rank {
-flex: 0 0 28px; font-weight: 700; color: #888; font-variant-numeric: tabular-nums;
-}
-.fd-draft-order-list .fd-do-name { flex: 1 1 auto; min-width: 0; font-weight: 600; }
-.fd-draft-order-list button {
-flex: 0 0 auto; font-size: 11px; padding: 2px 8px; cursor: pointer;
-border: 1px solid #ccc; border-radius: 3px; background: #f5f5f5;
-}
-.fd-draft-order-actions { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
-.fd-heading {
-display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-start;
-justify-content: space-between; margin: 0 0 8px;
-}
-.fd-heading-copy {
-flex: 1 1 auto; min-width: 0;
-font-size: 12px; line-height: 1.4; color: #444;
-}
-.fd-heading-copy p {
-margin: 0 0 0.4em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.fd-heading-copy p:last-child { margin-bottom: 0; }
-.fd-heading-meta {
-flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end;
-gap: 4px; margin-left: auto;
-}
-.fd-horizon-label {
-display: flex; flex-direction: column; gap: 2px; align-items: flex-end;
-font-size: 11px; font-weight: 700; color: #333;
-}
-.fd-horizon-label select {
-font-size: 13px; font-weight: 600; padding: 4px 8px;
-border: 1px solid #ccc; border-radius: 4px; min-width: 88px; background: #fff;
-}
-.fd-asof { font-size: 11px; color: #666; text-align: right; min-height: 1em; }
-#futures-error {
-display: none; background: #fff3f3; border-left: 4px solid #c62828;
-padding: 12px 16px; margin: 12px 0; font-size: 13px; border-radius: 4px;
-}
-#futures-shell { display: none; }
-.fd-subnav {
-display: flex; flex-wrap: wrap; gap: 0.35rem 0.25rem; align-items: center;
-padding: 0.55rem 0; margin: 0 0 12px; border-bottom: 1px solid #dde2e8;
-}
-.fd-tab-btn {
-display: inline-flex; align-items: center; padding: 0.45rem 0.9rem;
-border: none; border-radius: 4px; background: transparent; cursor: pointer;
-font-size: 13px; font-weight: 600; color: #334;
-}
-.fd-tab-btn:hover { background: #e8ecf1; color: #111; }
-.fd-tab-btn.active {
-background: darkblue; color: #fff;
-box-shadow: 0 0 0 1px rgba(255,255,255,0.35);
-}
-.fd-tab-panel { display: none; }
-.fd-tab-panel.is-active { display: block; }
-.futures-pool-layout {
-display: grid; grid-template-columns: minmax(0, 1fr) 300px;
-gap: 16px; align-items: start;
-}
-.futures-table-col { min-width: 0; }
-.futures-movers-col {
-font-size: 12px; position: sticky; top: 8px;
-background: #fafafa; border: 1px solid #e2e2e2; border-radius: 4px; padding: 8px 0;
-}
-.movers-stack { display: flex; flex-direction: column; gap: 12px; }
-.movers-block h4 {
-margin: 0 8px 6px; font-size: 12px; font-weight: 700; color: #333;
-}
-.movers-block .lt-player { padding: 4px 8px; }
-.movers-block .lt-player {
-grid-template-columns: 28px minmax(0, 1fr) 48px;
-}
-.movers-block .fd-pos-chip {
-font-size: 8px; padding: 2px 4px; vertical-align: middle; margin-left: 2px;
-}
-.lt-player-reason {
-font-size: 9px; font-weight: 600; color: #666; letter-spacing: 0.02em;
-}
-.lt-player-dx {
-text-align: right; font-weight: 700; font-size: 11px;
-font-variant-numeric: tabular-nums; white-space: nowrap;
-}
-.lt-player-dx.up { color: #2e7d32; }
-.lt-player-dx.down { color: #c62828; }
-.fd-pos-bar {
-display: flex; height: 16px; width: 100%; max-width: 72px;
-border-radius: 2px; overflow: hidden; background: #eee;
-}
-.fd-pos-bar-seg {
-display: flex; align-items: center; justify-content: center;
-height: 100%; color: #1a1a1a; font-weight: 700; font-size: 8px;
-line-height: 1; overflow: hidden; white-space: nowrap;
-}
-.fd-pos-bar-seg.fd-pos-DEF { background: #F38485; }
-.fd-pos-bar-seg.fd-pos-MID { background: #EBF19F; }
-.fd-pos-bar-seg.fd-pos-RUC { background: #A7A5F5; }
-.fd-pos-bar-seg.fd-pos-FWD { background: #A3E9C2; }
-.futures-detail {
-padding: 8px 12px; background: #fafafa; border-top: 1px solid #ddd; font-size: 11px;
-}
-.futures-detail table { border-collapse: collapse; width: 100%; }
-.futures-detail th, .futures-detail td {
-padding: 3px 8px; border: 1px solid #e0e0e0; text-align: right;
-}
-.futures-detail td:first-child, .futures-detail th:first-child { text-align: left; }
-#league-ladder, #teams-boards, #trade-calculator, #team-planner, #futures-help {
-display: block; margin-top: 8px;
-}
-#league-ladder > h3, #teams-boards > h3, #trade-calculator > h3, #team-planner > h3, #futures-help > h3 {
-margin: 0 0 4px; font-size: 13px;
-}
-#league-ladder > .muted, #teams-boards > .muted, #trade-calculator > .muted, #team-planner > .muted {
-margin: 0 0 8px; font-size: 11px;
-}
-.fd-help {
-font-size: 12px; line-height: 1.45; color: #444; max-width: 720px;
-}
-.fd-help p { margin: 0 0 0.75em; }
-.fd-help ul { margin: 0.4em 0 0; padding-left: 1.2em; }
-.fd-help li { margin: 0 0 0.45em; }
-.fp-head {
-display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline;
-margin: 0 0 10px;
-}
-.fp-head-title { font-size: 13px; font-weight: 700; color: #222; margin: 0; }
-.fp-head-tag {
-font-size: 11px; font-weight: 600; color: #666;
-}
-.fp-head-best {
-font-size: 11px; font-weight: 700; color: #1565c0;
-}
-.fp-seasons {
-display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-gap: 12px; align-items: start;
-}
-.fp-season {
-background: #fff; border: 1px solid #e2e2e2; border-radius: 4px; overflow: hidden;
-min-width: 0;
-}
-.fp-season.is-best {
-border-color: #64b5f6; box-shadow: 0 0 0 2px rgba(33,150,243,.25);
-}
-.fp-season-head {
-display: flex; justify-content: space-between; gap: 8px; align-items: baseline;
-padding: 8px 10px; background: #f3f3f3; border-bottom: 1px solid #e2e2e2;
-}
-.fp-season.is-best .fp-season-head { background: #e3f2fd; }
-.fp-season-year { font-weight: 700; font-size: 13px; color: #222; }
-.fp-season-badge {
-display: inline-block; margin-left: 6px; font-size: 9px; font-weight: 700;
-letter-spacing: 0.04em; text-transform: uppercase; color: #1565c0;
-background: #bbdefb; padding: 1px 5px; border-radius: 3px; vertical-align: middle;
-}
-.fp-season-sub { font-size: 10px; font-weight: 600; color: #666; margin-top: 2px; }
-.fp-season-total {
-font-variant-numeric: tabular-nums; font-weight: 700; font-size: 12px; color: #222;
-white-space: nowrap;
-}
-.fp-season-body { padding: 4px 0 6px; max-height: 640px; overflow: auto; }
-.fp-pos-label {
-font-size: 10px; font-weight: 700; color: #666; letter-spacing: 0.04em;
-text-transform: uppercase; padding: 6px 10px 2px;
-}
-.fp-empty-slot {
-padding: 4px 10px; font-size: 11px; color: #999; font-style: italic;
-}
-.fp-player-xp {
-text-align: right; font-weight: 700; font-size: 11px;
-font-variant-numeric: tabular-nums;
-}
-}
-#futures-settings-block {
-margin: 14px 0 0;
-}
-#futures-settings-block > h3 {
-margin: 0 0 8px; font-size: 13px;
-}
-#fd-import-manage[hidden] { display: none !important; }
+    .futures-controls {
+      display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end;
+      margin: 0; padding: 10px 12px; background: #f7f7f7; border-radius: 4px;
+      border: 1px solid #e2e2e2; font-size: 12px;
+    }
+    .futures-controls label { display: flex; flex-direction: column; gap: 2px; font-weight: 600; color: #444; }
+    .futures-controls input[type=number], .futures-controls select {
+      font-size: 12px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; min-width: 64px;
+    }
+    .futures-controls .row-inline { display: flex; gap: 8px; align-items: flex-end; }
+    .futures-import-row {
+      flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center;
+      padding-top: 8px; margin-top: 4px; border-top: 1px dashed #ddd;
+    }
+    .keeper-import-inline {
+      display: flex; flex-wrap: nowrap; align-items: center; gap: 8px 10px; min-width: 0;
+    }
+    .keeper-import-title {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-weight: 600; color: #444; white-space: nowrap;
+    }
+    .keeper-tip {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #888; color: #fff; font-size: 10px; font-weight: 700;
+      cursor: help; vertical-align: middle; position: relative; flex: 0 0 auto;
+    }
+    .keeper-tip:hover::after, .keeper-tip:focus::after {
+      content: attr(data-tip);
+      position: absolute; left: 0; bottom: calc(100% + 8px); transform: none;
+      width: 240px; padding: 8px 10px; background: #222; color: #fff;
+      font-size: 11px; font-weight: 400; line-height: 1.45; text-align: left;
+      border-radius: 4px; white-space: pre-line; z-index: 20;
+      box-shadow: 0 4px 12px rgba(0,0,0,.18);
+    }
+    .keeper-tip:hover::before, .keeper-tip:focus::before {
+      content: ''; position: absolute; left: 6px; bottom: calc(100% + 2px);
+      transform: none; border: 6px solid transparent; border-top-color: #222;
+    }
+    #keeper-csv-input { font-size: 12px; max-width: 200px; }
+    #keeper-csv-clear, #afl-import-btn, #fd-league-save, #fd-league-delete, #fd-league-refresh {
+      font-size: 11px; padding: 3px 8px; border: 1px solid #ccc; border-radius: 4px;
+      background: #fff; cursor: pointer; color: #444; white-space: nowrap;
+    }
+    #afl-import-btn, #fd-league-save { border-color: #1565c0; color: #1565c0; }
+    #fd-league-delete { border-color: #c62828; color: #c62828; }
+    #afl-share-url {
+      font-size: 12px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px;
+      min-width: 220px; flex: 1 1 220px;
+    }
+    #keeper-import-status {
+      flex: 1 1 100%; font-size: 11px; font-weight: 400; color: #555; margin: 0;
+    }
+    #keeper-import-status.is-error { color: #c62828; }
+    .fd-account-sync {
+      flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      margin-top: 4px;
+    }
+    .fd-account-sync a { font-size: 12px; font-weight: 600; }
+    @media (max-width: 720px) {
+      .keeper-import-inline { flex-wrap: wrap; }
+    }
+    #team-ratings {
+      display: none; margin: 14px 0 0; padding: 10px 12px;
+      border: 1px solid #e2e2e2; border-radius: 4px; background: #fafafa; font-size: 12px;
+    }
+    #team-ratings h3 { margin: 0 0 4px; font-size: 13px; }
+    #team-ratings h3.lt-boards-heading { margin-top: 16px; }
+    #team-ratings > .muted { margin: 0 0 8px; font-size: 11px; }
+    .lt-ladder-wrap { overflow-x: auto; margin-bottom: 4px; }
+    .lt-ladder {
+      border-collapse: collapse; width: 100%; min-width: 480px; font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+    .lt-ladder th, .lt-ladder td {
+      padding: 5px 8px; border-bottom: 1px solid #eee; text-align: right;
+    }
+    .lt-ladder th { font-weight: 700; color: #444; background: #f3f3f3; }
+    .lt-ladder .lt-ladder-team { text-align: left; white-space: nowrap; }
+    .lt-ladder .tr-rank { color: #888; font-weight: 700; margin-right: 4px; }
+    .lt-ladder .lt-vorp-col { font-weight: 700; }
+    .lt-ladder .medal-1 { background: #ffe082; }
+    .lt-ladder .medal-2 { background: #e8e8e8; }
+    .lt-ladder .medal-3 { background: #ffcc80; }
+    .lt-mine-row td { background: #e3f2fd; }
+    .lt-mine-row .medal-1 { background: #ffe082; }
+    .lt-mine-row .medal-2 { background: #e8e8e8; }
+    .lt-mine-row .medal-3 { background: #ffcc80; }
+    .lt-you {
+      display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.04em;
+      text-transform: uppercase; color: #1565c0; background: #bbdefb;
+      padding: 1px 5px; border-radius: 3px; vertical-align: middle;
+    }
+    .lt-mine-board { border-color: #64b5f6; box-shadow: 0 0 0 2px rgba(33,150,243,.25); }
+    .lt-mine-board .lt-board-head { background: #e3f2fd; }
+    #futures-table .fd-my-team-row .tabulator-cell { background: #e3f2fd !important; }
+    #trade-calculator {
+      display: none; margin: 14px 0 0; padding: 10px 12px;
+      border: 1px solid #e2e2e2; border-radius: 4px; background: #fafafa; font-size: 12px;
+    }
+    #trade-calculator h3 { margin: 0 0 8px; font-size: 13px; }
+    #trade-calculator > .muted { margin: 0 0 10px; font-size: 11px; }
+    .tc-board {
+      display: grid;
+      grid-template-columns: minmax(200px, 1fr) minmax(300px, 1.35fr) minmax(200px, 1fr);
+      gap: 12px; align-items: stretch;
+    }
+    @media (max-width: 900px) {
+      .tc-board { grid-template-columns: 1fr; }
+    }
+    .tc-col {
+      background: #fff; border: 1px solid #e2e2e2; border-radius: 4px; padding: 6px 8px;
+      min-width: 0;
+    }
+    .tc-roster { display: flex; flex-direction: column; min-height: 0; }
+    .tc-col-head {
+      display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px;
+    }
+    .tc-col-title { font-weight: 700; font-size: 12px; }
+    .tc-col-head select, .tc-col-head input[type='search'] {
+      font-size: 12px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; width: 100%;
+      box-sizing: border-box;
+    }
+    .tc-list {
+      display: flex; flex-direction: column; gap: 2px;
+      max-height: min(70vh, 640px); overflow: auto; flex: 1 1 auto;
+    }
+    .tc-center { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+    .tc-diff {
+      background: #fff; border: 1px solid #e2e2e2; border-radius: 4px; padding: 8px 10px;
+    }
+    .tc-diff-empty, .tc-balanced, .tc-slot-hint { margin: 4px 0 0; font-size: 11px; }
+    .tc-inputs {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    @media (max-width: 560px) {
+      .tc-inputs { grid-template-columns: 1fr; }
+    }
+    .tc-tray { min-height: 120px; }
+    .tc-asset-btn {
+      display: block; width: 100%; border: 1px solid transparent; border-radius: 4px;
+      background: transparent; padding: 0; margin: 0; cursor: pointer; text-align: left;
+      font: inherit; color: inherit;
+    }
+    .tc-asset-btn:hover { background: #f5f5f5; }
+    .tc-asset-btn.is-selected {
+      border-color: #64b5f6; background: #e3f2fd;
+    }
+    .tc-asset-btn.is-suggested {
+      opacity: 0.48; border-style: dashed; border-color: #bdbdbd;
+    }
+    .tc-asset-btn.is-suggested:hover { opacity: 0.72; background: #fafafa; }
+    .tc-asset-btn .lt-player { pointer-events: none; }
+    .tc-pick-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; color: #666; flex: 0 0 28px;
+    }
+    .fd-headshot-pick {
+      display: inline-flex !important; align-items: center; justify-content: center;
+      color: #666; background: #eceff1;
+      flex: 0 0 44px; width: 44px; height: 44px; border-radius: 50%;
+      overflow: hidden; border: 1px solid #ddd; box-sizing: border-box;
+    }
+    .fd-headshot-pick svg {
+      width: 100%; height: 100%; display: block; padding: 6px; box-sizing: border-box;
+    }
+    .fd-pused-chip { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+    .tc-suggest-label {
+      font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase;
+      letter-spacing: 0.03em; margin: 8px 0 4px;
+    }
+    .tc-overview-wrap { overflow-x: auto; }
+    .tc-overview {
+      border-collapse: collapse; width: 100%; min-width: 360px; font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+    .tc-overview th, .tc-overview td {
+      padding: 4px 6px; border-bottom: 1px solid #eee; text-align: right;
+    }
+    .tc-overview th { font-weight: 700; color: #444; background: #f3f3f3; }
+    .tc-overview .tc-team-col { text-align: left; white-space: nowrap; }
+    .tc-overview .tc-num.up { color: #2e7d32; font-weight: 700; }
+    .tc-overview .tc-num.down { color: #c62828; font-weight: 700; }
+    .tc-overview .tc-emph { background: #eceff1; font-weight: 700; }
+    .tc-overview .tc-row-a td:first-child { background: #e3f2fd; }
+    .lt-team-plan {
+      font-size: 10px; font-weight: 600; color: #666; line-height: 1.2;
+      margin-top: 1px; max-width: 160px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .lt-team-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
+    .lt-team-name-row { white-space: nowrap; }
+    .lt-board-title .lt-team-plan { margin-top: 2px; }
+    .tc-owner-head {
+      display: flex; flex-direction: column; gap: 1px;
+      padding: 8px 6px 4px; margin-top: 4px;
+      font-weight: 700; font-size: 11px; color: #333;
+      border-top: 1px solid #eee;
+    }
+    .tc-owner-head:first-child { border-top: 0; margin-top: 0; padding-top: 4px; }
+    .tc-owner-head .lt-team-plan { font-weight: 600; }
+    #my-team-wrap { display: none; }
+    #my-team-wrap.is-visible { display: flex; }
+    .fd-heading-controls {
+      display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; justify-content: flex-end;
+    }
+    #owner-dropdown { display: none; }
+    #owner-dropdown.is-visible { display: inline-block; }
+    #owner-dropdown-panel {
+      grid-template-columns: 1fr; max-height: 280px; overflow: auto; min-width: 160px;
+    }
+    .team-dropdown { position: relative; display: inline-block; margin-left: 4px; }
+    .team-dropdown-btn {
+      font-size: 12px; padding: 3px 8px; border-radius: 4px; border: 1px solid #ccc;
+      background: #666; color: #fff; cursor: pointer; min-width: 90px; text-align: left;
+    }
+    .team-dropdown-panel {
+      position: absolute; z-index: 999; top: 100%; left: 0; margin-top: 2px;
+      background: #fff; border: 1px solid #ccc; border-radius: 4px;
+      padding: 6px 10px; display: grid; grid-template-columns: repeat(3, max-content);
+      gap: 2px 10px; box-shadow: 0 2px 8px rgba(0,0,0,.15);
+      width: max-content; max-width: calc(100vw - 32px);
+    }
+    @media (max-width: 480px) {
+      .team-dropdown-panel { grid-template-columns: repeat(2, max-content); }
+    }
+    .team-option {
+      font-size: 12px; display: flex; align-items: center; gap: 4px;
+      cursor: pointer; color: #333; white-space: nowrap; font-weight: 400;
+    }
+    .lt-boards {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px; margin-top: 4px;
+    }
+    .lt-board {
+      background: #fff; border: 1px solid #e2e2e2; border-radius: 4px; overflow: hidden;
+      display: flex; flex-direction: column; min-width: 0;
+    }
+    .lt-board-head {
+      display: flex; justify-content: space-between; gap: 8px; align-items: baseline;
+      padding: 8px 10px; background: #f3f3f3; border-bottom: 1px solid #e2e2e2;
+    }
+    .lt-board-title {
+      font-weight: 700; font-size: 12px; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .lt-board-rank { color: #888; font-weight: 700; }
+    .lt-board-stats {
+      display: flex; gap: 8px; flex-shrink: 0; font-variant-numeric: tabular-nums; font-size: 11px;
+    }
+    .lt-stat { color: #666; }
+    .lt-stat-total { font-weight: 700; color: #222; }
+    .lt-board-body { padding: 4px 0; max-height: 520px; overflow: auto; }
+    .lt-player {
+      display: grid; grid-template-columns: 28px minmax(0, 1fr) 44px;
+      gap: 6px; align-items: center; padding: 3px 8px;
+    }
+    .lt-player .fd-headshot, .lt-player .fd-headshot-empty, .lt-player .fd-headshot-pick {
+      width: 28px; height: 28px; flex: 0 0 28px;
+    }
+    .lt-player-meta { min-width: 0; }
+    .lt-player-name {
+      font-weight: 600; font-size: 11px; line-height: 1.2;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .lt-player-chips { display: flex; flex-wrap: nowrap; gap: 3px; margin-top: 2px; }
+    .lt-player-chips .fd-team-chip, .lt-player-chips .fd-pos-chip {
+      font-size: 8px; padding: 2px 4px;
+    }
+    .lt-player-vorp {
+      text-align: right; font-weight: 700; font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+    .lt-below-cut { opacity: 0.55; }
+    .lt-cut {
+      display: flex; align-items: center; gap: 8px; margin: 4px 8px;
+      color: #c62828; font-size: 10px; font-weight: 700; letter-spacing: 0.02em;
+    }
+    .lt-cut::before, .lt-cut::after {
+      content: ''; flex: 1 1 auto; height: 2px; background: #c62828; border-radius: 1px;
+    }
+    #futures-settings {
+      margin: 12px 0 8px; border: 1px solid #e2e2e2; border-radius: 4px; background: #fafafa;
+    }
+    #futures-settings > summary {
+      cursor: pointer; padding: 8px 12px; font-size: 12px; font-weight: 700; color: #333;
+      list-style: none; user-select: none;
+    }
+    #futures-settings > summary::-webkit-details-marker { display: none; }
+    #futures-settings > summary::before {
+      content: '▸'; display: inline-block; margin-right: 6px; transition: transform .15s ease;
+    }
+    #futures-settings[open] > summary::before { transform: rotate(90deg); }
+    .filter-bar-futures {
+      display: flex; flex-direction: column; gap: 8px; margin: 8px 0 12px; font-size: 12px;
+    }
+    .filter-bar-top {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    }
+    .filter-bar-pos {
+      display: flex; flex-wrap: nowrap; gap: 6px; align-items: center;
+      overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px;
+    }
+    .filter-btn {
+      padding: 4px 12px; border: 1px solid #ccc; border-radius: 4px;
+      background: #666; color: #fff; cursor: pointer; font-size: 12px;
+      flex: 0 0 auto;
+    }
+    .filter-btn.active { background: darkblue; border-color: #1a73e8; }
+    .filter-label { font-weight: bold; margin-right: 2px; }
+    #cfg-search {
+      font-size: 12px; padding: 3px 6px; border-radius: 4px; border: 1px solid #ccc; width: 160px;
+      max-width: 40vw;
+    }
+    .team-dropdown-panel.is-open { display: grid !important; }
+    @media (max-width: 640px) {
+      .team-dropdown-panel {
+        position: fixed; left: 12px; right: 12px; top: auto; width: auto;
+        max-width: none; max-height: 50vh; overflow: auto;
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+      #owner-dropdown-panel { grid-template-columns: 1fr !important; }
+    }
+    .fd-draft-order {
+      margin-top: 16px; padding: 14px 14px 12px;
+      border: 1px solid #e2e2e2; border-radius: 6px; background: #fff;
+    }
+    .fd-draft-order h3 { margin: 0 0 6px; font-size: 15px; font-weight: 700; color: #111; }
+    .fd-draft-order-help { margin: 0 0 10px; font-size: 12px; color: #666; }
+    .fd-draft-order-list {
+      list-style: none; margin: 0; padding: 0; max-width: 520px;
+    }
+    .fd-draft-order-list li {
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+      border: 1px solid #e2e2e2; border-radius: 4px; margin-bottom: 4px;
+      background: #fff; font-size: 13px; cursor: grab;
+    }
+    .fd-draft-order-list li.fd-do-dragging {
+      opacity: 0.55; background: #f5f8ff; border-color: #90caf9;
+    }
+    .fd-draft-order-list li.fd-do-drag-over {
+      border-top: 2px solid darkblue;
+    }
+    .fd-draft-order-list .fd-do-rank {
+      flex: 0 0 28px; font-weight: 700; color: #888; font-variant-numeric: tabular-nums;
+    }
+    .fd-draft-order-list .fd-do-name { flex: 1 1 auto; min-width: 0; font-weight: 600; }
+    .fd-draft-order-list .fd-do-handle {
+      flex: 0 0 auto; width: 28px; height: 28px; border: none; background: transparent;
+      color: #888; cursor: grab; font-size: 16px; line-height: 1; padding: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .fd-draft-order-list .fd-do-handle:hover { color: darkblue; }
+    .fd-draft-order-actions { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .fd-draft-order-actions button {
+      font-size: 12px; padding: 6px 12px; border-radius: 4px; cursor: pointer;
+      border: 1px solid #ccc; background: #fff; color: #333;
+    }
+    .fd-draft-order-actions button:hover { background: #f3f3f3; }
+    .fd-heading {
+      display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-start;
+      justify-content: space-between; margin: 0 0 8px;
+    }
+    .fd-heading-copy {
+      flex: 1 1 auto; min-width: 0;
+      font-size: 12px; line-height: 1.4; color: #444;
+    }
+    .fd-heading-copy p {
+      margin: 0 0 0.4em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .fd-heading-copy p:last-child { margin-bottom: 0; }
+    .fd-heading-meta {
+      flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end;
+      gap: 4px; margin-left: auto;
+    }
+    .fd-horizon-label {
+      display: flex; flex-direction: column; gap: 2px; align-items: flex-end;
+      font-size: 11px; font-weight: 700; color: #333;
+    }
+    .fd-horizon-label select {
+      font-size: 13px; font-weight: 600; padding: 4px 8px;
+      border: 1px solid #ccc; border-radius: 4px; min-width: 88px; background: #fff;
+    }
+    .fd-asof { font-size: 11px; color: #666; text-align: right; min-height: 1em; }
+    #futures-error {
+      display: none; background: #fff3f3; border-left: 4px solid #c62828;
+      padding: 12px 16px; margin: 12px 0; font-size: 13px; border-radius: 4px;
+    }
+    #futures-shell { display: none; }
+    .fd-subnav {
+      display: flex; flex-wrap: wrap; gap: 0.35rem 0.25rem; align-items: center;
+      padding: 0.55rem 0; margin: 0 0 12px; border-bottom: 1px solid #dde2e8;
+    }
+    .fd-tab-btn {
+      display: inline-flex; align-items: center; padding: 0.45rem 0.9rem;
+      border: none; border-radius: 4px; background: transparent; cursor: pointer;
+      font-size: 13px; font-weight: 600; color: #334;
+    }
+    .fd-tab-btn:hover { background: #e8ecf1; color: #111; }
+    .fd-tab-btn.active {
+      background: darkblue; color: #fff;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.35);
+    }
+    .fd-tab-panel { display: none; }
+    .fd-tab-panel.is-active { display: block; }
+    .futures-pool-layout {
+      display: grid; grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 16px; align-items: start;
+    }
+    .futures-table-col { min-width: 0; }
+    .futures-movers-col {
+      font-size: 12px; position: sticky; top: 8px;
+      background: #fafafa; border: 1px solid #e2e2e2; border-radius: 4px; padding: 8px 0;
+    }
+    .movers-stack { display: flex; flex-direction: column; gap: 12px; }
+    .movers-block h4 {
+      margin: 0 8px 6px; font-size: 12px; font-weight: 700; color: #333;
+    }
+    .movers-block .lt-player { padding: 4px 8px; }
+    .movers-block .lt-player {
+      grid-template-columns: 28px minmax(0, 1fr) 48px;
+    }
+    .movers-block .fd-pos-chip {
+      font-size: 8px; padding: 2px 4px; vertical-align: middle; margin-left: 2px;
+    }
+    .lt-player-reason {
+      font-size: 9px; font-weight: 600; color: #666; letter-spacing: 0.02em;
+    }
+    .lt-player-dx {
+      text-align: right; font-weight: 700; font-size: 11px;
+      font-variant-numeric: tabular-nums; white-space: nowrap;
+    }
+    .lt-player-dx.up { color: #2e7d32; }
+    .lt-player-dx.down { color: #c62828; }
+    .fd-pos-bar {
+      display: flex; height: 16px; width: 100%; max-width: 72px;
+      border-radius: 2px; overflow: hidden; background: #eee;
+    }
+    .fd-pos-bar-seg {
+      display: flex; align-items: center; justify-content: center;
+      height: 100%; color: #1a1a1a; font-weight: 700; font-size: 8px;
+      line-height: 1; overflow: hidden; white-space: nowrap;
+    }
+    .fd-pos-bar-seg.fd-pos-DEF { background: #F38485; }
+    .fd-pos-bar-seg.fd-pos-MID { background: #EBF19F; }
+    .fd-pos-bar-seg.fd-pos-RUC { background: #A7A5F5; }
+    .fd-pos-bar-seg.fd-pos-FWD { background: #A3E9C2; }
+    .futures-detail {
+      padding: 8px 12px; background: #fafafa; border-top: 1px solid #ddd; font-size: 11px;
+    }
+    .futures-detail table { border-collapse: collapse; width: 100%; }
+    .futures-detail th, .futures-detail td {
+      padding: 3px 8px; border: 1px solid #e0e0e0; text-align: right;
+    }
+    .futures-detail td:first-child, .futures-detail th:first-child { text-align: left; }
+    #league-ladder, #teams-boards, #trade-calculator, #team-planner, #futures-help {
+      display: block; margin-top: 8px;
+    }
+    #league-ladder > h3, #teams-boards > h3, #trade-calculator > h3, #team-planner > h3, #futures-help > h3 {
+      margin: 0 0 4px; font-size: 13px;
+    }
+    #league-ladder > .muted, #teams-boards > .muted, #trade-calculator > .muted, #team-planner > .muted {
+      margin: 0 0 8px; font-size: 11px;
+    }
+    .fd-help {
+      font-size: 12px; line-height: 1.45; color: #444; max-width: 720px;
+    }
+    .fd-help p { margin: 0 0 0.75em; }
+    .fd-help ul { margin: 0.4em 0 0; padding-left: 1.2em; }
+    .fd-help li { margin: 0 0 0.45em; }
+    .fp-head {
+      display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline;
+      margin: 0 0 10px;
+    }
+    .fp-head-title { font-size: 13px; font-weight: 700; color: #222; margin: 0; }
+    .fp-head-tag {
+      font-size: 11px; font-weight: 600; color: #666;
+    }
+    .fp-head-best {
+      font-size: 11px; font-weight: 700; color: #1565c0;
+    }
+    .fp-seasons {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px; align-items: start;
+    }
+    .fp-season {
+      background: #fff; border: 1px solid #e2e2e2; border-radius: 4px; overflow: hidden;
+      min-width: 0;
+    }
+    .fp-season.is-best {
+      border-color: #64b5f6; box-shadow: 0 0 0 2px rgba(33,150,243,.25);
+    }
+    .fp-season-head {
+      display: flex; justify-content: space-between; gap: 8px; align-items: baseline;
+      padding: 8px 10px; background: #f3f3f3; border-bottom: 1px solid #e2e2e2;
+    }
+    .fp-season.is-best .fp-season-head { background: #e3f2fd; }
+    .fp-season-year { font-weight: 700; font-size: 13px; color: #222; }
+    .fp-season-badge {
+      display: inline-block; margin-left: 6px; font-size: 9px; font-weight: 700;
+      letter-spacing: 0.04em; text-transform: uppercase; color: #1565c0;
+      background: #bbdefb; padding: 1px 5px; border-radius: 3px; vertical-align: middle;
+    }
+    .fp-season-sub { font-size: 10px; font-weight: 600; color: #666; margin-top: 2px; }
+    .fp-season-total {
+      font-variant-numeric: tabular-nums; font-weight: 700; font-size: 12px; color: #222;
+      white-space: nowrap;
+    }
+    .fp-season-body { padding: 4px 0 6px; max-height: 640px; overflow: auto; }
+    .fp-pos-label {
+      font-size: 10px; font-weight: 700; color: #666; letter-spacing: 0.04em;
+      text-transform: uppercase; padding: 6px 10px 2px;
+    }
+    .fp-empty-slot {
+      padding: 4px 10px; font-size: 11px; color: #999; font-style: italic;
+    }
+    .fp-player-xp {
+      text-align: right; font-weight: 700; font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+    }
+    #fd-import-source[hidden],
+    #fd-draft-order-block[hidden],
+    #fd-import-actions[hidden],
+    #fd-keepers-finalised-row[hidden] { display: none !important; }
+    .fd-import-section {
+      margin: 14px 0 0; padding: 14px;
+      border: 1px solid #e2e2e2; border-radius: 6px; background: #fff;
+    }
+    .fd-import-section > h3 {
+      margin: 0 0 12px; font-size: 15px; font-weight: 700; color: #111;
+    }
+    .fd-import-source-card {
+      margin: 0 0 0; padding: 14px;
+      border: 1px solid #e2e2e2; border-radius: 6px;
+    }
+    .fd-import-source-card.fd-import-panel-afl {
+      background: rgba(2, 54, 128, 0.08);
+      border-color: rgba(2, 54, 128, 0.22);
+    }
+    .fd-import-source-card.fd-import-panel-keeper {
+      background: rgba(237, 28, 36, 0.08);
+      border-color: rgba(237, 28, 36, 0.22);
+    }
+    .fd-import-source-card h3 {
+      margin: 0 0 10px; font-size: 15px; font-weight: 700; color: #111;
+    }
+    .fd-import-meta {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px 14px; margin: 0 0 12px; font-size: 13px;
+    }
+    .fd-import-meta-label {
+      display: block; font-size: 11px; font-weight: 600; color: #666;
+      text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 2px;
+    }
+    .fd-import-meta-value { color: #222; font-weight: 600; }
+    #fd-import-myTeam {
+      width: 100%; max-width: 260px; font-size: 13px; padding: 5px 8px;
+      border: 1px solid #ccc; border-radius: 4px; background: #fff;
+    }
+    .fd-import-source-actions {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    }
+    .fd-import-source-actions button,
+    #fd-league-save {
+      font-size: 13px; padding: 8px 14px; border-radius: 4px; cursor: pointer;
+      border: 1px solid #ccc; background: #fff; color: #333;
+    }
+    .fd-import-source-actions button:hover { background: #f3f3f3; }
+    #fd-league-refresh {
+      border-color: darkblue; color: darkblue;
+    }
+    #fd-league-delete {
+      border-color: #c62828; color: #c62828;
+    }
+    #fd-league-save {
+      background: darkblue; border-color: darkblue; color: #fff;
+      font-weight: 700; font-size: 14px; padding: 10px 22px;
+    }
+    #fd-league-save:hover,
+    #fd-league-save:focus {
+      background: #00008b; border-color: #00008b; color: #fff;
+    }
+    #fd-league-save:disabled {
+      background: #999; border-color: #999; cursor: not-allowed;
+    }
+    .fd-stepper-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px 16px;
+    }
+    .fd-stepper-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .fd-stepper-label { font-size: 13px; font-weight: 600; color: #333; }
+    .fd-stepper {
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .fd-stepper-btn {
+      width: 28px; height: 28px; border-radius: 50%; border: none;
+      background: darkblue; color: #fff; font-size: 16px; font-weight: 700;
+      line-height: 1; cursor: pointer; padding: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .fd-stepper-btn:hover { background: #00008b; }
+    .fd-stepper-btn:disabled { background: #bbb; cursor: not-allowed; }
+    .fd-stepper input[type=number] {
+      width: 52px; text-align: center; font-size: 14px; font-weight: 700;
+      border: 1px solid #ccc; border-radius: 4px; padding: 4px 2px;
+      -moz-appearance: textfield;
+    }
+    .fd-stepper input[type=number]::-webkit-outer-spin-button,
+    .fd-stepper input[type=number]::-webkit-inner-spin-button {
+      -webkit-appearance: none; margin: 0;
+    }
+    .fd-options-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px 16px; align-items: end;
+    }
+    .fd-options-field { display: flex; flex-direction: column; gap: 4px; }
+    .fd-options-field > span {
+      font-size: 12px; font-weight: 600; color: #555;
+    }
+    .fd-options-field select {
+      font-size: 13px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;
+      background: #fff; max-width: 260px;
+    }
+    .fd-toggle-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      min-height: 34px;
+    }
+    .fd-toggle {
+      position: relative; display: inline-flex; align-items: center; cursor: pointer;
+    }
+    .fd-toggle input {
+      position: absolute; opacity: 0; width: 0; height: 0;
+    }
+    .fd-toggle-ui {
+      width: 40px; height: 22px; border-radius: 11px; background: #ccc;
+      position: relative; transition: background 0.15s; flex: 0 0 auto;
+    }
+    .fd-toggle-ui::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; border-radius: 50%; background: #fff;
+      transition: transform 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,.2);
+    }
+    .fd-toggle input:checked + .fd-toggle-ui { background: darkblue; }
+    .fd-toggle input:checked + .fd-toggle-ui::after { transform: translateX(18px); }
+    #fd-import-actions {
+      margin: 16px 0 8px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    }
+    #keeper-import-status {
+      flex: 1 1 100%; font-size: 12px; color: #555; margin: 0;
+    }
+    #keeper-import-status.is-error { color: #c62828; }
+    #keeper-csv-refresh-input { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
     .fd-import-modal {
       position: fixed; inset: 0; z-index: 10050;
       display: flex; align-items: center; justify-content: center;
@@ -2417,7 +2558,7 @@ margin: 0 0 8px; font-size: 13px;
       background: #fff; border: 1px solid #ddd; border-radius: 6px;
       padding: 28px 28px 24px;
       box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
-      font-family: "Inter", sans-serif;
+      font-family: 'Inter', sans-serif;
     }
     .fd-import-modal-close {
       position: absolute; top: 10px; right: 12px;
@@ -2504,87 +2645,91 @@ margin: 0 0 8px; font-size: 13px;
     #fd-import-modal-status.is-error { color: #c62828; }
     .muted { color: #888; }
 
-.fd-name-cell {
-display: flex; align-items: center; gap: 8px; height: 100%;
-margin: 0; padding: 0;
-}
-.fd-headshot {
-flex: 0 0 44px; width: 44px; height: 44px; align-self: center;
-border-radius: 50%; overflow: hidden; background: #e8e8e8;
-border: 1px solid #ddd; display: block;
-}
-.fd-headshot img {
-width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block;
-}
-.fd-headshot-empty { background: #eee; }
-.lt-player .fd-headshot-pick { color: #666; }
-.fd-name-meta {
-flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px;
-}
-.fd-name-top {
-font-weight: 700; font-size: 12px; line-height: 1.2; white-space: nowrap;
-overflow: hidden; text-overflow: ellipsis;
-}
-.fd-name-bottom { display: flex; flex-wrap: nowrap; gap: 4px; align-items: center; min-width: 0; }
-.fd-team-chip, .fd-pos-chip {
-display: inline-flex; align-items: center; justify-content: center;
-font-size: 9px; font-weight: 700; line-height: 1; padding: 3px 5px;
-border-radius: 3px; white-space: nowrap; letter-spacing: 0.02em;
-}
-.fd-pos-chip.fd-pos-DEF { background: #F38485; color: #1a1a1a; }
-.fd-pos-chip.fd-pos-MID { background: #EBF19F; color: #1a1a1a; }
-.fd-pos-chip.fd-pos-RUC { background: #A7A5F5; color: #1a1a1a; }
-.fd-pos-chip.fd-pos-FWD { background: #A3E9C2; color: #1a1a1a; }
+    /* Name cell */
+    .fd-name-cell {
+      display: flex; align-items: center; gap: 8px; height: 100%;
+      margin: 0; padding: 0;
+    }
+    .fd-headshot {
+      flex: 0 0 44px; width: 44px; height: 44px; align-self: center;
+      border-radius: 50%; overflow: hidden; background: #e8e8e8;
+      border: 1px solid #ddd; display: block;
+    }
+    .fd-headshot img {
+      width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block;
+    }
+    .fd-headshot-empty { background: #eee; }
+    .lt-player .fd-headshot-pick { color: #666; }
+    .fd-name-meta {
+      flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px;
+    }
+    .fd-name-top {
+      font-weight: 700; font-size: 12px; line-height: 1.2; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .fd-name-bottom { display: flex; flex-wrap: nowrap; gap: 4px; align-items: center; min-width: 0; }
+    .fd-team-chip, .fd-pos-chip {
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700; line-height: 1; padding: 3px 5px;
+      border-radius: 3px; white-space: nowrap; letter-spacing: 0.02em;
+    }
+    .fd-pos-chip.fd-pos-DEF { background: #F38485; color: #1a1a1a; }
+    .fd-pos-chip.fd-pos-MID { background: #EBF19F; color: #1a1a1a; }
+    .fd-pos-chip.fd-pos-RUC { background: #A7A5F5; color: #1a1a1a; }
+    .fd-pos-chip.fd-pos-FWD { background: #A3E9C2; color: #1a1a1a; }
 
-.fd-team-chip.fd-team-ADEL { background: #0F1432; color: #fff; }
-.fd-team-chip.fd-team-BL { background: #8B0042; color: #fff; }
-.fd-team-chip.fd-team-CARL { background: #031E2F; color: #fff; }
-.fd-team-chip.fd-team-COLL { background: #000000; color: #fff; }
-.fd-team-chip.fd-team-ESS { background: #000000; color: #fff; }
-.fd-team-chip.fd-team-FRE { background: #331C54; color: #fff; }
-.fd-team-chip.fd-team-GEEL { background: #002244; color: #fff; }
-.fd-team-chip.fd-team-GCFC { background: #BB0000; color: #fff; }
-.fd-team-chip.fd-team-GWS { background: #313B42; color: #fff; }
-.fd-team-chip.fd-team-HAW { background: #512B1B; color: #fff; }
-.fd-team-chip.fd-team-MELB { background: #061A33; color: #fff; }
-.fd-team-chip.fd-team-NMFC { background: #003CA0; color: #fff; }
-.fd-team-chip.fd-team-PORT { background: #000000; color: #fff; }
-.fd-team-chip.fd-team-RICH { background: #000000; color: #FFD300; }
-.fd-team-chip.fd-team-STK { background: #000000; color: #fff; }
-.fd-team-chip.fd-team-SYD { background: #E1251B; color: #fff; }
-.fd-team-chip.fd-team-WCE { background: #003087; color: #fff; }
-.fd-team-chip.fd-team-WB { background: #0039A6; color: #fff; }
-#futures-table .tabulator-cell { overflow: visible; }
-#futures-table .tabulator-row .tabulator-cell[tabulator-field='name'] {
-padding-top: 4px; padding-bottom: 4px;
-}
+    /* Club colours */
+    .fd-team-chip.fd-team-ADEL { background: #0F1432; color: #fff; }
+    .fd-team-chip.fd-team-BL   { background: #8B0042; color: #fff; }
+    .fd-team-chip.fd-team-CARL { background: #031E2F; color: #fff; }
+    .fd-team-chip.fd-team-COLL { background: #000000; color: #fff; }
+    .fd-team-chip.fd-team-ESS  { background: #000000; color: #fff; }
+    .fd-team-chip.fd-team-FRE  { background: #331C54; color: #fff; }
+    .fd-team-chip.fd-team-GEEL { background: #002244; color: #fff; }
+    .fd-team-chip.fd-team-GCFC { background: #BB0000; color: #fff; }
+    .fd-team-chip.fd-team-GWS  { background: #313B42; color: #fff; }
+    .fd-team-chip.fd-team-HAW  { background: #512B1B; color: #fff; }
+    .fd-team-chip.fd-team-MELB { background: #061A33; color: #fff; }
+    .fd-team-chip.fd-team-NMFC { background: #003CA0; color: #fff; }
+    .fd-team-chip.fd-team-PORT { background: #000000; color: #fff; }
+    .fd-team-chip.fd-team-RICH { background: #000000; color: #FFD300; }
+    .fd-team-chip.fd-team-STK  { background: #000000; color: #fff; }
+    .fd-team-chip.fd-team-SYD  { background: #E1251B; color: #fff; }
+    .fd-team-chip.fd-team-WCE  { background: #003087; color: #fff; }
+    .fd-team-chip.fd-team-WB   { background: #0039A6; color: #fff; }
 
-#futures-table .tabulator-col .tabulator-col-resize-handle { display: none; }
-#futures-table .tabulator-col .tabulator-col-sorter { display: none; }
-#futures-table .tabulator-col[aria-sort='ascending'] .tabulator-col-sorter,
-#futures-table .tabulator-col[aria-sort='descending'] .tabulator-col-sorter {
-display: flex;
-}
-#futures-table .tabulator-col .tabulator-col-title {
-overflow: visible;
-text-overflow: clip;
-white-space: nowrap;
-}
-@media (max-width: 960px) {
-.futures-pool-layout { grid-template-columns: 1fr; }
-.futures-movers-col { position: static; }
-}
-@media (max-width: 720px) {
-.fd-heading-copy p { white-space: normal; }
-.fd-heading-meta { align-items: flex-start; margin-left: 0; }
-.fd-heading-controls { justify-content: flex-start; }
-.fd-horizon-label { align-items: flex-start; }
-.fd-asof { text-align: left; }
-.fd-subnav {
-flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
-}
-}
-</style>
+    #futures-table .tabulator-cell { overflow: visible; }
+    #futures-table .tabulator-row .tabulator-cell[tabulator-field='name'] {
+      padding-top: 4px; padding-bottom: 4px;
+    }
+    /* Lock headers: no resize handle; sort arrow only on the active sort column */
+    #futures-table .tabulator-col .tabulator-col-resize-handle { display: none; }
+    #futures-table .tabulator-col .tabulator-col-sorter { display: none; }
+    #futures-table .tabulator-col[aria-sort='ascending'] .tabulator-col-sorter,
+    #futures-table .tabulator-col[aria-sort='descending'] .tabulator-col-sorter {
+      display: flex;
+    }
+    #futures-table .tabulator-col .tabulator-col-title {
+      overflow: visible;
+      text-overflow: clip;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 960px) {
+      .futures-pool-layout { grid-template-columns: 1fr; }
+      .futures-movers-col { position: static; }
+    }
+    @media (max-width: 720px) {
+      .fd-heading-copy p { white-space: normal; }
+      .fd-heading-meta { align-items: flex-start; margin-left: 0; }
+      .fd-heading-controls { justify-content: flex-start; }
+      .fd-horizon-label { align-items: flex-start; }
+      .fd-asof { text-align: left; }
+      .fd-subnav {
+        flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+      }
+    }
+  </style>
 <div id="loading-state" class="skeleton-table">
 <div class="skeleton-row">
 <div class="skeleton-cell" style="flex:160 0 0;"></div>
@@ -2728,7 +2873,7 @@ flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
 <div class="fd-import-modal-card" role="dialog" aria-modal="true" aria-labelledby="fd-import-modal-title">
 <button id="fd-import-modal-close" class="fd-import-modal-close" type="button" aria-label="Close">×</button>
 <h2 id="fd-import-modal-title" class="fd-import-modal-title">Import your league</h2>
-<img class="fd-import-modal-hero" src="img/TutorialTeam.png" alt="Preview of the Teams view after importing a league"/>
+<img class="fd-import-modal-hero" src="C:/Users/jaiden.popowski/Documents/RStats/jaidenpopowski.github.io/img/TutorialTeam.png" alt="Preview of the Teams view after importing a league"/>
 <p class="fd-import-modal-body">Import your league from AFL Fantasy or Keeper Fantasy to see all teams, find the best free agents, and plan trades. Saves to your account for easy use.</p>
 <div id="fd-import-modal-guest" class="fd-import-modal-cta-wrap">
 <a href="/login.html" id="fd-import-get-started" class="btn-auth">Get started</a>
@@ -2737,7 +2882,10 @@ flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
 <div class="fd-import-panel fd-import-panel-afl">
 <h3>AFL Fantasy</h3>
 <ol>
-<li>Open your league draft board on <a href="https://fantasy.afl.com.au/draft" target="_blank" rel="noopener noreferrer">fantasy.afl.com.au/draft</a></li>
+<li>
+Open your league draft board on 
+<a href="https://fantasy.afl.com.au/draft" target="_blank" rel="noopener noreferrer">fantasy.afl.com.au/draft</a>
+</li>
 <li>Use Share / copy the draft board URL</li>
 <li>Paste it below and import</li>
 </ol>
@@ -2749,7 +2897,10 @@ flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
 <div class="fd-import-panel fd-import-panel-keeper">
 <h3>Keeper Fantasy</h3>
 <ol>
-<li>Open your league on <a href="https://keeperfantasy.com/" target="_blank" rel="noopener noreferrer">keeperfantasy.com</a></li>
+<li>
+Open your league on 
+<a href="https://keeperfantasy.com/" target="_blank" rel="noopener noreferrer">keeperfantasy.com</a>
+</li>
 <li>Go to the Players page and Download List</li>
 <li>Choose the CSV below and import</li>
 </ol>
@@ -2762,90 +2913,152 @@ flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
 <p id="fd-import-modal-status"></p>
 </div>
 </div>
-<div id="fd-import-manage" hidden>
-<div class="futures-controls">
-<div class="futures-import-row" style="border-top: none; padding-top: 0; margin-top: 0;">
-<div class="keeper-import-inline">
-<span class="keeper-import-title">
-Keeper Fantasy import
-<span class="keeper-tip" tabindex="0" role="img" aria-label="How to export from Keeper Fantasy" data-tip="1. Open your league on Keeper Fantasy&#39;s website
-2. Go to the Players page
-3. Download List
-4. Upload the file here">?</span>
-</span>
-<input id="keeper-csv-input" type="file" accept=".csv,text/csv"/>
-<button id="keeper-csv-clear" type="button">Clear</button>
+<div id="fd-import-source" hidden>
+<div id="fd-import-source-card" class="fd-import-source-card">
+<h3 id="fd-import-source-title">League</h3>
+<div class="fd-import-meta">
+<div>
+<span class="fd-import-meta-label">League name</span>
+<span id="fd-import-league-name" class="fd-import-meta-value">—</span>
 </div>
-<div class="keeper-import-inline">
-<span class="keeper-import-title">
-AFL Fantasy import
-<span class="keeper-tip" tabindex="0" role="img" aria-label="How to import from AFL Fantasy" data-tip="1. Open your league draft board on fantasy.afl.com.au
-2. Use Share / copy the draft board URL
-3. Paste it here (requires login)
-4. Save to sync to your account">?</span>
-</span>
-<input id="afl-share-url" type="url" placeholder="Paste draft share URL"/>
-<button id="afl-import-btn" type="button">Import</button>
+<div>
+<span class="fd-import-meta-label">My team</span>
+<select id="fd-import-myTeam"></select>
 </div>
-<div class="fd-account-sync" id="fd-account-guest">
-<a href="/login.html" id="fd-login-to-save">Login to save your league information to your account</a>
+<div>
+<span class="fd-import-meta-label">Last updated</span>
+<span id="fd-import-last-updated" class="fd-import-meta-value">—</span>
 </div>
-<div class="fd-account-sync" id="fd-account-authed" style="display:none;">
-<button id="fd-league-save" type="button">Save to account</button>
-<button id="fd-league-refresh" type="button">Refresh AFL</button>
-<button id="fd-league-delete" type="button">Delete saved</button>
+<div>
+<span class="fd-import-meta-label">Teams</span>
+<span id="fd-import-team-count" class="fd-import-meta-value">—</span>
 </div>
-<p id="keeper-import-status"></p>
 </div>
-<div class="fd-draft-order" id="fd-draft-order-block">
-<h3>Set 2027 draft order</h3>
-<p class="fd-draft-order-help">Best → worst (1st overall picks last in round 1). Leave empty to use projected ladder. Snake still reverses odd rounds.</p>
+<div class="fd-import-source-actions">
+<button id="fd-league-refresh" type="button">Refresh</button>
+<button id="fd-league-delete" type="button">Delete</button>
+</div>
+<input id="keeper-csv-refresh-input" type="file" accept=".csv,text/csv"/>
+</div>
+</div>
+<div id="fd-import-squad" class="fd-import-section">
+<h3>Squad formation</h3>
+<div class="fd-stepper-grid">
+<div class="fd-stepper-row">
+<span class="fd-stepper-label">DEF</span>
+<div class="fd-stepper">
+<button type="button" class="fd-stepper-btn" data-target="cfg-def" data-dir="-1">−</button>
+<input id="cfg-def" type="number" min="0" max="12" value="5"/>
+<button type="button" class="fd-stepper-btn" data-target="cfg-def" data-dir="1">+</button>
+</div>
+</div>
+<div class="fd-stepper-row">
+<span class="fd-stepper-label">MID</span>
+<div class="fd-stepper">
+<button type="button" class="fd-stepper-btn" data-target="cfg-mid" data-dir="-1">−</button>
+<input id="cfg-mid" type="number" min="0" max="14" value="7"/>
+<button type="button" class="fd-stepper-btn" data-target="cfg-mid" data-dir="1">+</button>
+</div>
+</div>
+<div class="fd-stepper-row">
+<span class="fd-stepper-label">RUC</span>
+<div class="fd-stepper">
+<button type="button" class="fd-stepper-btn" data-target="cfg-ruc" data-dir="-1">−</button>
+<input id="cfg-ruc" type="number" min="0" max="4" value="1"/>
+<button type="button" class="fd-stepper-btn" data-target="cfg-ruc" data-dir="1">+</button>
+</div>
+</div>
+<div class="fd-stepper-row">
+<span class="fd-stepper-label">FWD</span>
+<div class="fd-stepper">
+<button type="button" class="fd-stepper-btn" data-target="cfg-fwd" data-dir="-1">−</button>
+<input id="cfg-fwd" type="number" min="0" max="12" value="5"/>
+<button type="button" class="fd-stepper-btn" data-target="cfg-fwd" data-dir="1">+</button>
+</div>
+</div>
+<div class="fd-stepper-row">
+<span class="fd-stepper-label">FLX</span>
+<div class="fd-stepper">
+<button type="button" class="fd-stepper-btn" data-target="cfg-flx" data-dir="-1">−</button>
+<input id="cfg-flx" type="number" min="0" max="12" value="0"/>
+<button type="button" class="fd-stepper-btn" data-target="cfg-flx" data-dir="1">+</button>
+</div>
+</div>
+<div class="fd-stepper-row">
+<span class="fd-stepper-label">Bench</span>
+<div class="fd-stepper">
+<button type="button" class="fd-stepper-btn" data-target="cfg-bench" data-dir="-1">−</button>
+<input id="cfg-bench" type="number" min="0" max="30" value="12"/>
+<button type="button" class="fd-stepper-btn" data-target="cfg-bench" data-dir="1">+</button>
+</div>
+</div>
+<div class="fd-stepper-row" id="fd-keepers-stepper-row">
+<span class="fd-stepper-label">Keepers</span>
+<div class="fd-stepper">
+<button type="button" class="fd-stepper-btn" data-target="cfg-keepers" data-dir="-1">−</button>
+<input id="cfg-keepers" type="number" min="0" max="40" value="20" title="Number of players you keep each year"/>
+<button type="button" class="fd-stepper-btn" data-target="cfg-keepers" data-dir="1">+</button>
+</div>
+</div>
+</div>
+</div>
+<div id="fd-import-options" class="fd-import-section">
+<h3>League options</h3>
+<div class="fd-options-grid">
+<div class="fd-options-field">
+<span>League type</span>
+<select id="cfg-leagueType">
+<option value="keeper" selected>Keeper</option>
+<option value="redraft">Redraft</option>
+<option value="dynasty">Dynasty</option>
+</select>
+</div>
+<div class="fd-options-field" id="fd-keepers-finalised-row">
+<span>Keepers finalised</span>
+<div class="fd-toggle-row">
+<label class="fd-toggle">
+<input id="cfg-keepersFinalised" type="checkbox"/>
+<span class="fd-toggle-ui"></span>
+</label>
+</div>
+</div>
+<div class="fd-options-field">
+<span>Draft format</span>
+<select id="cfg-draftFormat">
+<option value="snake" selected>Snake</option>
+<option value="linear">Linear</option>
+</select>
+</div>
+<div class="fd-options-field">
+<span>Pick trading</span>
+<div class="fd-toggle-row">
+<label class="fd-toggle">
+<input id="cfg-pickTrading" type="checkbox" checked/>
+<span class="fd-toggle-ui"></span>
+</label>
+</div>
+</div>
+<div class="fd-stepper-row">
+<span class="fd-stepper-label">Teams</span>
+<div class="fd-stepper">
+<button type="button" class="fd-stepper-btn" data-target="cfg-teams" data-dir="-1">−</button>
+<input id="cfg-teams" type="number" min="2" max="30" value="10"/>
+<button type="button" class="fd-stepper-btn" data-target="cfg-teams" data-dir="1">+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="fd-draft-order" id="fd-draft-order-block" hidden>
+<h3>Draft order</h3>
+<p class="fd-draft-order-help">Best → worst (1st overall picks last in round 1 for snake). Drag to reorder.</p>
 <ol id="fd-draft-order-list" class="fd-draft-order-list"></ol>
 <div class="fd-draft-order-actions">
 <button id="fd-draft-order-projected" type="button">Use projected ladder</button>
-<button id="fd-draft-order-clear" type="button">Clear</button>
 </div>
 </div>
-</div>
-</div>
-<div id="futures-settings-block">
-<h3>League settings</h3>
-<div class="futures-controls">
-<label>
-Teams
-<input id="cfg-teams" type="number" min="2" max="30" value="10"/>
-</label>
-<div class="row-inline">
-<label>
-DEF
-<input id="cfg-def" type="number" min="0" max="12" value="5"/>
-</label>
-<label>
-MID
-<input id="cfg-mid" type="number" min="0" max="14" value="7"/>
-</label>
-<label>
-RUC
-<input id="cfg-ruc" type="number" min="0" max="4" value="1"/>
-</label>
-<label>
-FWD
-<input id="cfg-fwd" type="number" min="0" max="12" value="5"/>
-</label>
-</div>
-<label>
-Bench
-<input id="cfg-bench" type="number" min="0" max="30" value="12"/>
-</label>
-<label>
-Keepers
-<input id="cfg-keepers" type="number" min="0" max="40" value="20" title="Number of players you keep each year"/>
-</label>
-<label style="flex-direction: row; align-items: center; gap: 6px; font-weight: 600;" title="Have you locked in your keepers yet?">
-<input id="cfg-keeperCut" type="checkbox"/>
-Yet to finalise keepers
-</label>
-</div>
+<div id="fd-import-actions" hidden>
+<button id="fd-league-save" type="button">Save to account</button>
+<p id="keeper-import-status"></p>
 </div>
 </div>
 <div id="fd-tab-help" class="fd-tab-panel" hidden>

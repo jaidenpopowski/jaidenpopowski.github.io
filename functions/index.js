@@ -163,10 +163,10 @@ function normalizeAflPayload(leagueMeta, teamsArr, draftBoard) {
     DEF: Number(leagueMeta.squadSize && leagueMeta.squadSize.DEF) || 0,
     MID: Number(leagueMeta.squadSize && leagueMeta.squadSize.MID) || 0,
     RUC: Number(leagueMeta.squadSize && leagueMeta.squadSize.RUC) || 0,
-    FWD: Number(leagueMeta.squadSize && leagueMeta.squadSize.FWD) || 0
+    FWD: Number(leagueMeta.squadSize && leagueMeta.squadSize.FWD) || 0,
+    FLX: Number(leagueMeta.squadSize && leagueMeta.squadSize.FLX) || 0
   };
   const bench =
-    (Number(leagueMeta.squadSize && leagueMeta.squadSize.FLX) || 0) +
     (Number(leagueMeta.squadSize && leagueMeta.squadSize.INT) || 0) +
     (Number(leagueMeta.reserve) || 0) +
     (Number(leagueMeta.injuryReplacement) || 0);
