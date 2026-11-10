@@ -1525,10 +1525,13 @@
   /** True for keeper-league top-up slots (KD / type=pick without a national id). */
   function isKeeperLeaguePick(r) {
     if (!r) return false;
+    const id = String(r.id || "");
+    const key = String(r.key || "");
+    if (id.indexOf("KD_PICK_") === 0 || key.indexOf("PICK:") === 0) return true;
+    // National pool assets (PICK_YYYY_*) are not keeper slots.
     if (isNationalPickAsset(r)) return false;
     if (r.type === "pick") return true;
-    const id = String(r.id || "");
-    return id.indexOf("KD_PICK_") === 0;
+    return false;
   }
 
   /** Material Person icon — national / real AFL draftee placeholder. */
@@ -1554,7 +1557,9 @@
   }
 
   function pickIconHtml(row) {
-    if (isNationalPickAsset(row) || (row && row._pick && isNationalPickAsset(row._pick.proxyRow))) {
+    // Only real PICK_YYYY_* pool assets get the person icon — never KD slots,
+    // even when their value proxy is a national pick.
+    if (isNationalPickAsset(row) && !isKeeperLeaguePick(row)) {
       return personIconHtml("fd-headshot fd-headshot-pick");
     }
     return libraryAddIconHtml();
@@ -2726,13 +2731,11 @@
 
   function plannerPlayerRowHtml(slot, belowCut) {
     const r = slot.player;
-    const isNat =
-      isNationalPickAsset(r) ||
-      (r._pick && isNationalPickAsset(r._pick.proxyRow));
+    const isNat = isNationalPickAsset(r) && !isKeeperLeaguePick(r);
     const isPick = r.type === "pick" || isNat || isKeeperLeaguePick(r);
     if (isPick) {
       const tip =
-        !isNat && r._pick && r._pick.proxyName
+        r._pick && r._pick.proxyName
           ? r.name + " · proxy " + r._pick.proxyName
           : r.name || "";
       const abbr = isNat ? r.teamAbbr || r.club || "" : "";
@@ -3073,9 +3076,9 @@
    * Snake-draft pick slots with unowned proxies.
    * yearCount=1 (default): upcoming draft only — used by Trades.
    * yearCount>1: one draft class per horizon season — used by Planner.
-   * Each year pool = that year's national PICK_YYYY_* + remaining FAs,
-   * ranked by horizon VORP (same Through as keepers). National picks keep
-   * club chips; FA-proxied keeper slots do not inherit the proxy club.
+   * Value pool = that year's national PICK_YYYY_* + remaining FAs (VORP-ranked).
+   * Slots are always keeper-league assets (KD id / R# name / no AFL club) —
+   * national picks only supply proxy value, never slot identity or club chips.
    */
   function buildKeeperDraftPicks(unowned, cfg, seasons, rows, league, opts) {
     const yearSeasons = seasons.slice();
@@ -3119,16 +3122,12 @@
       const usedFaIds = new Set();
       slots.forEach((slot, i) => {
         const proxy = pool[i] || null;
-        const isNat = proxy && isNationalPickAsset(proxy);
-        if (proxy && !isNat) usedFaIds.add(proxy.id);
+        const proxyIsNat = !!(proxy && isNationalPickAsset(proxy));
+        if (proxy && !proxyIsNat) usedFaIds.add(proxy.id);
         const ypts = proxy
           ? yearPointsForRow(proxy, yLen)
           : Array.from({ length: yLen }, () => 0);
         const overall = i + 1;
-        // Club only for real national picks — never inherit FA proxy club onto KD slots.
-        const club = isNat
-          ? proxy.teamAbbr || proxy.club || ""
-          : "";
         out.push({
           // Slot-stable keys (not proxy id) so trades survive pool re-rank.
           key: singleYear
@@ -3139,18 +3138,15 @@
           owner: slot.owner,
           seasonIdx: yi,
           draftYear: draftYear,
-          id: isNat
-            ? proxy.id
-            : singleYear
-              ? "KD_PICK_" + String(overall).padStart(2, "0")
-              : "KD_PICK_" + draftYear + "_" + String(overall).padStart(2, "0"),
-          name: isNat
-            ? proxy.name
-            : draftYear + " R" + slot.round + " (#" + overall + ")",
+          // Always KD identity — never adopt PICK_YYYY_* / AFL club from proxy.
+          id: singleYear
+            ? "KD_PICK_" + String(overall).padStart(2, "0")
+            : "KD_PICK_" + draftYear + "_" + String(overall).padStart(2, "0"),
+          name: draftYear + " R" + slot.round + " (#" + overall + ")",
           vorp: proxy ? Number(proxy.vorp) || 0 : 0,
           yearPts: ypts,
-          club: club,
-          proxyName: isNat ? null : proxy ? proxy.name : null,
+          club: "",
+          proxyName: proxy ? proxy.name : null,
           proxyId: proxy ? proxy.id : null,
           proxyRow: proxy
         });
@@ -3167,19 +3163,16 @@
   /** Synthetic roster row so planner lineups can place a pick via its proxy. */
   function plannerPlayerFromPick(pick) {
     const proxy = pick && pick.proxyRow;
-    const isNat = !!(proxy && isNationalPickAsset(proxy));
-    const club = isNat
-      ? (pick && pick.club) || proxy.teamAbbr || proxy.club || ""
-      : "";
+    const proxyIsNat = !!(proxy && isNationalPickAsset(proxy));
     const proxyAsset = proxy && proxy._asset ? proxy._asset : null;
     const asset = proxyAsset
       ? proxyAsset
       : {
           xPoints: (pick.yearPts || []).slice(),
-          pos: isNat && proxy && proxy.pos ? proxy.pos : undefined
+          pos: proxyIsNat && proxy && proxy.pos ? proxy.pos : undefined
         };
-    // National picks: ensure pos priors available even if only on the row
-    if (isNat && proxy && proxy.pos && !asset.pos) {
+    // Value proxy may be a national pick — copy pos priors only, never club.
+    if (proxyIsNat && proxy && proxy.pos && !asset.pos) {
       asset.pos = proxy.pos;
     }
     return {
@@ -3188,11 +3181,11 @@
       owner: pick.owner,
       type: "pick",
       vorp: Number(pick.vorp) || 0,
-      teamAbbr: club,
-      club: club,
+      teamAbbr: "",
+      club: "",
       fantasyPos: "",
       keeperPos: "",
-      event: (proxy && proxy.event) || (proxyAsset && proxyAsset.event) || null,
+      event: null,
       _asset: asset,
       _pick: pick
     };
@@ -3287,7 +3280,6 @@
       };
     });
     (picks || []).forEach((p) => {
-      const isNat = !!(p.proxyRow && isNationalPickAsset(p.proxyRow));
       map[p.key] = {
         key: p.key,
         kind: "pick",
@@ -3299,7 +3291,8 @@
         round: p.round,
         owner: p.owner,
         belowCut: false,
-        club: isNat ? p.club || "" : "",
+        // KD slots never inherit AFL club from a national value proxy.
+        club: "",
         proxyRow: p.proxyRow || null,
         row: null
       };
@@ -3674,16 +3667,16 @@
   }
 
   function pickPlayerRowHtml(p) {
-    const proxy = p && p.proxyRow;
-    const isNat = !!(proxy && isNationalPickAsset(proxy)) || isNationalPickAsset(p);
-    const abbr = isNat
-      ? (p && p.club) || (proxy ? proxy.teamAbbr || proxy.club || "" : "")
-      : "";
+    // Trade/board pick rows from buildKeeperDraftPicks are always KD slots.
+    const isNat =
+      isNationalPickAsset(p) &&
+      !isKeeperLeaguePick(p) &&
+      !(p && p.key && String(p.key).indexOf("PICK:") === 0);
     const tip =
       "Overall #" +
       (p.pick || "") +
-      (!isNat && p.proxyName ? " · proxy " + p.proxyName : "");
-    const pUsedChip = pickUsageChipHtml(p);
+      (p.proxyName ? " · proxy " + p.proxyName : "");
+    const pUsedChip = isNat ? pickUsageChipHtml(p) : "";
     return (
       '<div class="lt-player tc-pick-row">' +
       (isNat
@@ -3696,7 +3689,7 @@
       escapeHtml(p.name || "") +
       "</div>" +
       '<div class="lt-player-chips">' +
-      teamChipHtml(abbr) +
+      (isNat ? teamChipHtml((p && p.club) || "") : "") +
       (isNat ? "" : '<span class="fd-pos-chip">PICK</span>') +
       pUsedChip +
       "</div>" +
@@ -3708,28 +3701,24 @@
     );
   }
 
-  /** Chip when national pick carries usage risk (p_used &lt; 1). Never for KD/FA proxies. */
+  /** Chip when a real national PICK_YYYY_* asset carries usage risk (p_used &lt; 1). */
   function pickUsageChipHtml(assetOrPick) {
-    const proxy =
-      (assetOrPick && assetOrPick.proxyRow) ||
-      (assetOrPick && assetOrPick.row) ||
-      null;
     const self = assetOrPick;
-    const isNat =
-      isNationalPickAsset(self) ||
-      isNationalPickAsset(proxy) ||
-      !!(self && self.proxyRow && isNationalPickAsset(self.proxyRow)) ||
-      (self && String(self.id || "").indexOf("PICK_") === 0);
-    if (!isNat) return "";
-    // Prefer the national asset itself; do not fall through to an FA proxy player.
+    // KD slots / FA proxies never get this chip — even if value proxy is national.
+    if (
+      !self ||
+      isKeeperLeaguePick(self) ||
+      (self.key && String(self.key).indexOf("PICK:") === 0) ||
+      (self.id && String(self.id).indexOf("KD_PICK_") === 0)
+    ) {
+      return "";
+    }
     const row = isNationalPickAsset(self)
       ? self
-      : isNationalPickAsset(proxy)
-        ? proxy
-        : self && String(self.id || "").indexOf("PICK_") === 0
-          ? self
-          : null;
-    if (!row) return "";
+      : self.proxyRow && isNationalPickAsset(self.proxyRow) && !self.key
+        ? self.proxyRow
+        : null;
+    if (!row || !isNationalPickAsset(row)) return "";
     const a = row._asset || row;
     let pUsed = null;
     const ev = (a && a.event) || (row && row.event) || "";
