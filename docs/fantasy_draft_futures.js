@@ -4765,8 +4765,6 @@
     }
     if (block && state.cfg.tab === "import") block.hidden = false;
     const order = currentDraftOrderList(state.rows, league, state.cfg);
-    const usingCustom = !!(state.cfg.draftOrder && state.cfg.draftOrder.length);
-    const fmt = state.cfg.draftFormat === "linear" ? "linear" : "snake";
     list.innerHTML = order
       .map((owner, i) => {
         return (
@@ -4784,13 +4782,6 @@
         );
       })
       .join("");
-    const hint = block && block.querySelector(".fd-draft-order-help");
-    if (hint) {
-      hint.textContent = usingCustom
-        ? "Custom order (best → worst)" +
-          (fmt === "snake" ? ". Snake reverses odd rounds." : ". Linear keeps the same order each round.")
-        : "Using projected ladder (best → worst). Drag to lock a custom order.";
-    }
     bindDraftOrderDrag(list);
   }
 

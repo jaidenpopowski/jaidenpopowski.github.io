@@ -2211,13 +2211,13 @@ display: none;
       #owner-dropdown-panel { grid-template-columns: 1fr !important; }
     }
     .fd-draft-order {
-      margin-top: 16px; padding: 14px 14px 12px;
+      margin: 0; padding: 14px;
       border: 1px solid #e2e2e2; border-radius: 6px; background: #fff;
+      width: 100%; box-sizing: border-box;
     }
-    .fd-draft-order h3 { margin: 0 0 6px; font-size: 15px; font-weight: 700; color: #111; }
-    .fd-draft-order-help { margin: 0 0 10px; font-size: 12px; color: #666; }
+    .fd-draft-order h3 { margin: 0 0 10px; font-size: 15px; font-weight: 700; color: #111; }
     .fd-draft-order-list {
-      list-style: none; margin: 0; padding: 0; max-width: 520px;
+      list-style: none; margin: 0; padding: 0; max-width: 100%;
     }
     .fd-draft-order-list li {
       display: flex; align-items: center; gap: 8px; padding: 8px 10px;
@@ -2412,15 +2412,24 @@ display: none;
     #fd-draft-order-block[hidden],
     #fd-import-actions[hidden],
     #fd-keepers-finalised-row[hidden] { display: none !important; }
+    #fd-import-layout {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      align-items: start;
+      margin-top: 4px;
+      max-width: 1100px;
+    }
+    #fd-import-layout > * { min-width: 0; }
     .fd-import-section {
-      margin: 14px 0 0; padding: 14px;
+      margin: 0; padding: 14px;
       border: 1px solid #e2e2e2; border-radius: 6px; background: #fff;
     }
     .fd-import-section > h3 {
       margin: 0 0 12px; font-size: 15px; font-weight: 700; color: #111;
     }
     .fd-import-source-card {
-      margin: 0 0 0; padding: 14px;
+      margin: 0; padding: 14px;
       border: 1px solid #e2e2e2; border-radius: 6px;
     }
     .fd-import-source-card.fd-import-panel-afl {
@@ -2435,17 +2444,18 @@ display: none;
       margin: 0 0 10px; font-size: 15px; font-weight: 700; color: #111;
     }
     .fd-import-meta {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 10px 14px; margin: 0 0 12px; font-size: 13px;
+      display: grid; grid-template-columns: 1fr;
+      gap: 8px; margin: 0 0 12px; font-size: 13px;
     }
     .fd-import-meta-label {
-      display: block; font-size: 11px; font-weight: 600; color: #666;
-      text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 2px;
+      display: block; font-size: 12px; font-weight: 600; color: #555;
+      margin-bottom: 2px;
     }
     .fd-import-meta-value { color: #222; font-weight: 600; }
     #fd-import-myTeam {
-      width: 100%; max-width: 260px; font-size: 13px; padding: 5px 8px;
+      width: 100%; font-size: 13px; padding: 5px 8px;
       border: 1px solid #ccc; border-radius: 4px; background: #fff;
+      box-sizing: border-box;
     }
     .fd-import-source-actions {
       display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
@@ -2474,27 +2484,27 @@ display: none;
       background: #999; border-color: #999; cursor: not-allowed;
     }
     .fd-stepper-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 10px 16px;
+      display: grid; grid-template-columns: 1fr;
+      gap: 8px;
     }
     .fd-stepper-row {
       display: flex; align-items: center; justify-content: space-between; gap: 10px;
     }
     .fd-stepper-label { font-size: 13px; font-weight: 600; color: #333; }
     .fd-stepper {
-      display: inline-flex; align-items: center; gap: 6px;
+      display: inline-flex; align-items: center; gap: 4px;
     }
     .fd-stepper-btn {
-      width: 28px; height: 28px; border-radius: 50%; border: none;
-      background: darkblue; color: #fff; font-size: 16px; font-weight: 700;
+      width: 22px; height: 22px; border-radius: 50%; border: none;
+      background: darkblue; color: #fff; font-size: 13px; font-weight: 700;
       line-height: 1; cursor: pointer; padding: 0;
       display: inline-flex; align-items: center; justify-content: center;
     }
     .fd-stepper-btn:hover { background: #00008b; }
     .fd-stepper-btn:disabled { background: #bbb; cursor: not-allowed; }
     .fd-stepper input[type=number] {
-      width: 52px; text-align: center; font-size: 14px; font-weight: 700;
-      border: 1px solid #ccc; border-radius: 4px; padding: 4px 2px;
+      width: 40px; text-align: center; font-size: 13px; font-weight: 700;
+      border: 1px solid #ccc; border-radius: 4px; padding: 2px 0;
       -moz-appearance: textfield;
     }
     .fd-stepper input[type=number]::-webkit-outer-spin-button,
@@ -2502,40 +2512,42 @@ display: none;
       -webkit-appearance: none; margin: 0;
     }
     .fd-options-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px 16px; align-items: end;
+      display: grid; grid-template-columns: 1fr;
+      gap: 10px; align-items: stretch;
     }
     .fd-options-field { display: flex; flex-direction: column; gap: 4px; }
-    .fd-options-field > span {
-      font-size: 12px; font-weight: 600; color: #555;
+    .fd-options-field > span,
+    .fd-options-toggle > span {
+      font-size: 13px; font-weight: 600; color: #333;
     }
     .fd-options-field select {
       font-size: 13px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;
-      background: #fff; max-width: 260px;
+      background: #fff; width: 100%; box-sizing: border-box;
     }
-    .fd-toggle-row {
-      display: flex; align-items: center; justify-content: space-between; gap: 10px;
-      min-height: 34px;
+    .fd-options-toggle {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      min-height: 28px;
     }
     .fd-toggle {
       position: relative; display: inline-flex; align-items: center; cursor: pointer;
+      flex: 0 0 auto;
     }
     .fd-toggle input {
       position: absolute; opacity: 0; width: 0; height: 0;
     }
     .fd-toggle-ui {
-      width: 40px; height: 22px; border-radius: 11px; background: #ccc;
+      width: 36px; height: 20px; border-radius: 10px; background: #ccc;
       position: relative; transition: background 0.15s; flex: 0 0 auto;
     }
     .fd-toggle-ui::after {
       content: ''; position: absolute; top: 2px; left: 2px;
-      width: 18px; height: 18px; border-radius: 50%; background: #fff;
+      width: 16px; height: 16px; border-radius: 50%; background: #fff;
       transition: transform 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,.2);
     }
     .fd-toggle input:checked + .fd-toggle-ui { background: darkblue; }
-    .fd-toggle input:checked + .fd-toggle-ui::after { transform: translateX(18px); }
+    .fd-toggle input:checked + .fd-toggle-ui::after { transform: translateX(16px); }
     #fd-import-actions {
-      margin: 16px 0 8px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      margin: 0; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
     }
     #keeper-import-status {
       flex: 1 1 100%; font-size: 12px; color: #555; margin: 0;
@@ -2913,6 +2925,7 @@ Open your league on
 <p id="fd-import-modal-status"></p>
 </div>
 </div>
+<div id="fd-import-layout">
 <div id="fd-import-source" hidden>
 <div id="fd-import-source-card" class="fd-import-source-card">
 <h3 id="fd-import-source-title">League</h3>
@@ -3013,14 +3026,12 @@ Open your league on
 <option value="dynasty">Dynasty</option>
 </select>
 </div>
-<div class="fd-options-field" id="fd-keepers-finalised-row">
+<div class="fd-options-toggle" id="fd-keepers-finalised-row">
 <span>Keepers finalised</span>
-<div class="fd-toggle-row">
 <label class="fd-toggle">
 <input id="cfg-keepersFinalised" type="checkbox"/>
 <span class="fd-toggle-ui"></span>
 </label>
-</div>
 </div>
 <div class="fd-options-field">
 <span>Draft format</span>
@@ -3029,14 +3040,12 @@ Open your league on
 <option value="linear">Linear</option>
 </select>
 </div>
-<div class="fd-options-field">
+<div class="fd-options-toggle">
 <span>Pick trading</span>
-<div class="fd-toggle-row">
 <label class="fd-toggle">
 <input id="cfg-pickTrading" type="checkbox" checked/>
 <span class="fd-toggle-ui"></span>
 </label>
-</div>
 </div>
 <div class="fd-stepper-row">
 <span class="fd-stepper-label">Teams</span>
@@ -3050,7 +3059,6 @@ Open your league on
 </div>
 <div class="fd-draft-order" id="fd-draft-order-block" hidden>
 <h3>Draft order</h3>
-<p class="fd-draft-order-help">Best → worst (1st overall picks last in round 1 for snake). Drag to reorder.</p>
 <ol id="fd-draft-order-list" class="fd-draft-order-list"></ol>
 <div class="fd-draft-order-actions">
 <button id="fd-draft-order-projected" type="button">Use projected ladder</button>
@@ -3059,6 +3067,7 @@ Open your league on
 <div id="fd-import-actions" hidden>
 <button id="fd-league-save" type="button">Save to account</button>
 <p id="keeper-import-status"></p>
+</div>
 </div>
 </div>
 <div id="fd-tab-help" class="fd-tab-panel" hidden>
