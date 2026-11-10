@@ -2411,7 +2411,46 @@ display: none;
     #fd-import-source[hidden],
     #fd-draft-order-block[hidden],
     #fd-import-actions[hidden],
-    #fd-keepers-finalised-row[hidden] { display: none !important; }
+    #fd-keepers-finalised-row[hidden],
+    #fd-keepers-stepper-row[hidden],
+    #fd-pick-trading-row[hidden],
+    #fd-import-pane-guest[hidden],
+    #fd-import-pane-empty[hidden],
+    #fd-import-pane-league[hidden],
+    #fd-import-refresh-tip[hidden] { display: none !important; }
+    .fd-import-refresh-wrap {
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .fd-import-tip {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: darkblue; color: #fff; font-size: 11px; font-weight: 700;
+      cursor: help; position: relative; flex: 0 0 auto; line-height: 1;
+    }
+    .fd-import-tip:hover::after, .fd-import-tip:focus::after {
+      content: attr(data-tip);
+      position: absolute; left: 0; bottom: calc(100% + 8px);
+      width: 240px; padding: 8px 10px; background: #222; color: #fff;
+      font-size: 11px; font-weight: 400; line-height: 1.45; text-align: left;
+      border-radius: 4px; white-space: pre-line; z-index: 30;
+      box-shadow: 0 4px 12px rgba(0,0,0,.18);
+    }
+    .fd-import-tip:hover::before, .fd-import-tip:focus::before {
+      content: ''; position: absolute; left: 4px; bottom: calc(100% + 2px);
+      border: 6px solid transparent; border-top-color: #222;
+    }
+    .fd-import-guest-card {
+      padding: 16px; border: 1px solid #e2e2e2; border-radius: 6px; background: #fff;
+    }
+    .fd-import-guest-card h3 {
+      margin: 0 0 8px; font-size: 16px; font-weight: 700; color: #111;
+    }
+    .fd-import-guest-card p {
+      margin: 0 0 14px; font-size: 13px; line-height: 1.5; color: #555;
+    }
+    .fd-import-empty-split {
+      display: grid; grid-template-columns: 1fr; gap: 10px;
+    }
     #fd-import-layout {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -2880,17 +2919,14 @@ display: none;
 <div id="league-ladder"></div>
 </div>
 <div id="fd-tab-import" class="fd-tab-panel" hidden>
-<div id="fd-import-modal" class="fd-import-modal" hidden>
-<div class="fd-import-modal-backdrop" id="fd-import-modal-backdrop"></div>
-<div class="fd-import-modal-card" role="dialog" aria-modal="true" aria-labelledby="fd-import-modal-title">
-<button id="fd-import-modal-close" class="fd-import-modal-close" type="button" aria-label="Close">×</button>
-<h2 id="fd-import-modal-title" class="fd-import-modal-title">Import your league</h2>
-<img class="fd-import-modal-hero" src="C:/Users/jaiden.popowski/Documents/RStats/jaidenpopowski.github.io/img/TutorialTeam.png" alt="Preview of the Teams view after importing a league"/>
-<p class="fd-import-modal-body">Import your league from AFL Fantasy or Keeper Fantasy to see all teams, find the best free agents, and plan trades. Saves to your account for easy use.</p>
-<div id="fd-import-modal-guest" class="fd-import-modal-cta-wrap">
+<div id="fd-import-layout">
+<div id="fd-import-source">
+<div id="fd-import-pane-guest" class="fd-import-guest-card" hidden>
+<h3>Import your league</h3>
+<p>Import your league from AFL Fantasy or Keeper Fantasy to see all teams, find the best free agents, and plan trades. Saves to your account for easy use.</p>
 <a href="/login.html" id="fd-import-get-started" class="btn-auth">Get started</a>
 </div>
-<div id="fd-import-modal-authed" class="fd-import-modal-split" hidden>
+<div id="fd-import-pane-empty" class="fd-import-empty-split" hidden>
 <div class="fd-import-panel fd-import-panel-afl">
 <h3>AFL Fantasy</h3>
 <ol>
@@ -2921,12 +2957,9 @@ Open your league on
 <button id="keeper-import-btn-modal" type="button">Import</button>
 </div>
 </div>
-</div>
 <p id="fd-import-modal-status"></p>
 </div>
-</div>
-<div id="fd-import-layout">
-<div id="fd-import-source" hidden>
+<div id="fd-import-pane-league" hidden>
 <div id="fd-import-source-card" class="fd-import-source-card">
 <h3 id="fd-import-source-title">League</h3>
 <div class="fd-import-meta">
@@ -2948,10 +2981,16 @@ Open your league on
 </div>
 </div>
 <div class="fd-import-source-actions">
+<div class="fd-import-refresh-wrap">
 <button id="fd-league-refresh" type="button">Refresh</button>
+<span id="fd-import-refresh-tip" class="fd-import-tip" tabindex="0" role="img" aria-label="How to re-upload Keeper lists" data-tip="1. Open your league on keeperfantasy.com&#10;2. Go to the Players page and Download List&#10;3. Choose the CSV and import" hidden>?</span>
+</div>
 <button id="fd-league-delete" type="button">Delete</button>
+<button id="fd-league-save" type="button">Save all settings</button>
 </div>
 <input id="keeper-csv-refresh-input" type="file" accept=".csv,text/csv"/>
+<p id="keeper-import-status"></p>
+</div>
 </div>
 </div>
 <div id="fd-import-squad" class="fd-import-section">
@@ -3040,7 +3079,7 @@ Open your league on
 <option value="linear">Linear</option>
 </select>
 </div>
-<div class="fd-options-toggle">
+<div class="fd-options-toggle" id="fd-pick-trading-row">
 <span>Pick trading</span>
 <label class="fd-toggle">
 <input id="cfg-pickTrading" type="checkbox" checked/>
@@ -3063,10 +3102,6 @@ Open your league on
 <div class="fd-draft-order-actions">
 <button id="fd-draft-order-projected" type="button">Use projected ladder</button>
 </div>
-</div>
-<div id="fd-import-actions" hidden>
-<button id="fd-league-save" type="button">Save to account</button>
-<p id="keeper-import-status"></p>
 </div>
 </div>
 </div>

@@ -46,6 +46,7 @@
   };
 
   const FD_TABS = ["pool", "planner", "teams", "trades", "ladder", "import", "help"];
+  const LEAGUE_REQUIRED_TABS = ["planner", "teams", "trades", "ladder"];
 
   const CLUB_FILTER_ORDER = [
     "ADEL",
@@ -373,7 +374,13 @@
   }
 
   function setActiveTab(tab) {
-    const next = FD_TABS.indexOf(tab) >= 0 ? tab : "pool";
+    let next = FD_TABS.indexOf(tab) >= 0 ? tab : "pool";
+    if (
+      LEAGUE_REQUIRED_TABS.indexOf(next) >= 0 &&
+      !leagueHasTeams(state.league)
+    ) {
+      next = "import";
+    }
     state.cfg.tab = next;
     document.querySelectorAll(".fd-tab-btn").forEach((btn) => {
       btn.classList.toggle("active", btn.getAttribute("data-tab") === next);
@@ -385,7 +392,6 @@
     });
     writeCfgToUrl(state.cfg);
     if (next === "import") syncImportTabUi();
-    else hideImportModal();
     if (next === "pool" && state.table) {
       try {
         state.table.redraw(true);
@@ -402,50 +408,23 @@
     el.classList.toggle("is-error", !!isError);
   }
 
-  function hideImportModal() {
-    const modal = document.getElementById("fd-import-modal");
-    if (modal) modal.hidden = true;
-  }
-
-  function showImportModal(mode) {
-    const modal = document.getElementById("fd-import-modal");
-    const guest = document.getElementById("fd-import-modal-guest");
-    const authed = document.getElementById("fd-import-modal-authed");
-    if (!modal) return;
-    const isGuest = mode !== "authed";
-    if (guest) guest.hidden = !isGuest;
-    if (authed) authed.hidden = isGuest;
-    modal.hidden = false;
-    setImportModalStatus("");
-  }
-
   function syncImportManageVisibility() {
     const hasLeague = leagueHasTeams(state.league);
-    const source = document.getElementById("fd-import-source");
+    const loggedIn = !!state.accountUser;
+    const guest = document.getElementById("fd-import-pane-guest");
+    const empty = document.getElementById("fd-import-pane-empty");
+    const leaguePane = document.getElementById("fd-import-pane-league");
     const draft = document.getElementById("fd-draft-order-block");
-    const actions = document.getElementById("fd-import-actions");
-    if (source) source.hidden = !hasLeague;
+    const source = document.getElementById("fd-import-source");
+    if (source) source.hidden = false;
+    if (guest) guest.hidden = !(!hasLeague && !loggedIn);
+    if (empty) empty.hidden = !(!hasLeague && loggedIn);
+    if (leaguePane) leaguePane.hidden = !hasLeague;
     if (draft) draft.hidden = !hasLeague;
-    if (actions) actions.hidden = !hasLeague;
     if (hasLeague) renderImportSourceCard();
   }
 
   function syncImportTabUi() {
-    syncImportManageVisibility();
-    if (leagueHasTeams(state.league)) {
-      hideImportModal();
-      return;
-    }
-    if (state.importModalDismissed) {
-      hideImportModal();
-      return;
-    }
-    showImportModal(state.accountUser ? "authed" : "guest");
-  }
-
-  function dismissImportModal() {
-    state.importModalDismissed = true;
-    hideImportModal();
     syncImportManageVisibility();
   }
 
@@ -529,15 +508,14 @@
 
     syncImportMyTeamSelect(league, state.cfg);
 
+    const tip = document.getElementById("fd-import-refresh-tip");
     if (refreshBtn) {
-      const canRefresh =
-        isAfl
-          ? !!(platform.leagueHash)
-          : true;
+      const canRefresh = isAfl ? !!(platform.leagueHash) : true;
       refreshBtn.style.display = canRefresh ? "" : "none";
       refreshBtn.disabled = !canRefresh;
-      refreshBtn.textContent = "Refresh";
+      refreshBtn.textContent = isAfl ? "Refresh" : "Re-upload lists";
     }
+    if (tip) tip.hidden = isAfl;
   }
 
   function syncImportMyTeamSelect(league, cfg) {
@@ -568,7 +546,6 @@
 
   function afterModalImportSuccess() {
     state.importModalDismissed = false;
-    hideImportModal();
     syncImportManageVisibility();
     setImportModalStatus("League imported — opening Teams…");
     setLeagueStatus("League imported — opening Teams…");
@@ -907,8 +884,8 @@
       el.textContent = msg || "";
       el.classList.toggle("is-error", !!isError);
     }
-    const modalOpen = document.getElementById("fd-import-modal");
-    if (modalOpen && !modalOpen.hidden) setImportModalStatus(msg, isError);
+    const emptyPane = document.getElementById("fd-import-pane-empty");
+    if (emptyPane && !emptyPane.hidden) setImportModalStatus(msg, isError);
   }
 
   function syncOwnerDropdownVisibility(league) {
@@ -1188,7 +1165,7 @@
   function applyLeagueTypeUi(cfg) {
     const lt = cfg && cfg.leagueType;
     const hidePlanner = lt === "redraft";
-    const hideCut = lt !== "keeper";
+    const isKeeper = lt === "keeper";
 
     document.querySelectorAll('.fd-tab-btn[data-tab="planner"]').forEach((btn) => {
       btn.style.display = hidePlanner ? "none" : "";
@@ -1198,13 +1175,27 @@
     }
 
     const finalisedRow = document.getElementById("fd-keepers-finalised-row");
-    if (finalisedRow) finalisedRow.hidden = hideCut;
+    if (finalisedRow) finalisedRow.hidden = !isKeeper;
 
     const keepersRow = document.getElementById("fd-keepers-stepper-row");
-    if (keepersRow) keepersRow.style.display = lt === "redraft" ? "none" : "";
+    if (keepersRow) keepersRow.hidden = !isKeeper;
+
+    const pickRow = document.getElementById("fd-pick-trading-row");
+    if (pickRow) pickRow.hidden = lt === "redraft";
 
     const typeSel = document.getElementById("cfg-leagueType");
     if (typeSel && lt) typeSel.value = lt;
+
+    const endSel = document.getElementById("cfg-endSeason");
+    if (endSel) {
+      if (lt === "redraft" && state.seasons && state.seasons.length) {
+        cfg.endSeason = state.seasons[0];
+        endSel.value = String(state.seasons[0]);
+        endSel.disabled = true;
+      } else {
+        endSel.disabled = false;
+      }
+    }
   }
 
   function buildLeaguePersistPayload() {
@@ -5231,14 +5222,6 @@
       });
     }
 
-    const importModalClose = document.getElementById("fd-import-modal-close");
-    if (importModalClose) {
-      importModalClose.addEventListener("click", () => dismissImportModal());
-    }
-    const importModalBackdrop = document.getElementById("fd-import-modal-backdrop");
-    if (importModalBackdrop) {
-      importModalBackdrop.addEventListener("click", () => dismissImportModal());
-    }
     const getStarted = document.getElementById("fd-import-get-started");
     if (getStarted) {
       getStarted.addEventListener("click", (e) => {
