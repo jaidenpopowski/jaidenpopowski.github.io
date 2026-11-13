@@ -5237,10 +5237,13 @@
         e.preventDefault();
         const q = new URLSearchParams(window.location.search);
         q.set("tab", "import");
-        const redirect = encodeURIComponent(
-          window.location.pathname + "?" + q.toString()
-        );
-        window.location.href = "/login.html?redirect=" + redirect;
+        const returnTo = window.location.pathname + "?" + q.toString();
+        if (window.SbjAuth && typeof window.SbjAuth.openLoginModal === "function") {
+          window.SbjAuth.openLoginModal({ redirect: returnTo });
+        } else {
+          window.location.href =
+            "/account.html?redirect=" + encodeURIComponent(returnTo);
+        }
       });
     }
     const aflModalBtn = document.getElementById("afl-import-btn-modal");

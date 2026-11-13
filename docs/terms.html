@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Terms of Service</title>
+
+<script src="site_libs/header-attrs-2.31/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-6.5.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet" />
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1GD8EVS054"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-1GD8EVS054');
+</script>
+<!-- header.html — included on every page via _site.yml in_header -->
+<script type="module" src="firebase.js"></script>
+<script type="module" src="auth.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Stats By Jaiden</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index">Home</a>
+</li>
+<li>
+  <a href="fantasy">Fantasy</a>
+</li>
+<li>
+  <a href="supercoach">SuperCoach</a>
+</li>
+<li>
+  <a href="aflw">AFLW</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://ko-fi.com/statsbyjaiden">
+    <span class="fa fa-solid fa-mug-hot"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://twitter.com/jaiden_popowski">
+    <span class="fa fa-brands fa-twitter"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://instagram.com/statsbyjaiden">
+    <span class="fa fa-brands fa-instagram"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="account">Account</a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Terms of Service</h1>
+
+</div>
+
+
+<p><strong>Last updated:</strong> 13th November 2026</p>
+<p>These Terms of Service (“Terms”) govern your use of the Stats By
+Jaiden website at <a
+href="https://statsbyjaiden.com.au">statsbyjaiden.com.au</a> (the
+“Site”), operated by Jaiden Popowski in Australia (“I”, “me”, “my”).
+Trading details: ABN 99 827 968 575.</p>
+<p>By accessing or using the Site, creating an account, or purchasing
+premium access, you agree to these Terms. If you do not agree, do not
+use the Site.</p>
+<p>For how personal information is handled, see the <a
+href="privacy.html">Privacy Policy</a>.</p>
+<div id="the-site" class="section level1">
+<h1>The Site</h1>
+<p>Stats By Jaiden provides AFL Fantasy, SuperCoach, AFLW, and related
+statistical tools, projections, models, and league helpers for
+informational and entertainment purposes.</p>
+<p>The Site is a personal project. It is <strong>not</strong> affiliated
+with, endorsed by, or officially connected to the AFL, AFL Fantasy,
+SuperCoach, Draftstars, Keeper Fantasy, or any club, competition, or
+data provider unless explicitly stated.</p>
+</div>
+<div id="my-employment" class="section level1">
+<h1>My employment</h1>
+<p>I am employed by Genius Sports, which builds and maintains the
+official AFL Fantasy and AFLW Fantasy platforms on behalf of their
+owners (including the AFL and Telstra). That employment does not mean
+this Site is affiliated with, endorsed by, or operated for Genius
+Sports, the AFL, Telstra, or the official Fantasy products. Stats By
+Jaiden is a personal side project. Data used on this Site comes from
+publicly available sources (for example public websites and official
+public API feeds), not from confidential systems, internal tools, or
+personal information I can access through my job. I do not use official
+Fantasy account data or other non-public work information to operate
+this Site, create accounts here, or produce projections and tools.</p>
+</div>
+<div id="accounts" class="section level1">
+<h1>Accounts</h1>
+<p>You may create an account using an email address and password. You
+are responsible for:</p>
+<ul>
+<li>providing accurate account details</li>
+<li>keeping your login credentials confidential</li>
+<li>activity that occurs under your account</li>
+</ul>
+<p>I may suspend or terminate accounts that appear to abuse the Site,
+share paid access contrary to these Terms, attempt to circumvent
+paywalls, or otherwise interfere with the service.</p>
+<p>You may request account deletion as described in the <a
+href="privacy.html">Privacy Policy</a>. Deleting an account may end
+access to paid features tied to that account. Payment records held by
+payment providers are governed by their policies.</p>
+</div>
+<div id="premium-access-and-payments" class="section level1">
+<h1>Premium access and payments</h1>
+<p>Some features require a paid (“Premium”) subscription. Prices,
+inclusions, and season coverage are shown on the Site at the time of
+purchase.</p>
+<ul>
+<li>Payments are processed by Stripe (or another payment provider named
+on the Site). I do not store your full card details.</li>
+<li>Unless otherwise stated at checkout, Premium access is a one-off
+purchase for the stated period (for example, a season), not an
+auto-renewing subscription.</li>
+<li>Access is granted to the purchasing account only. Sharing login
+details or redistributing paid content is not permitted.</li>
+<li>Premium features may change over a season as tools are improved;
+material reductions to what was advertised at purchase will be handled
+reasonably on a case-by-case basis.</li>
+</ul>
+</div>
+<div id="refunds" class="section level1">
+<h1>Refunds</h1>
+<p>Because Premium content is digital and access can be used immediately
+after purchase, <strong>all sales are generally final</strong>.</p>
+<p>I may consider a refund or credit at my discretion where:</p>
+<ul>
+<li>payment was duplicated in error</li>
+<li>technical failure prevented reasonable access shortly after
+purchase, and I could not fix it in a timely way</li>
+<li>Australian Consumer Law otherwise requires a remedy</li>
+</ul>
+<p>To request a review, <a href="mailto:jaidenstats@gmail.com">email
+me</a> from the email on your account, with your purchase details.</p>
+</div>
+<div id="acceptable-use" class="section level1">
+<h1>Acceptable use</h1>
+<p>You agree not to:</p>
+<ul>
+<li>scrape, harvest, or systematically copy Site content or data beyond
+ordinary personal use</li>
+<li>reverse engineer paywalls, authentication, or storage access
+controls</li>
+<li>upload malware or attempt unauthorised access to accounts, systems,
+or data</li>
+<li>use the Site for unlawful purposes</li>
+<li>misrepresent Site output as official AFL, Fantasy, SuperCoach, or
+DFS advice</li>
+</ul>
+<p>I may rate-limit, block, or remove access where I reasonably believe
+these rules are being broken.</p>
+</div>
+<div id="no-warranties-fantasy-and-modelling-disclaimer"
+class="section level1">
+<h1>No warranties; fantasy and modelling disclaimer</h1>
+<p>Projections, valuations, VORP figures, injury-related estimates,
+contract notes, positional forecasts, and similar outputs are
+<strong>models and opinions</strong>, not guarantees.</p>
+<ul>
+<li>Past ranking results, expert contest placings, or subscriber wins do
+not guarantee future performance.</li>
+<li>Data is collected from public and third-party sources that may be
+incomplete, delayed, or wrong.</li>
+<li>Lineups, trades, drafts, and DFS entries involve risk; you are
+solely responsible for your decisions.</li>
+</ul>
+<p>To the fullest extent permitted by law, the Site and its content are
+provided <strong>“as is”</strong> and <strong>“as available”</strong>,
+without warranties of accuracy, completeness, merchantability, fitness
+for a particular purpose, or uninterrupted availability.</p>
+</div>
+<div id="limitation-of-liability" class="section level1">
+<h1>Limitation of liability</h1>
+<p>To the fullest extent permitted by Australian law:</p>
+<ul>
+<li>I am not liable for indirect, incidental, special, consequential, or
+punitive loss, or for lost profits, lost opportunity, or fantasy/DFS
+losses arising from use of the Site.</li>
+<li>My total aggregate liability relating to the Site or a Premium
+purchase is limited to the amount you paid me for Premium access in the
+12 months before the claim (or AUD $50 if you paid nothing).</li>
+</ul>
+<p>Nothing in these Terms excludes or limits rights that cannot be
+excluded under the Australian Consumer Law or other applicable law.
+Where liability cannot be excluded, it is limited to re-supply of the
+services or payment of the cost of re-supply, where that is
+permitted.</p>
+</div>
+<div id="intellectual-property" class="section level1">
+<h1>Intellectual property</h1>
+<p>Site design, text, models, tools, and original compilations are owned
+by me or used under licence. You may use the Site for personal,
+non-commercial fantasy purposes. You may not republish, sell, or
+redistribute substantial Site content or paid outputs without prior
+written permission.</p>
+<p>Player names, images, logos, and competition marks belong to their
+respective owners and are used for informational reference only.</p>
+</div>
+<div id="third-party-services-and-links" class="section level1">
+<h1>Third-party services and links</h1>
+<p>The Site relies on third parties (for example hosting, Firebase
+authentication, payments, analytics, and optional support widgets).
+Their terms and privacy policies also apply when you use those
+services.</p>
+<p>Links to other websites (including fantasy contests and tools) are
+provided for convenience. I am not responsible for their content or
+practices.</p>
+</div>
+<div id="changes-to-the-site-or-terms" class="section level1">
+<h1>Changes to the Site or Terms</h1>
+<p>I may update features, pricing for new purchases, or these Terms from
+time to time. The “Last updated” date will change when Terms are
+revised. Continued use of the Site after an update constitutes
+acceptance of the revised Terms where the law allows. For material
+changes affecting existing Premium purchasers, I will take reasonable
+steps to communicate the change where practical.</p>
+</div>
+<div id="governing-law" class="section level1">
+<h1>Governing law</h1>
+<p>These Terms are governed by the laws of Victoria, Australia. Courts
+in that jurisdiction may hear disputes, without limiting any
+non-excludable consumer rights you have.</p>
+</div>
+<div id="contact" class="section level1">
+<h1>Contact</h1>
+<p>Questions about these Terms: <a
+href="mailto:jaidenstats@gmail.com">send me an email.</a>.</p>
+</div>
+
+<hr>
+
+<p style="text-align: center;"> Stats By Jaiden &middot; <a href="privacy">Privacy</a> &middot; <a href="terms">Terms</a></p>
+
+<script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
+<script>
+  kofiWidgetOverlay.draw('statsbyjaiden', {
+    'type': 'floating-chat',
+    'floating-chat.donateButton.text': 'Support Me',
+    'floating-chat.donateButton.background-color': '#323842',
+    'floating-chat.donateButton.text-color': '#fff'
+  });
+</script>
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

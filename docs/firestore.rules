@@ -11,7 +11,7 @@ service cloud.firestore {
         && request.auth.uid == userId
         && (!('paid' in request.resource.data)
             || request.resource.data.paid == resource.data.paid);
-      allow delete: if false;
+      allow delete: if request.auth != null && request.auth.uid == userId;
     }
   }
 }

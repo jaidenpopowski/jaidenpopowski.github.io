@@ -315,6 +315,311 @@ a:active {
   color: #1a7a4a;
 }
 
+/* ─── Account landing (3 columns) ────────────────────────────────────────── */
+
+.account-landing {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  align-items: start;
+  padding: 28px 0 80px;
+}
+
+.account-col {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 22px 20px 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  min-width: 0;
+}
+
+.account-col h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 14px;
+  color: #111;
+}
+
+.account-col-sub {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #555;
+  margin: 0 0 16px;
+}
+
+.account-hero {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 3;
+  height: auto;
+  object-fit: cover;
+  object-position: center top;
+  border-radius: 4px;
+  border: 1px solid #e2e2e2;
+  margin: 0 0 14px;
+  background: #f5f5f5;
+}
+
+.account-info-box {
+  border: 1px solid #e2e2e2;
+  border-radius: 4px;
+  padding: 14px 14px 4px;
+  margin-bottom: 14px;
+  background: #fafafa;
+}
+
+.account-info-box p {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 12px;
+}
+
+.account-info-box .account-value {
+  color: #111;
+  font-weight: 500;
+  word-break: break-word;
+  font-size: 14px;
+}
+
+.account-col .form-group {
+  margin-bottom: 14px;
+}
+
+.account-col .form-group label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #444;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.account-col .form-control {
+  height: 38px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  color: #222;
+  width: 100%;
+  padding: 6px 10px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.account-col .form-control:focus {
+  border-color: darkblue;
+  box-shadow: 0 0 0 2px rgba(0,0,139,0.1);
+  outline: none;
+}
+
+.account-col .forgot-link {
+  font-size: 12px;
+  color: #888;
+  text-decoration: none;
+  float: right;
+}
+
+.account-col .forgot-link:hover {
+  color: darkblue;
+  text-decoration: underline;
+}
+
+.account-col .btn-auth {
+  margin-top: 8px;
+}
+
+.btn-auth-secondary {
+  background-color: #eef2ff !important;
+  color: #111 !important;
+}
+
+.btn-auth-secondary:hover,
+.btn-auth-secondary:focus {
+  background-color: #dfe6ff !important;
+  color: #111 !important;
+}
+
+.btn-auth-danger {
+  display: block;
+  width: 100%;
+  height: 38px;
+  margin-top: 8px;
+  background: #fff;
+  color: #c62828;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  line-height: 36px;
+}
+
+.btn-auth-danger:hover,
+.btn-auth-danger:focus {
+  background: #fff5f5;
+  border-color: #ef9a9a;
+  outline: none;
+}
+
+.account-muted {
+  font-size: 12px;
+  color: #888;
+  margin-top: 14px;
+  margin-bottom: 0;
+}
+
+.account-muted a {
+  color: darkblue;
+}
+
+.account-price-line {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 10px;
+  line-height: 1.1;
+}
+
+.account-price-line sup {
+  font-size: 14px;
+  vertical-align: super;
+}
+
+.account-price-period {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #888;
+  margin-top: 2px;
+}
+
+.account-feature-rows {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 0;
+  border-top: 1px solid #eee;
+}
+
+.account-feature-rows li {
+  font-size: 13px;
+  color: #333;
+  padding: 11px 0;
+  border-bottom: 1px solid #eee;
+  line-height: 1.45;
+}
+
+.account-feature-rows li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.account-feature-rows a {
+  color: darkblue;
+  font-weight: 600;
+}
+
+/* Signup modal on account page */
+.account-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.account-modal[hidden] {
+  display: none !important;
+}
+
+.account-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.account-modal-card {
+  position: relative;
+  z-index: 1;
+  width: min(420px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 28px 24px 22px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+}
+
+.account-modal-card h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 36px 6px 0;
+  color: #111;
+}
+
+.account-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0;
+}
+
+.account-modal-close:hover,
+.account-modal-close:focus {
+  color: #111;
+  background: #f2f2f2;
+  outline: none;
+}
+
+.account-modal-card .form-group {
+  margin-bottom: 14px;
+}
+
+.account-modal-card .form-group label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #444;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.account-modal-card .form-control {
+  height: 38px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  color: #222;
+  width: 100%;
+  padding: 6px 10px;
+}
+
+.account-modal-card .form-control:focus {
+  border-color: darkblue;
+  box-shadow: 0 0 0 2px rgba(0,0,139,0.1);
+  outline: none;
+}
+
+@media (max-width: 992px) {
+  .account-landing {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding-top: 20px;
+  }
+}
+
 /* ─── Upgrade / paywall page ─────────────────────────────────────────────── */
 
 .upgrade-wrap {
@@ -449,68 +754,21 @@ a:active {
   color: #888;
 }
 
-/* ─── Legacy / existing login modal (kept for compatibility) ─────────────── */
+/* Site-wide login overlay uses .account-modal / .account-modal-card (see above).
+   Legacy green .login-modal styles removed in favour of that shared widget. */
 
-#login-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  overflow: hidden;
-}
-
-.login-modal {
-  background-color: white;
-  padding: 20px 30px;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  max-width: 400px;
-  box-sizing: border-box;
-  text-align: center;
-  margin: auto;
-}
-
-.login-modal h3 {
-  font-weight: bold;
-  font-size: 1.5em;
-  margin-bottom: 20px;
-}
-
-.login-modal input {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 15px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  font-size: 1em;
-}
-
-.login-modal button {
-  width: 100%;
-  padding: 10px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  font-size: 1.1em;
-  cursor: pointer;
-}
-
-.login-modal button:hover { background-color: #45a049; }
-
-.login-modal p { margin-top: 15px; }
-
-.login-modal a {
-  color: #007bff;
+/* Ensure overlay form controls match account modal when injected by auth.js */
+#sbj-login-modal .forgot-link {
+  font-size: 12px;
+  color: #888;
   text-decoration: none;
+  float: right;
 }
 
-.login-modal a:hover { text-decoration: underline; }
+#sbj-login-modal .forgot-link:hover {
+  color: darkblue;
+  text-decoration: underline;
+}
 
 input.error { border: 2px solid red; }
 
