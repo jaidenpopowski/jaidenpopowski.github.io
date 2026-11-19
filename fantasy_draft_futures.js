@@ -1705,6 +1705,7 @@
         age: a.age != null && Number.isFinite(Number(a.age)) ? Math.round(Number(a.age)) : null,
         contract: a.contract,
         fantasyPos: Array.isArray(a.fantasyPos) ? a.fantasyPos.join("/") : "",
+        photoUrl: a.photoUrl || null,
         status: a.status,
         value: r.value,
         vorp,
@@ -1823,15 +1824,28 @@
       return libraryAddIconHtml();
     }
     const pid = pulsePlayerId(row);
-    if (!pid) {
+    const prospectUrl = String(
+      (row && row.photoUrl) ||
+        (row && row._asset && row._asset.photoUrl) ||
+        ""
+    );
+    if (!pid && !prospectUrl) {
       return personIconHtml("fd-headshot fd-headshot-pick");
     }
-    const src = HEADSHOT_BASE + pid + ".png?im=Resize=(80,80)";
+    // Normal ChampID → prospect photoUrl → empty.
+    const primary = pid
+      ? HEADSHOT_BASE + pid + ".png?im=Resize=(80,80)"
+      : prospectUrl;
+    const fallbackAttr = pid && prospectUrl
+      ? " data-fallback=\"" + escapeHtml(prospectUrl) + "\""
+      : "";
     return (
       '<span class="fd-headshot">' +
       '<img src="' +
-      src +
-      '" alt="" loading="lazy" onerror="this.parentNode.classList.add(\'fd-headshot-empty\');this.remove();">' +
+      escapeHtml(primary) +
+      '" alt="" loading="lazy"' +
+      fallbackAttr +
+      " onerror=\"var f=this.getAttribute('data-fallback');if(f){this.removeAttribute('data-fallback');this.src=f;}else{this.parentNode.classList.add('fd-headshot-empty');this.remove();}\">" +
       "</span>"
     );
   }

@@ -1705,6 +1705,7 @@
         age: a.age != null && Number.isFinite(Number(a.age)) ? Math.round(Number(a.age)) : null,
         contract: a.contract,
         fantasyPos: Array.isArray(a.fantasyPos) ? a.fantasyPos.join("/") : "",
+        photoUrl: a.photoUrl || null,
         status: a.status,
         value: r.value,
         vorp,
@@ -1823,7 +1824,11 @@
       return libraryAddIconHtml();
     }
     const pid = pulsePlayerId(row);
-    const prospectUrl = row && row.photoUrl ? String(row.photoUrl) : "";
+    const prospectUrl = String(
+      (row && row.photoUrl) ||
+        (row && row._asset && row._asset.photoUrl) ||
+        ""
+    );
     if (!pid && !prospectUrl) {
       return personIconHtml("fd-headshot fd-headshot-pick");
     }

@@ -15,14 +15,21 @@ function escapeHtml(str) {
     .replace(/"/g, "&quot;");
 }
 
-function headshot(playerId, league) {
-  if (!playerId) return "";
-  const id = String(playerId).replace(/\D/g, "");
+function headshot(playerId, league, photoUrl) {
+  if (!playerId && !photoUrl) return "";
+  const id = playerId ? String(playerId).replace(/\D/g, "") : "";
   const path =
     league === "aflw"
       ? `AFLW/2026264/${id}.png`
       : `AFL/2026014/${id}.png`;
-  return `<img class="hub-headshot" src="https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/${path}?im=Resize=(50,50)" alt="" onerror="this.style.display='none'">`;
+  const primary = id
+    ? `https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/${path}?im=Resize=(50,50)`
+    : String(photoUrl);
+  const fallback =
+    id && photoUrl
+      ? ` data-fallback="${escapeHtml(String(photoUrl))}"`
+      : "";
+  return `<img class="hub-headshot" src="${escapeHtml(primary)}" alt=""${fallback} onerror="var f=this.getAttribute('data-fallback');if(f){this.removeAttribute('data-fallback');this.src=f;}else{this.style.display='none'}">`;
 }
 
 function formatPrice(price) {
