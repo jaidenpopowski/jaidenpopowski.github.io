@@ -202,7 +202,15 @@
       search: "",
       give: [],
       get: [],
-      bound: false
+      bound: false,
+      sheetOpen: false,
+      sheetSide: "give",
+      sheetKind: "players",
+      sheetPos: "ALL",
+      swapped: false,
+      verdictExpanded: false,
+      toast: "",
+      calculating: false
     },
     /** @type {Object.<string,string>} */
     teamLabels: Object.create(null)
@@ -392,6 +400,9 @@
     });
     writeCfgToUrl(state.cfg);
     if (next === "import") syncImportTabUi();
+    if (next === "trades" && state.rows) {
+      renderTradeCalculator(state.rows, state.league, state.cfg);
+    }
     if (next === "pool" && state.table) {
       try {
         state.table.redraw(true);
@@ -591,14 +602,13 @@
 
   function resolveKeeperCut(cfg, data, seasons) {
     if (cfg.keeperCut === true || cfg.keeperCut === false) return cfg.keeperCut;
-    // Imported keepers-only rosters ⇒ treat as cut already finalised.
-    if (
-      state.rows &&
-      state.league &&
-      allImportedTeamsAtOrUnderKeepers(state.rows, state.league, cfg)
-    ) {
-      return true;
-    }
+    const lt = cfg.leagueType || (state.league && state.league.platform && state.league.platform.leagueType);
+    // Dynasty / redraft: no keeper cut phase.
+    if (lt === "dynasty" || lt === "redraft") return false;
+    // Keeper (or unknown): cut ON when any roster still exceeds keepers.
+    // Do not key off national PICK_* assets — AFL draft ≠ fantasy keeper draft.
+    // Under-keepers is a no-op in selectKeepers* (everyone kept).
+    if (lt === "keeper" || lt == null || lt === "") return true;
     return hasUpcomingDraftPicks(data, seasons);
   }
 
@@ -854,6 +864,27 @@
     };
   }
 
+  /** Strip CD_I prefixes from ownership/position maps so ids match pulsePlayerId rows. */
+  function normalizeLeagueIds(league) {
+    if (!league) return league;
+    function normKey(k) {
+      const s = String(k || "");
+      if (/^CD_I\d+$/i.test(s)) return s.replace(/^CD_I/i, "");
+      return s;
+    }
+    function rewriteMap(src) {
+      if (!src) return src;
+      const out = Object.create(null);
+      Object.keys(src).forEach((k) => {
+        out[normKey(k)] = src[k];
+      });
+      return out;
+    }
+    league.ownership = rewriteMap(league.ownership) || league.ownership;
+    league.positions = rewriteMap(league.positions) || league.positions;
+    return league;
+  }
+
   function applyLeagueOwnership(rows, league) {
     if (!league || !league.ownership) {
       rows.forEach((r) => {
@@ -863,8 +894,11 @@
       });
       return rows;
     }
+    normalizeLeagueIds(league);
     rows.forEach((r) => {
-      const tid = league.ownership[r.id];
+      const tid = league.ownership[r.id] != null
+        ? league.ownership[r.id]
+        : league.ownership[pulsePlayerId(r)];
       if (tid != null && tid !== "") {
         r.ownerTeamId = String(tid);
         r.owner = teamNameById(league, tid) || null;
@@ -872,7 +906,12 @@
         r.ownerTeamId = null;
         r.owner = null;
       }
-      r.keeperPos = (league.positions && league.positions[r.id]) || null;
+      const posKey = r.id;
+      const posPulse = pulsePlayerId(r);
+      r.keeperPos =
+        (league.positions &&
+          (league.positions[posKey] || league.positions[posPulse])) ||
+        null;
     });
     return rows;
   }
@@ -1321,7 +1360,9 @@
         "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
       );
       const userRef = doc(sbj.db, "users", sbj.currentUser.uid);
-      await setDoc(userRef, { league: payload }, { merge: true });
+      // mergeFields replaces `league` wholesale (merge:true deep-merges maps and
+      // would keep dropped players / removed teams after a re-import).
+      await setDoc(userRef, { league: payload }, { mergeFields: ["league"] });
       if (state.league) {
         state.league.fromAccount = true;
         state.league.createdAt = payload.createdAt;
@@ -2214,26 +2255,23 @@
 
   /** AFL H&A-ish season length for cover need (slots × games). */
   const COVER_GAMES_SEASON = 23;
-  /** Cover is "enough" when Σ xGamesPOS ≥ this × slots × games. */
-  const COVER_ADEQUACY = 0.8;
 
-  /** Expected games at `pos` for one horizon year (xGamesPOS, else pos% × xGames). */
+  /** Expected games at `pos` for one horizon year (xGamesPOS × probListed, else pos% × xGames × pl). */
   function seasonXGamesAtPos(row, pos, yearIdx) {
     const a = row && row._asset;
+    const pl = numAt(a && a.probListed, yearIdx);
+    const pList = Number.isFinite(pl) ? pl : 1;
     const xgPos = numAt(a && a["xGames" + pos], yearIdx);
-    if (Number.isFinite(xgPos) && xgPos > 0) return xgPos;
+    if (Number.isFinite(xgPos) && xgPos > 0) return Math.max(0, xgPos * pList);
     const probs = seasonPosProbs(row, yearIdx);
     const xg = numAt(a && a.xGames, yearIdx);
     const g = Number.isFinite(xg) ? Math.max(0, xg) : 0;
-    const pl = numAt(a && a.probListed, yearIdx);
-    const pList = Number.isFinite(pl) ? pl : 1;
     return Math.max(0, (probs[pos] || 0) * g * pList);
   }
 
   /**
-   * Season points with xGames cover: on-field always counts; bench/depth counts
-   * in full when that position's Σ xGamesPOS covers ~80% of slots × games.
-   * Example: 5 DEFs with strong xGamesDEF vs 4 slots → all five count.
+   * Season points with xGames cover: on-field always counts; bench/depth scaled by
+   * smooth min(1, cover/need) for each eligible position (picks included the same way).
    */
   function coverWeightedSeasonPoints(players, cfg, yearIdx, opts) {
     const list = (players || []).filter(Boolean);
@@ -2251,11 +2289,11 @@
         cover[pos] += seasonXGamesAtPos(p, pos, yearIdx);
       });
     });
-    const adequate = {};
+    const coverFrac = {};
     POS_KEYS.forEach((pos) => {
       const need =
         (Number(cfg.slots && cfg.slots[pos]) || 0) * COVER_GAMES_SEASON;
-      adequate[pos] = need <= 0 || cover[pos] >= COVER_ADEQUACY * need;
+      coverFrac[pos] = need <= 0 ? 1 : Math.min(1, cover[pos] / need);
     });
     let pts = 0;
     list.forEach((p) => {
@@ -2265,10 +2303,12 @@
         pts += xp;
         return;
       }
-      const counts = POS_KEYS.some(
-        (pos) => canPlaySeasonPos(p, pos, yearIdx) && adequate[pos]
-      );
-      if (counts) pts += xp;
+      let best = 0;
+      POS_KEYS.forEach((pos) => {
+        if (!canPlaySeasonPos(p, pos, yearIdx)) return;
+        if (coverFrac[pos] > best) best = coverFrac[pos];
+      });
+      if (best > 0) pts += xp * best;
     });
     return pts;
   }
@@ -3669,8 +3709,22 @@
 
     // Unequal pick hauls: keep nPicks = roster − keepers; drop highest #s (e.g. #96).
     const pickCap = nPicksCap(cfg);
-    trimOwnerPicksToCap(pickOwnerByKey, picksByKey, sideA, pickCap);
-    trimOwnerPicksToCap(pickOwnerByKey, picksByKey, sideB, pickCap);
+    const droppedA = trimOwnerPicksToCap(pickOwnerByKey, picksByKey, sideA, pickCap);
+    const droppedB = trimOwnerPicksToCap(pickOwnerByKey, picksByKey, sideB, pickCap);
+    const trimmedPicks = [];
+    function pushTrimmed(owner, keys) {
+      (keys || []).forEach((k) => {
+        const pk = picksByKey[k];
+        trimmedPicks.push({
+          owner: owner,
+          key: k,
+          pick: pk && pk.pick,
+          name: (pk && pk.name) || k
+        });
+      });
+    }
+    pushTrimmed(sideA, droppedA);
+    pushTrimmed(sideB, droppedB);
 
     const postA = teamTradeTotals(simRows, sideA, cfg, pickOwnerByKey, picksByKey);
     const postB = teamTradeTotals(simRows, sideB, cfg, pickOwnerByKey, picksByKey);
@@ -3687,7 +3741,8 @@
     return {
       a: diffTotals(postA, preA),
       b: diffTotals(postB, preB),
-      yLen
+      yLen,
+      trimmedPicks: trimmedPicks
     };
   }
 
@@ -3782,74 +3837,545 @@
     return g + "||" + t;
   }
 
-  const TRADE_MAX_ASSETS = 2;
+  const TRADE_RATER_MAX = 6;
+  const TRADE_SUGGEST_MAX = 2;
   const TRADE_FILLER_CANDIDATES = 25;
+  const TRADE_HISTORY_KEY = "fd_trade_history_v1";
+  const TRADE_FEEDBACK_KEY = "fd_trade_feedback_v1";
+  /** @deprecated alias — tray limit for rater */
+  const TRADE_MAX_ASSETS = TRADE_RATER_MAX;
 
   function emptyTradeSim(yLen) {
     const z = Array.from({ length: yLen }, () => 0);
     return {
       a: { yearPts: z.slice(), vorp: 0 },
       b: { yearPts: z.slice(), vorp: 0 },
-      yLen: yLen
+      yLen: yLen,
+      trimmedPicks: []
     };
   }
 
+  function roundXPts(v) {
+    if (v == null || !Number.isFinite(v)) return 0;
+    return Math.round(v / 10) * 10;
+  }
+
+  function trackFd(eventName, props) {
+    try {
+      if (typeof gtag === "function") {
+        gtag("event", eventName, props || {});
+      }
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function loadTradeHistory() {
+    try {
+      const raw = localStorage.getItem(TRADE_HISTORY_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveTradeHistory(entry) {
+    const hist = loadTradeHistory().filter(
+      (h) => !(h && h.sig === entry.sig)
+    );
+    hist.unshift(entry);
+    try {
+      localStorage.setItem(TRADE_HISTORY_KEY, JSON.stringify(hist.slice(0, 10)));
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function saveTradeFeedback(entry) {
+    let arr = [];
+    try {
+      const raw = localStorage.getItem(TRADE_FEEDBACK_KEY);
+      arr = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(arr)) arr = [];
+    } catch (e) {
+      arr = [];
+    }
+    arr.unshift(entry);
+    try {
+      localStorage.setItem(TRADE_FEEDBACK_KEY, JSON.stringify(arr.slice(0, 50)));
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function verdictBand(ratio) {
+    if (ratio > TRADE_XPTS_GAP_PCT) return "CLEAR_WIN";
+    if (ratio > TRADE_BALANCED_PCT) return "SLIGHT_WIN";
+    if (ratio >= -TRADE_BALANCED_PCT) return "FAIR";
+    if (ratio >= -TRADE_XPTS_GAP_PCT) return "SLIGHT_LOSS";
+    return "CLEAR_LOSS";
+  }
+
+  function verdictLabel(band, swapped) {
+    const map = {
+      CLEAR_WIN: "Clear win for you",
+      SLIGHT_WIN: "Slight win for you",
+      FAIR: "Fair",
+      SLIGHT_LOSS: "Slight loss for you",
+      CLEAR_LOSS: "Clear loss for you"
+    };
+    if (!swapped) return map[band] || "Fair";
+    const flip = {
+      CLEAR_WIN: "CLEAR_LOSS",
+      SLIGHT_WIN: "SLIGHT_LOSS",
+      FAIR: "FAIR",
+      SLIGHT_LOSS: "SLIGHT_WIN",
+      CLEAR_LOSS: "CLEAR_WIN"
+    };
+    return map[flip[band] || band] || "Fair";
+  }
+
+  function keptSetIds(split) {
+    const s = new Set();
+    if (!split) return s;
+    if (split.keptSet) {
+      split.keptSet.forEach((id) => s.add(id));
+      return s;
+    }
+    (split.kept || []).forEach((p) => {
+      if (p && p.id != null) s.add(p.id);
+    });
+    return s;
+  }
+
+  function setDiff(a, b) {
+    const out = [];
+    a.forEach((id) => {
+      if (!b.has(id)) out.push(id);
+    });
+    return out;
+  }
+
+  function assetPosLabel(asset) {
+    if (!asset) return "";
+    if (asset.kind === "pick") return "PICK";
+    return String(displayPos(asset.row || asset) || "")
+      .split("/")[0]
+      .trim();
+  }
+
+  function lineupGapsForTeam(keptPlayers, cfg, picksForOwner, yearIdx) {
+    const mustInclude = (picksForOwner || [])
+      .filter(Boolean)
+      .map((pk) => {
+        const proxy = pk.proxyRow || null;
+        if (!proxy) {
+          return {
+            id: pk.key,
+            name: pk.name,
+            type: "pick",
+            vorp: pk.vorp,
+            _pick: pk,
+            _asset: pk.proxyRow && pk.proxyRow._asset
+          };
+        }
+        return Object.assign({}, proxy, {
+          id: pk.key,
+          name: pk.name,
+          type: "pick",
+          _pick: pk
+        });
+      });
+    const lineup = buildSeasonLineup(keptPlayers || [], cfg, yearIdx, {
+      mustInclude: mustInclude
+    });
+    const gaps = [];
+    POS_KEYS.forEach((pos) => {
+      if ((lineup.remaining[pos] || 0) > 0) gaps.push(pos);
+    });
+    return gaps;
+  }
+
+  function ownedPicksFor(owner, picks, pickOwnerOverride) {
+    return (picks || []).filter((p) => {
+      const o =
+        pickOwnerOverride && pickOwnerOverride[p.key] != null
+          ? pickOwnerOverride[p.key]
+          : p.owner;
+      return o === owner;
+    });
+  }
+
+  function buildRiskFlags(getKeys, assetMap, seasons, yLen) {
+    const flags = [];
+    const endSeason =
+      seasons && seasons.length && yLen
+        ? seasons[Math.min(yLen, seasons.length) - 1]
+        : null;
+    (getKeys || []).forEach((k) => {
+      const a = assetMap[k];
+      if (!a) return;
+      if (a.kind === "pick") {
+        if (a.proxyName) {
+          flags.push({
+            key: k,
+            text: "Pick valued like " + a.proxyName
+          });
+        }
+        return;
+      }
+      const row = a.row || a;
+      const asset = row._asset || {};
+      const pl = asset.probListed;
+      if (pl && pl.length) {
+        for (let i = 0; i < yLen && i < pl.length; i++) {
+          const p = Number(pl[i]);
+          if (Number.isFinite(p) && p < 0.75) {
+            const yr = seasons[i];
+            flags.push({
+              key: k,
+              text: (row.name || "Player") + " may leave the list by " + yr
+            });
+            break;
+          }
+        }
+      }
+      if (row.age != null && Number(row.age) >= 31) {
+        flags.push({
+          key: k,
+          text: "Age " + row.age + ": expect decline"
+        });
+      }
+      const contract = row.contract != null ? Number(row.contract) : NaN;
+      if (Number.isFinite(contract) && endSeason != null && contract < endSeason) {
+        flags.push({
+          key: k,
+          text: "Contract expires " + contract
+        });
+      }
+    });
+    return flags;
+  }
+
   /**
-   * Suggest at most one filler piece (often one side only) to balance confirmed give/get.
-   * When both sides empty, proposes an opening 1-for-1.
+   * Pure trade evaluator — no DOM / no state reads.
+   * Callers pass seasons, cfg, rows, etc. so this can move to a Worker later.
    */
-  function suggestTradeFillers(opts) {
+  function evaluateTrade(opts) {
     const {
+      rows,
+      league,
+      cfg,
+      seasons,
+      data,
+      picks,
+      assetMap,
+      myTeam,
+      other,
+      giveKeys,
+      getKeys,
+      preCache
+    } = opts;
+    const yLen = horizonLen(seasons, cfg.endSeason) || (seasons || []).length || 1;
+    const yearSeasons = (seasons || []).slice(0, yLen);
+    const give = giveKeys || [];
+    const get = getKeys || [];
+    const cutOn =
+      opts.cutOn != null
+        ? !!opts.cutOn
+        : resolveKeeperCut(cfg, data || null, seasons);
+    const empty = {
+      empty: true,
+      mine: {
+        yearDelta: Array.from({ length: yLen }, () => 0),
+        total: 0,
+        keptIn: [],
+        keptOut: [],
+        gaps: []
+      },
+      theirs: {
+        yearDelta: Array.from({ length: yLen }, () => 0),
+        total: 0,
+        keptIn: [],
+        keptOut: [],
+        gaps: []
+      },
+      scale: 800,
+      ratio: 0,
+      ratioB: 0,
+      raw: 0,
+      verdict: "FAIR",
+      tags: [],
+      reasons: [],
+      riskFlags: [],
+      trimmedPicks: [],
+      sim: emptyTradeSim(yLen),
+      yearSeasons: yearSeasons,
+      cutOn: cutOn
+    };
+    if (!myTeam || !other || myTeam === other) return empty;
+    if (!give.length && !get.length) {
+      empty.reasons = ["Add something to rate"];
+      return empty;
+    }
+
+    const giveSum = sumAssetYearPts(give, assetMap);
+    const getSum = sumAssetYearPts(get, assetMap);
+    const scale = Math.max(800, giveSum, getSum);
+    const raw = scale > 0 ? (getSum - giveSum) / scale : 0;
+
+    const sim = simulateTrade(
       rows,
       league,
       cfg,
       myTeam,
       other,
+      give,
+      get,
+      picks,
+      preCache
+    );
+    const netMe = yearPtsTotal(sim.a.yearPts);
+    const netThem = yearPtsTotal(sim.b.yearPts);
+    const ratio = scale > 0 ? netMe / scale : 0;
+    const ratioB = scale > 0 ? netThem / scale : 0;
+    const verdict = verdictBand(ratio);
+
+    const tags = [];
+    if (Math.abs(ratio) < 0.04) tags.push("Close call");
+    const sign = (x) => (x > 0.001 ? 1 : x < -0.001 ? -1 : 0);
+    if (sign(raw) !== sign(ratio) || Math.abs(raw - ratio) > 0.05) {
+      tags.push("Depends on your cut");
+    }
+    if (ratio >= TRADE_BALANCED_PCT && ratioB >= TRADE_BALANCED_PCT) {
+      tags.push("Win-win");
+    }
+    if (
+      (ratio >= TRADE_XPTS_GAP_PCT && ratioB <= -TRADE_XPTS_GAP_PCT) ||
+      (ratioB >= TRADE_XPTS_GAP_PCT && ratio <= -TRADE_XPTS_GAP_PCT)
+    ) {
+      tags.push("Lopsided");
+    }
+
+    function sideDiff(sideSim, sideName) {
+      const preKept = keptSetIds(sideSim.pre && sideSim.pre.split);
+      const postKept = keptSetIds(sideSim.post && sideSim.post.split);
+      const keptIn = setDiff(postKept, preKept);
+      const keptOut = setDiff(preKept, postKept);
+      return {
+        yearDelta: (sideSim.yearPts || []).slice(0, yLen),
+        total: yearPtsTotal(sideSim.yearPts),
+        keptIn: keptIn,
+        keptOut: keptOut,
+        gaps: []
+      };
+    }
+
+    const mine = sideDiff(sim.a, myTeam);
+    const theirs = sideDiff(sim.b, other);
+
+    // Post-trade pick ownership for gap checks
+    const baseMaps = buildPickMaps(picks);
+    const pickOwnerByKey = Object.assign(
+      Object.create(null),
+      baseMaps.pickOwnerByKey
+    );
+    give.forEach((k) => {
+      if (baseMaps.picksByKey[k]) pickOwnerByKey[k] = other;
+    });
+    get.forEach((k) => {
+      if (baseMaps.picksByKey[k]) pickOwnerByKey[k] = myTeam;
+    });
+    const pickCap = nPicksCap(cfg);
+    trimOwnerPicksToCap(pickOwnerByKey, baseMaps.picksByKey, myTeam, pickCap);
+    trimOwnerPicksToCap(pickOwnerByKey, baseMaps.picksByKey, other, pickCap);
+
+    function gapsNew(owner, postSplit, preSplit) {
+      const preGaps = new Set(
+        lineupGapsForTeam(
+          (preSplit && preSplit.kept) || [],
+          cfg,
+          ownedPicksFor(owner, picks, baseMaps.pickOwnerByKey),
+          0
+        )
+      );
+      const postGaps = lineupGapsForTeam(
+        (postSplit && postSplit.kept) || [],
+        cfg,
+        ownedPicksFor(owner, picks, pickOwnerByKey),
+        0
+      );
+      return postGaps
+        .filter((pos) => !preGaps.has(pos))
+        .map((pos) => ({
+          pos: pos,
+          year: yearSeasons[0],
+          text:
+            "After this " +
+            (owner === myTeam ? "you have" : owner + " has") +
+            " no " +
+            pos.toLowerCase() +
+            " in " +
+            yearSeasons[0]
+        }));
+    }
+    mine.gaps = gapsNew(myTeam, sim.a.post && sim.a.post.split, sim.a.pre && sim.a.pre.split);
+    theirs.gaps = gapsNew(
+      other,
+      sim.b.post && sim.b.post.split,
+      sim.b.pre && sim.b.pre.split
+    );
+
+    const reasons = [];
+    const vorpHint = "(value over a replacement player)";
+    function nameOf(id) {
+      const a = assetMap[id];
+      return (a && a.name) || String(id);
+    }
+    function vorpOf(id) {
+      const a = assetMap[id];
+      return a ? Math.round(Number(a.vorp) || 0) : 0;
+    }
+    if (give.length || get.length) {
+      const topGive = give
+        .slice()
+        .sort((a, b) => vorpOf(b) - vorpOf(a))[0];
+      const topGet = get
+        .slice()
+        .sort((a, b) => vorpOf(b) - vorpOf(a))[0];
+      if (topGive && topGet) {
+        reasons.push(
+          "You give " +
+            nameOf(topGive) +
+            " (VORP " +
+            vorpOf(topGive) +
+            " " +
+            vorpHint +
+            ", " +
+            (assetPosLabel(assetMap[topGive]) || "?") +
+            ") and get " +
+            nameOf(topGet) +
+            " (VORP " +
+            vorpOf(topGet) +
+            ", " +
+            (assetPosLabel(assetMap[topGet]) || "?") +
+            ")."
+        );
+      } else if (topGive && !topGet) {
+        reasons.push(
+          "You give " +
+            nameOf(topGive) +
+            " (VORP " +
+            vorpOf(topGive) +
+            " " +
+            vorpHint +
+            ") and get nothing."
+        );
+      } else if (topGet && !topGive) {
+        reasons.push(
+          "You get " +
+            nameOf(topGet) +
+            " (VORP " +
+            vorpOf(topGet) +
+            " " +
+            vorpHint +
+            ") for nothing."
+        );
+      }
+    }
+    if (cutOn) {
+      if (mine.keptOut.length) {
+        reasons.push(
+          nameOf(mine.keptOut[0]) +
+            " drops out of your best " +
+            (Number(cfg.keeperCount) || 20)
+        );
+      }
+      if (mine.keptIn.length) {
+        reasons.push(
+          nameOf(mine.keptIn[0]) +
+            " moves into your best " +
+            (Number(cfg.keeperCount) || 20)
+        );
+      }
+    }
+    const pickKeys = give.concat(get).filter((k) => assetMap[k] && assetMap[k].kind === "pick");
+    if (pickKeys.length) {
+      const pk = assetMap[pickKeys[0]];
+      if (pk && pk.proxyName) {
+        reasons.push(
+          (pk.name || "Pick") + " is valued like " + pk.proxyName + "."
+        );
+      }
+    }
+    (sim.trimmedPicks || []).forEach((t) => {
+      if (reasons.length >= 4) return;
+      reasons.push(
+        t.owner +
+          " would hold more than " +
+          nPicksCap(cfg) +
+          " picks; " +
+          (t.name || "#" + t.pick) +
+          " is dropped."
+      );
+    });
+
+    const riskFlags = buildRiskFlags(get, assetMap, yearSeasons, yLen);
+
+    return {
+      empty: false,
+      mine: mine,
+      theirs: theirs,
+      scale: scale,
+      ratio: ratio,
+      ratioB: ratioB,
+      raw: raw,
+      verdict: verdict,
+      tags: tags,
+      reasons: reasons.slice(0, 4),
+      riskFlags: riskFlags,
+      trimmedPicks: sim.trimmedPicks || [],
+      sim: sim,
+      yearSeasons: yearSeasons,
+      cutOn: cutOn,
+      giveSum: giveSum,
+      getSum: getSum,
+      netMe: netMe,
+      netThem: netThem
+    };
+  }
+
+  /**
+   * Single-asset balance ideas when you're losing or partner would likely decline.
+   * No empty-board opening generator.
+   */
+  function suggestBalanceAdds(opts) {
+    const {
+      rows,
+      league,
+      cfg,
+      seasons,
+      data,
+      myTeam,
+      other,
       giveKeys,
       getKeys,
       assetMap,
-      picks
+      picks,
+      evalResult,
+      preCache
     } = opts;
-    const empty = { suggestGive: null, suggestGet: null, balanced: false };
-    if (!myTeam || !other || myTeam === other) return empty;
-
+    const out = [];
+    if (!myTeam || !other || myTeam === other) return out;
     const give = (giveKeys || []).slice();
     const get = (getKeys || []).slice();
-    const baseMaps = buildPickMaps(picks);
-    const preCache = Object.create(null);
-    preCache[myTeam] = teamTradeTotals(
-      rows,
-      myTeam,
-      cfg,
-      baseMaps.pickOwnerByKey,
-      baseMaps.picksByKey
-    );
-    preCache[other] = teamTradeTotals(
-      rows,
-      other,
-      cfg,
-      baseMaps.pickOwnerByKey,
-      baseMaps.picksByKey
-    );
-
-    function runSim(g, t) {
-      return simulateTrade(rows, league, cfg, myTeam, other, g, t, picks, preCache);
-    }
-
-    const giveX0 = sumAssetYearPts(give, assetMap);
-    const getX0 = sumAssetYearPts(get, assetMap);
-    const balGap = tradeBalancedGap(giveX0, getX0);
-    if (give.length || get.length) {
-      const gap = Math.abs(giveX0 - getX0);
-      const sim0 = runSim(give, get);
-      if (gap <= balGap) {
-        const myT = yearPtsTotal(sim0.a.yearPts);
-        const theirT = yearPtsTotal(sim0.b.yearPts);
-        if (myT >= -180 && theirT >= -350) {
-          return { suggestGive: null, suggestGet: null, balanced: true };
-        }
-      }
-    }
+    if (!give.length && !get.length) return out;
+    const ev = evalResult;
+    if (!ev || ev.empty) return out;
+    const needHelp =
+      ev.ratio < -TRADE_BALANCED_PCT || ev.ratioB < -TRADE_XPTS_GAP_PCT;
+    if (!needHelp) return out;
 
     const giveSet = new Set(give);
     const getSet = new Set(get);
@@ -3859,8 +4385,7 @@
       .sort(
         (a, b) =>
           yearPtsTotal(b.yearPts) - yearPtsTotal(a.yearPts) ||
-          (b.vorp || 0) - (a.vorp || 0) ||
-          a.name.localeCompare(b.name)
+          (b.vorp || 0) - (a.vorp || 0)
       )
       .slice(0, TRADE_FILLER_CANDIDATES);
     const theirAvail = Object.keys(assetMap)
@@ -3869,56 +4394,77 @@
       .sort(
         (a, b) =>
           yearPtsTotal(b.yearPts) - yearPtsTotal(a.yearPts) ||
-          (b.vorp || 0) - (a.vorp || 0) ||
-          a.name.localeCompare(b.name)
+          (b.vorp || 0) - (a.vorp || 0)
       )
       .slice(0, TRADE_FILLER_CANDIDATES);
 
-    const canAddGive = give.length < TRADE_MAX_ASSETS;
-    const canAddGet = get.length < TRADE_MAX_ASSETS;
-    let best = { score: -1e9, suggestGive: null, suggestGet: null };
+    const canAddGive = give.length < TRADE_RATER_MAX;
+    const canAddGet = get.length < TRADE_RATER_MAX;
+    // Prefer topping up the short side relative to face value / post-cut
+    const askMore = ev.ratio < -TRADE_BALANCED_PCT && canAddGet;
+    const giveMore = !askMore && canAddGive && ev.ratioB < -TRADE_XPTS_GAP_PCT;
 
-    function consider(sg, st) {
-      const g = sg ? give.concat([sg]) : give.slice();
-      const t = st ? get.concat([st]) : get.slice();
-      // Need a real trade direction after applying the suggestion
-      if (!g.length && !t.length) return;
-      if (g.length > TRADE_MAX_ASSETS || t.length > TRADE_MAX_ASSETS) return;
-      const gSum = sumAssetYearPts(g, assetMap);
-      const tSum = sumAssetYearPts(t, assetMap);
-      const assetGap = Math.abs(gSum - tSum);
-      if (assetGap > tradeGapMax(gSum, tSum)) return;
-      const sim = runSim(g, t);
-      const score = scoreTradePackage(sim, g, t, assetMap, myTeam, other);
-      if (score <= -1e8 || score <= best.score) return;
-      best = { score, suggestGive: sg || null, suggestGet: st || null };
+    function tryAdd(side, key) {
+      const g = side === "give" ? give.concat([key]) : give.slice();
+      const t = side === "get" ? get.concat([key]) : get.slice();
+      if (g.length > TRADE_RATER_MAX || t.length > TRADE_RATER_MAX) return null;
+      const next = evaluateTrade({
+        rows: rows,
+        league: league,
+        cfg: cfg,
+        seasons: seasons,
+        data: data,
+        picks: picks,
+        assetMap: assetMap,
+        myTeam: myTeam,
+        other: other,
+        giveKeys: g,
+        getKeys: t,
+        preCache: preCache
+      });
+      if (!next || next.empty) return null;
+      return {
+        side: side,
+        key: key,
+        name: (assetMap[key] && assetMap[key].name) || key,
+        verdict: next.verdict,
+        ratio: next.ratio
+      };
     }
 
-    if (!give.length && !get.length) {
-      // Opening: one piece each
+    const candidates = [];
+    if (askMore) {
+      theirAvail.forEach((a) => {
+        const hit = tryAdd("get", a.key);
+        if (hit) candidates.push(hit);
+      });
+    } else if (giveMore) {
       myAvail.forEach((a) => {
-        theirAvail.forEach((b) => consider(a.key, b.key));
+        const hit = tryAdd("give", a.key);
+        if (hit) candidates.push(hit);
       });
     } else {
-      // Prefer a single-side filler on the short side
-      const needGet = giveX0 > getX0 + balGap * 0.25;
-      const needGive = getX0 > giveX0 + balGap * 0.25;
-      if (needGet && canAddGet) {
-        theirAvail.forEach((b) => consider(null, b.key));
-      } else if (needGive && canAddGive) {
-        myAvail.forEach((a) => consider(a.key, null));
-      } else {
-        if (canAddGet) theirAvail.forEach((b) => consider(null, b.key));
-        if (canAddGive) myAvail.forEach((a) => consider(a.key, null));
+      if (canAddGet) {
+        theirAvail.forEach((a) => {
+          const hit = tryAdd("get", a.key);
+          if (hit) candidates.push(hit);
+        });
+      }
+      if (canAddGive) {
+        myAvail.forEach((a) => {
+          const hit = tryAdd("give", a.key);
+          if (hit) candidates.push(hit);
+        });
       }
     }
 
-    if (best.score <= -1e8) return empty;
-    return {
-      suggestGive: best.suggestGive,
-      suggestGet: best.suggestGet,
-      balanced: false
-    };
+    candidates.sort((a, b) => {
+      const aFair = a.verdict === "FAIR" || a.verdict === "SLIGHT_WIN" ? 1 : 0;
+      const bFair = b.verdict === "FAIR" || b.verdict === "SLIGHT_WIN" ? 1 : 0;
+      if (bFair !== aFair) return bFair - aFair;
+      return Math.abs(a.ratio) - Math.abs(b.ratio);
+    });
+    return candidates.slice(0, 3);
   }
 
   function pickPlayerRowHtml(p) {
@@ -4020,11 +4566,63 @@
     );
   }
 
-  function tradeDiffTableHtml(sim, myTeam, other, yearSeasons) {
-    const yLen = yearSeasons.length;
-    const s = sim || emptyTradeSim(yLen);
-    const ya = (s.a && s.a.yearPts) || Array.from({ length: yLen }, () => 0);
-    const yb = (s.b && s.b.yearPts) || Array.from({ length: yLen }, () => 0);
+  function tradeCutBadge(asset, cutOn) {
+    if (!cutOn || !asset || asset.kind === "pick") return "";
+    return asset.belowCut
+      ? '<span class="tc-cut-badge is-cut">Below cut</span>'
+      : '<span class="tc-cut-badge is-kept">Kept</span>';
+  }
+
+  function trayCardHtml(asset, side, cutOn) {
+    if (!asset) return "";
+    return (
+      '<div class="tc-tray-card" data-tc-key="' +
+      escapeHtml(asset.key) +
+      '">' +
+      '<div class="tc-tray-card-body">' +
+      tradeAssetBodyHtml(asset) +
+      tradeCutBadge(asset, cutOn) +
+      "</div>" +
+      '<button type="button" class="tc-remove" data-tc-remove="' +
+      escapeHtml(asset.key) +
+      '" data-tc-side="' +
+      escapeHtml(side) +
+      '" aria-label="Remove ' +
+      escapeHtml(asset.name || "") +
+      '">×</button>' +
+      "</div>"
+    );
+  }
+
+  function tradeSeasonTableHtml(evalResult, swapped) {
+    const ys = (evalResult && evalResult.yearSeasons) || [];
+    if (!ys.length) return "";
+    const ya = swapped
+      ? (evalResult.theirs && evalResult.theirs.yearDelta) || []
+      : (evalResult.mine && evalResult.mine.yearDelta) || [];
+    const yb = swapped
+      ? (evalResult.mine && evalResult.mine.yearDelta) || []
+      : (evalResult.theirs && evalResult.theirs.yearDelta) || [];
+    const maxAbs = Math.max(
+      1,
+      ...ya.map((v) => Math.abs(v || 0)),
+      ...yb.map((v) => Math.abs(v || 0))
+    );
+    function cell(v) {
+      const n = Number(v) || 0;
+      const pct = Math.min(100, (Math.abs(n) / maxAbs) * 100);
+      return (
+        "<td class='tc-num " +
+        (n > 0 ? "up" : n < 0 ? "down" : "") +
+        "'><div class='tc-num-val'>" +
+        fmtSigned(n) +
+        "</div><div class='tc-mini-bar' aria-hidden='true'><span style='width:" +
+        pct.toFixed(0) +
+        "%' class='" +
+        (n >= 0 ? "up" : "down") +
+        "'></span></div></td>"
+      );
+    }
     function row(label, yearPts, cls) {
       const total = yearPtsTotal(yearPts);
       return (
@@ -4033,17 +4631,7 @@
         "'><td class='tc-team-col'>" +
         escapeHtml(label) +
         "</td>" +
-        yearPts
-          .map((v) => {
-            return (
-              "<td class='tc-num " +
-              (v > 0 ? "up" : v < 0 ? "down" : "") +
-              "'>" +
-              fmtSigned(v) +
-              "</td>"
-            );
-          })
-          .join("") +
+        yearPts.map(cell).join("") +
         "<td class='tc-num tc-emph " +
         (total > 0 ? "up" : total < 0 ? "down" : "") +
         "'>" +
@@ -4054,32 +4642,383 @@
     return (
       '<div class="tc-overview-wrap"><table class="tc-overview"><thead><tr>' +
       "<th class='tc-team-col'></th>" +
-      yearSeasons.map((y) => "<th>" + y + "</th>").join("") +
-      "<th title='Sum of year deltas'>Total</th></tr></thead><tbody>" +
-      row(myTeam, ya, "tc-row-a") +
-      row(other, yb, "tc-row-b") +
+      ys.map((y) => "<th>" + y + "</th>").join("") +
+      "<th>Total</th></tr></thead><tbody>" +
+      row("You", ya, "tc-row-a") +
+      row("Them", yb, "tc-row-b") +
       "</tbody></table></div>"
     );
+  }
+
+  function theirAcceptLabel(ratioB) {
+    if (ratioB >= -TRADE_BALANCED_PCT) return "Yes";
+    if (ratioB >= -TRADE_XPTS_GAP_PCT) return "Borderline";
+    return "No";
+  }
+
+  function dataAgeDays(league) {
+    const raw = league && league.updatedAt;
+    if (!raw) return null;
+    const t = Date.parse(raw);
+    if (!Number.isFinite(t)) return null;
+    return Math.floor((Date.now() - t) / 86400000);
+  }
+
+  function tradeContextBarHtml(cfg, league, myTeam, seasons) {
+    const yLen = horizonLen(seasons, cfg.endSeason) || seasons.length;
+    const through =
+      seasons.length && yLen
+        ? seasons[0] + (yLen > 1 ? "–" + seasons[yLen - 1] : "")
+        : "—";
+    const cutOn = resolveKeeperCut(cfg, state.data, seasons);
+    const cutWords = cutOn
+      ? "Keepers not yet cut (we pick your best " +
+        (Number(cfg.keeperCount) || 20) +
+        ")"
+      : "Rosters as imported";
+    const nPick = nPicksCap(cfg);
+    const age = dataAgeDays(league);
+    const ageTxt =
+      age == null ? "" : age <= 0 ? "updated today" : "updated " + age + "d ago";
+    let chips = "";
+    if (age != null && age > 14) {
+      chips +=
+        '<span class="tc-chip tc-chip-warn">League data is ' +
+        age +
+        ' days old — <button type="button" class="tc-link-btn" data-tc-goto="import">re-import</button></span>';
+    }
+    if (
+      nPick > 0 &&
+      (!cfg.draftOrder || !cfg.draftOrder.length)
+    ) {
+      chips +=
+        '<span class="tc-chip">Pick values use projected draft order — <button type="button" class="tc-link-btn" data-tc-goto="import">set order</button></span>';
+    }
+    const picksTxt = nPick > 0 ? " · picks " + nPick : "";
+    return (
+      '<div class="tc-context">' +
+      '<div class="tc-context-main">' +
+      "<span>Using: <b>" +
+      escapeHtml(myTeam || "—") +
+      "</b> · " +
+      escapeHtml(through) +
+      " · " +
+      escapeHtml(cutWords) +
+      escapeHtml(picksTxt) +
+      (ageTxt ? " · " + escapeHtml(ageTxt) : "") +
+      "</span>" +
+      ' <button type="button" class="tc-link-btn" data-tc-goto="import">Change</button>' +
+      "</div>" +
+      (chips ? '<div class="tc-context-chips">' + chips + "</div>" : "") +
+      "</div>"
+    );
+  }
+
+  function tradeToastHtml() {
+    const msg = state.trade.toast || "";
+    if (!msg) return "";
+    return '<div class="tc-toast" role="status">' + escapeHtml(msg) + "</div>";
+  }
+
+  function showTradeToast(msg) {
+    state.trade.toast = msg || "";
+    const host = document.getElementById("tc-toast-host");
+    if (host) host.innerHTML = tradeToastHtml();
+    if (state.trade._toastTimer) clearTimeout(state.trade._toastTimer);
+    if (msg) {
+      state.trade._toastTimer = setTimeout(() => {
+        state.trade.toast = "";
+        const h = document.getElementById("tc-toast-host");
+        if (h) h.innerHTML = "";
+      }, 3500);
+    }
+  }
+
+  function verdictPanelHtml(evalResult, myTeam, other, balanceIdeas, swapped) {
+    if (!evalResult) {
+      return '<div class="tc-verdict-empty muted">Add something to rate</div>';
+    }
+    if (evalResult.empty && (!evalResult.reasons || !evalResult.reasons.length)) {
+      return '<div class="tc-verdict-empty muted">Add something to rate</div>';
+    }
+    if (evalResult.empty) {
+      return (
+        '<div class="tc-verdict-empty muted">' +
+        escapeHtml((evalResult.reasons && evalResult.reasons[0]) || "Add something to rate") +
+        "</div>"
+      );
+    }
+    const band = evalResult.verdict;
+    const label = verdictLabel(band, swapped);
+    const netMe = swapped ? evalResult.netThem : evalResult.netMe;
+    const netThem = swapped ? evalResult.netMe : evalResult.netThem;
+    const ratioB = swapped ? evalResult.ratio : evalResult.ratioB;
+    const through =
+      evalResult.yearSeasons && evalResult.yearSeasons.length
+        ? evalResult.yearSeasons[0] +
+          (evalResult.yearSeasons.length > 1
+            ? "–" + evalResult.yearSeasons[evalResult.yearSeasons.length - 1]
+            : "")
+        : "";
+    const cutBit = evalResult.cutOn
+      ? " after both teams re-pick their best " +
+        (Number(state.cfg.keeperCount) || 20)
+      : " (rosters as imported)";
+    const explain =
+      "You net " +
+      fmtSigned(roundXPts(netMe)) +
+      " projected points over " +
+      through +
+      cutBit +
+      ".";
+    const tags = (evalResult.tags || [])
+      .map((t) => '<span class="tc-tag">' + escapeHtml(t) + "</span>")
+      .join("");
+    const reasons = (evalResult.reasons || [])
+      .map((r) => "<li>" + escapeHtml(r) + "</li>")
+      .join("");
+    const gaps = (swapped ? evalResult.theirs.gaps : evalResult.mine.gaps) || [];
+    const gapHtml = gaps.length
+      ? '<div class="tc-gaps"><h4>Lineup gaps</h4><ul>' +
+        gaps
+          .map(
+            (g) =>
+              '<li class="tc-gap">' + escapeHtml(g.text || g.pos) + "</li>"
+          )
+          .join("") +
+        "</ul></div>"
+      : "";
+    const risks = evalResult.riskFlags || [];
+    const riskHtml = risks.length
+      ? '<div class="tc-risks"><h4>Risk flags</h4><ul>' +
+        risks.map((r) => "<li>" + escapeHtml(r.text) + "</li>").join("") +
+        "</ul></div>"
+      : "";
+    const theirBand = verdictBand(ratioB);
+    const theirLine =
+      '<p class="tc-their-side">From their side: <b>' +
+      escapeHtml(verdictLabel(theirBand, false).replace(" for you", "")) +
+      "</b>. Likely acceptable to them: <b>" +
+      escapeHtml(theirAcceptLabel(ratioB)) +
+      "</b>.</p>";
+
+    let balanceHtml = "";
+    if (balanceIdeas && balanceIdeas.length) {
+      balanceHtml =
+        '<div class="tc-balance">' +
+        '<div class="tc-balance-head">Balance it <span class="muted">Ideas, not advice</span></div>' +
+        '<div class="tc-balance-chips">' +
+        balanceIdeas
+          .map((idea) => {
+            const verb = idea.side === "get" ? "Ask for" : "Offer";
+            const target =
+              idea.verdict === "FAIR"
+                ? "Fair"
+                : verdictLabel(idea.verdict, false);
+            return (
+              '<button type="button" class="tc-balance-chip" data-tc-balance-side="' +
+              escapeHtml(idea.side) +
+              '" data-tc-balance-key="' +
+              escapeHtml(idea.key) +
+              '">' +
+              escapeHtml(verb + " " + idea.name + " → " + target) +
+              "</button>"
+            );
+          })
+          .join("") +
+        "</div></div>";
+    }
+
+    const hist = loadTradeHistory();
+    const histHtml = hist.length
+      ? '<div class="tc-history"><h4>Recent checks</h4>' +
+        hist
+          .map((h, i) => {
+            return (
+              '<button type="button" class="tc-history-row" data-tc-hist="' +
+              i +
+              '"><span>' +
+              escapeHtml(h.summary || "Trade") +
+              '</span><span class="tc-tag">' +
+              escapeHtml(h.verdictLabel || "") +
+              "</span></button>"
+            );
+          })
+          .join("") +
+        "</div>"
+      : "";
+
+    return (
+      '<div class="tc-verdict" aria-live="polite">' +
+      (state.trade.calculating
+        ? '<div class="tc-calc-hint muted">Calculating…</div>'
+        : "") +
+      '<div class="tc-verdict-band tc-band-' +
+      escapeHtml(band) +
+      '">' +
+      escapeHtml(label) +
+      " · " +
+      fmtSigned(roundXPts(netMe)) +
+      " xPts</div>" +
+      '<p class="tc-verdict-explain">' +
+      escapeHtml(explain) +
+      "</p>" +
+      '<p class="tc-verdict-nums muted">You ' +
+      fmtSigned(roundXPts(netMe)) +
+      " · Them " +
+      fmtSigned(roundXPts(netThem)) +
+      " (xPts, " +
+      escapeHtml(through) +
+      ') <button type="button" class="tc-link-btn" data-tc-xpts-info>What are xPts?</button></p>' +
+      '<div class="tc-xpts-info" id="tc-xpts-info" hidden>' +
+      "<p>xPts = projected fantasy points over " +
+      escapeHtml(through) +
+      " for a team's best " +
+      (Number(state.cfg.keeperCount) || 20) +
+      " keepers (+ picks) after the trade. It's an estimate, not a guarantee.</p>" +
+      "</div>" +
+      (tags ? '<div class="tc-tags">' + tags + "</div>" : "") +
+      (reasons
+        ? '<div class="tc-why"><h4>Why</h4><ul>' + reasons + "</ul></div>"
+        : "") +
+      tradeSeasonTableHtml(evalResult, swapped) +
+      gapHtml +
+      riskHtml +
+      theirLine +
+      '<div class="tc-actions">' +
+      '<button type="button" class="tc-btn" data-tc-action="swap">Swap sides</button>' +
+      '<button type="button" class="tc-btn" data-tc-action="copy">Copy summary</button>' +
+      '<button type="button" class="tc-btn" data-tc-action="clear">Clear</button>' +
+      "</div>" +
+      balanceHtml +
+      '<div class="tc-feedback">' +
+      '<span class="muted">Does this match your gut?</span> ' +
+      '<button type="button" class="tc-btn" data-tc-feedback="up" aria-label="Thumbs up">👍</button>' +
+      '<button type="button" class="tc-btn" data-tc-feedback="down" aria-label="Thumbs down">👎</button>' +
+      "</div>" +
+      histHtml +
+      "</div>"
+    );
+  }
+
+  function stickyBarHtml(evalResult, swapped) {
+    if (!evalResult || evalResult.empty) {
+      return (
+        '<button type="button" class="tc-sticky-bar" data-tc-expand-verdict>' +
+        '<span class="muted">Add players or picks to rate this trade</span></button>'
+      );
+    }
+    const label = verdictLabel(evalResult.verdict, swapped);
+    const net = swapped ? evalResult.netThem : evalResult.netMe;
+    return (
+      '<button type="button" class="tc-sticky-bar" data-tc-expand-verdict>' +
+      "<span>" +
+      escapeHtml(label) +
+      " · " +
+      fmtSigned(roundXPts(net)) +
+      " xPts</span>" +
+      '<span class="muted">tap for details</span></button>'
+    );
+  }
+
+  function addSheetListHtml(assets, selectedSet, cutOn, showOwners) {
+    if (!assets.length) return '<p class="muted">No assets</p>';
+    const parts = [];
+    let lastOwner = null;
+    let shownCut = false;
+    let keptCount = 0;
+    assets.forEach((a) => {
+      if (!a.belowCut) keptCount++;
+    });
+    assets.forEach((a, idx) => {
+      if (showOwners && a.owner !== lastOwner) {
+        lastOwner = a.owner;
+        parts.push(
+          '<div class="tc-owner-head">' +
+            escapeHtml(a.owner) +
+            teamPlanLabelHtml(a.owner) +
+            "</div>"
+        );
+      }
+      if (cutOn && !shownCut && a.belowCut) {
+        shownCut = true;
+        parts.push(
+          '<div class="tc-cut-line" role="separator">Cut line · keepers above</div>'
+        );
+      }
+      const checked = selectedSet.has(a.key);
+      parts.push(
+        '<button type="button" class="tc-asset-btn' +
+          (checked ? " is-selected" : "") +
+          (a.belowCut ? " is-cut" : "") +
+          '" data-tc-sheet-asset="' +
+          escapeHtml(a.key) +
+          '" data-tc-owner="' +
+          escapeHtml(a.owner || "") +
+          '" aria-pressed="' +
+          (checked ? "true" : "false") +
+          '">' +
+          '<span class="tc-check" aria-hidden="true">' +
+          (checked ? "✓" : "") +
+          "</span>" +
+          tradeAssetBodyHtml(a) +
+          "</button>"
+      );
+    });
+    return parts.join("");
+  }
+
+  function buildTradeCache(rows, league, cfg, picks) {
+    const unowned = unownedAfterCuts(rows, league, cfg);
+    const pickList =
+      picks ||
+      buildKeeperDraftPicks(unowned, cfg, state.seasons, rows, league);
+    const keptSets = buildKeptSets(rows, league, cfg);
+    const assetMap = tradeAssetMap(rows, pickList, keptSets);
+    const baseMaps = buildPickMaps(pickList);
+    const preCache = Object.create(null);
+    (league.owners || []).forEach((owner) => {
+      preCache[owner] = teamTradeTotals(
+        rows,
+        owner,
+        cfg,
+        baseMaps.pickOwnerByKey,
+        baseMaps.picksByKey
+      );
+    });
+    return { picks: pickList, keptSets, assetMap, preCache };
   }
 
   function renderTradeCalculator(rows, league, cfg) {
     const el = document.getElementById("trade-calculator");
     if (!el) return;
+    el.style.display = "block";
+
     if (!league || !league.owners || !league.owners.length) {
-      el.style.display = "block";
       el.innerHTML =
-        "<p class='muted'>Upload a Keeper Fantasy CSV in <b>Import</b> to use the trade calculator.</p>";
+        '<div class="tc-rater">' +
+        "<h3>Trade check</h3>" +
+        "<p class='muted'>Import your league to rate offers. We re-pick both teams' best keepers and tell you who comes out ahead.</p>" +
+        '<button type="button" class="tc-btn tc-btn-primary" data-tc-goto="import">Import league</button>' +
+        "</div>";
       return;
     }
 
-    const yearSeasons = state.seasons.slice();
-    const unowned = unownedAfterCuts(rows, league, cfg);
-    const picks = buildKeeperDraftPicks(unowned, cfg, state.seasons, rows, league);
-    const keptSets = buildKeptSets(rows, league, cfg);
-    const assetMap = tradeAssetMap(rows, picks, keptSets);
-
     const myTeam =
       cfg.myTeam && league.owners.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : "";
+    if (!myTeam) {
+      el.innerHTML =
+        '<div class="tc-rater">' +
+        "<h3>Trade check</h3>" +
+        "<p class='muted'>Select <b>My team</b> (header / Import) to start.</p>" +
+        '<button type="button" class="tc-btn" data-tc-goto="import">Change</button>' +
+        "</div>";
+      return;
+    }
+
+    const cache = buildTradeCache(rows, league, cfg);
+    const { picks, assetMap, preCache } = cache;
+    const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
 
     let otherTeam =
       state.trade.otherTeam && league.owners.indexOf(state.trade.otherTeam) >= 0
@@ -4088,56 +5027,195 @@
     if (otherTeam && otherTeam === myTeam) otherTeam = "";
     state.trade.otherTeam = otherTeam;
 
-    const searchQ = String(state.trade.search || "")
-      .trim()
-      .toLowerCase();
-
-    state.trade.give = (state.trade.give || []).filter(
-      (k) => assetMap[k] && assetMap[k].owner === myTeam
-    );
-    state.trade.get = (state.trade.get || []).filter(
-      (k) =>
-        assetMap[k] &&
-        assetMap[k].owner &&
-        assetMap[k].owner !== myTeam &&
-        (!otherTeam || assetMap[k].owner === otherTeam)
-    );
+    // Drop stale assets after re-import
+    const staleMsgs = [];
+    state.trade.give = (state.trade.give || []).filter((k) => {
+      const a = assetMap[k];
+      if (a && a.owner === myTeam) return true;
+      if (a) staleMsgs.push((a.name || k) + " is no longer on " + myTeam);
+      else staleMsgs.push("An asset is no longer in your latest import");
+      return false;
+    });
+    state.trade.get = (state.trade.get || []).filter((k) => {
+      const a = assetMap[k];
+      if (
+        a &&
+        a.owner &&
+        a.owner !== myTeam &&
+        (!otherTeam || a.owner === otherTeam)
+      ) {
+        return true;
+      }
+      if (a) {
+        staleMsgs.push(
+          (a.name || k) +
+            " is no longer on " +
+            (a.owner || "that team") +
+            " in your latest import"
+        );
+      }
+      return false;
+    });
+    if (staleMsgs.length) showTradeToast(staleMsgs[0]);
 
     const giveSet = new Set(state.trade.give);
     const getSet = new Set(state.trade.get);
+    const swapped = !!state.trade.swapped;
 
-    const myAssets = myTeam
-      ? Object.keys(assetMap)
-          .map((k) => assetMap[k])
-          .filter((a) => a.owner === myTeam)
-          .sort((a, b) => {
-            const ac = a.belowCut ? 1 : 0;
-            const bc = b.belowCut ? 1 : 0;
-            if (ac !== bc) return ac - bc;
-            return (
-              yearPtsTotal(b.yearPts) - yearPtsTotal(a.yearPts) ||
-              a.name.localeCompare(b.name)
-            );
-          })
-      : [];
+    let evalResult = null;
+    let balanceIdeas = [];
+    if (otherTeam) {
+      const t0 =
+        typeof performance !== "undefined" && performance.now
+          ? performance.now()
+          : Date.now();
+      evalResult = evaluateTrade({
+        rows: rows,
+        league: league,
+        cfg: cfg,
+        seasons: state.seasons,
+        data: state.data,
+        picks: picks,
+        assetMap: assetMap,
+        myTeam: myTeam,
+        other: otherTeam,
+        giveKeys: state.trade.give,
+        getKeys: state.trade.get,
+        preCache: preCache
+      });
+      const dt =
+        (typeof performance !== "undefined" && performance.now
+          ? performance.now()
+          : Date.now()) - t0;
+      if (dt > 100) {
+        try {
+          console.info("[trade-check] eval ms", Math.round(dt));
+        } catch (e) {
+          /* ignore */
+        }
+      }
+      if (evalResult && !evalResult.empty) {
+        trackFd("verdict_shown", {
+          band: evalResult.verdict,
+          tags: (evalResult.tags || []).join(","),
+          assets: state.trade.give.length + state.trade.get.length
+        });
+        balanceIdeas = suggestBalanceAdds({
+          rows: rows,
+          league: league,
+          cfg: cfg,
+          seasons: state.seasons,
+          data: state.data,
+          myTeam: myTeam,
+          other: otherTeam,
+          giveKeys: state.trade.give,
+          getKeys: state.trade.get,
+          assetMap: assetMap,
+          picks: picks,
+          evalResult: evalResult,
+          preCache: preCache
+        });
+        // Persist history when the rated package changes
+        const sig =
+          packageSignature(state.trade.give, state.trade.get) + "|" + otherTeam;
+        if (sig !== state.trade._lastHistSig) {
+          state.trade._lastHistSig = sig;
+          const summaryParts = [];
+          state.trade.give.forEach((k) => {
+            if (assetMap[k]) summaryParts.push(assetMap[k].name);
+          });
+          summaryParts.push("↔");
+          state.trade.get.forEach((k) => {
+            if (assetMap[k]) summaryParts.push(assetMap[k].name);
+          });
+          saveTradeHistory({
+            sig: sig,
+            otherTeam: otherTeam,
+            give: state.trade.give.slice(),
+            get: state.trade.get.slice(),
+            summary: summaryParts.join(" "),
+            verdict: evalResult.verdict,
+            verdictLabel: verdictLabel(evalResult.verdict, false),
+            ratio: evalResult.ratio
+          });
+        }
+      }
+    }
 
-    let theirAssets = [];
-    if (myTeam) {
-      theirAssets = Object.keys(assetMap)
+    const otherOptions =
+      '<option value="">Select team</option>' +
+      league.owners
+        .filter((o) => o !== myTeam)
+        .map((o) => {
+          const lab = state.teamLabels && state.teamLabels[o];
+          const label =
+            o + (lab && lab.label ? " · " + lab.label : "");
+          return (
+            '<option value="' +
+            escapeHtml(o) +
+            '"' +
+            (o === otherTeam ? " selected" : "") +
+            ">" +
+            escapeHtml(label) +
+            "</option>"
+          );
+        })
+        .join("");
+
+    const giveCards = state.trade.give.length
+      ? state.trade.give
+          .map((k) => trayCardHtml(assetMap[k], "give", cutOn))
+          .join("")
+      : '<p class="muted tc-tray-empty">Nothing added yet</p>';
+    const getCards = state.trade.get.length
+      ? state.trade.get
+          .map((k) => trayCardHtml(assetMap[k], "get", cutOn))
+          .join("")
+      : '<p class="muted tc-tray-empty">Nothing added yet</p>';
+
+    const giveFull = state.trade.give.length >= TRADE_RATER_MAX;
+    const getFull = state.trade.get.length >= TRADE_RATER_MAX;
+    const sheetOpen = !!state.trade.sheetOpen;
+    const sheetSide = state.trade.sheetSide || "give";
+    const sheetPos = state.trade.sheetPos || "ALL";
+    const sheetKind = state.trade.sheetKind || "players";
+    const sheetSearch = String(state.trade.search || "")
+      .trim()
+      .toLowerCase();
+    const showPicks =
+      keeperDraftPicksPerTeam(cfg) > 0 && cfg.pickTrading !== false;
+
+    let sheetAssets = [];
+    if (sheetOpen) {
+      const ownerFilter =
+        sheetSide === "give"
+          ? myTeam
+          : otherTeam || null;
+      sheetAssets = Object.keys(assetMap)
         .map((k) => assetMap[k])
-        .filter((a) => a.owner && a.owner !== myTeam)
         .filter((a) => {
-          if (searchQ) {
-            return String(a.name || "")
-              .toLowerCase()
-              .includes(searchQ);
-          }
-          return !otherTeam || a.owner === otherTeam;
+          if (sheetSide === "give") return a.owner === myTeam;
+          if (ownerFilter) return a.owner === ownerFilter;
+          return a.owner && a.owner !== myTeam;
+        })
+        .filter((a) => {
+          if (sheetKind === "picks") return a.kind === "pick";
+          return a.kind !== "pick";
+        })
+        .filter((a) => {
+          if (sheetKind === "picks") return true;
+          if (sheetPos === "ALL") return true;
+          const pos = String(displayPos(a.row || a) || "").toUpperCase();
+          return pos.indexOf(sheetPos) >= 0;
+        })
+        .filter((a) => {
+          if (!sheetSearch) return true;
+          return String(a.name || "")
+            .toLowerCase()
+            .includes(sheetSearch);
         })
         .sort((a, b) => {
-          if (!searchQ && otherTeam) {
-            /* same team */
-          } else {
+          if (!ownerFilter && sheetSide === "get") {
             const oc = String(a.owner).localeCompare(String(b.owner));
             if (oc) return oc;
           }
@@ -4150,170 +5228,136 @@
           );
         });
     }
+    const sheetSelected = sheetSide === "give" ? giveSet : getSet;
 
-    const otherOptions =
-      '<option value="">— Other team —</option>' +
-      league.owners
-        .filter((o) => o !== myTeam)
-        .map(
-          (o) =>
-            '<option value="' +
-            escapeHtml(o) +
-            '"' +
-            (o === otherTeam ? " selected" : "") +
-            ">" +
-            escapeHtml(o) +
-            "</option>"
-        )
-        .join("");
+    const sheetHtml = sheetOpen
+      ? '<div class="tc-sheet-backdrop" data-tc-sheet-close></div>' +
+        '<div class="tc-sheet" role="dialog" aria-modal="true" aria-label="Add player or pick">' +
+        '<div class="tc-sheet-head">' +
+        "<strong>Add to " +
+        (sheetSide === "give" ? "You give" : "You get") +
+        "</strong>" +
+        '<button type="button" class="tc-btn" data-tc-sheet-done>Done</button>' +
+        "</div>" +
+        '<input id="tc-sheet-search" type="search" placeholder="Search" value="' +
+        escapeHtml(state.trade.search || "") +
+        '" autocomplete="off" />' +
+        '<div class="tc-sheet-tabs">' +
+        '<button type="button" class="tc-tab' +
+        (sheetKind === "players" ? " is-active" : "") +
+        '" data-tc-sheet-kind="players">Players</button>' +
+        (showPicks
+          ? '<button type="button" class="tc-tab' +
+            (sheetKind === "picks" ? " is-active" : "") +
+            '" data-tc-sheet-kind="picks">Picks</button>'
+          : "") +
+        "</div>" +
+        (sheetKind === "players"
+          ? '<div class="tc-pos-filters">' +
+            ["ALL", "DEF", "MID", "RUC", "FWD"]
+              .map(
+                (p) =>
+                  '<button type="button" class="filter-btn pos-filter-btn' +
+                  (sheetPos === p ? " active" : "") +
+                  '" data-tc-sheet-pos="' +
+                  p +
+                  '">' +
+                  p +
+                  "</button>"
+              )
+              .join("") +
+            "</div>"
+          : "") +
+        '<div class="tc-sheet-list" id="tc-sheet-list">' +
+        addSheetListHtml(
+          sheetAssets,
+          sheetSelected,
+          cutOn,
+          sheetSide === "get" && !otherTeam
+        ) +
+        "</div></div>"
+      : "";
 
-    let fillers = {
-      suggestGive: null,
-      suggestGet: null,
-      balanced: false
-    };
-    if (myTeam && otherTeam) {
-      fillers = suggestTradeFillers({
-        rows,
-        league,
-        cfg,
-        myTeam,
-        other: otherTeam,
-        giveKeys: state.trade.give,
-        getKeys: state.trade.get,
-        assetMap,
-        picks
-      });
-    }
-
-    // Yearly diffs use confirmed pieces only (suggestions stay visual).
-    let displaySim = emptyTradeSim(yearSeasons.length);
-    if (myTeam && otherTeam) {
-      displaySim = simulateTrade(
-        rows,
-        league,
-        cfg,
-        myTeam,
-        otherTeam,
-        state.trade.give || [],
-        state.trade.get || [],
-        picks
-      );
-    }
-
-    function rosterListHtml(list, selectedSet, role, emptyMsg) {
-      if (!list.length) return '<p class="muted">' + emptyMsg + "</p>";
-      const parts = [];
-      let last = null;
-      const multiOwner = role === "get" && (searchQ || !otherTeam);
-      list.forEach((a) => {
-        if (multiOwner && a.owner !== last) {
-          last = a.owner;
-          parts.push(
-            '<div class="tc-owner-head">' +
-              escapeHtml(a.owner) +
-              teamPlanLabelHtml(a.owner) +
-              "</div>"
-          );
-        }
-        parts.push(
-          tradeAssetRowHtml(a, selectedSet.has(a.key), {
-            role: role,
-            owner: a.owner
-          })
-        );
-      });
-      return parts.join("");
-    }
-
-    function confirmedStackHtml(keys, role) {
-      if (!keys.length) {
-        return '<p class="muted tc-slot-hint">Confirmed</p>';
-      }
-      return keys
-        .map((k) =>
-          tradeAssetRowHtml(assetMap[k], true, {
-            role: role + "-locked",
-            owner: assetMap[k] && assetMap[k].owner
-          })
-        )
-        .join("");
-    }
-
-    function suggestStackHtml(key, role) {
-      if (!key || !assetMap[key]) return "";
-      return (
-        '<div class="tc-suggest-label">Suggested</div>' +
-        tradeAssetRowHtml(assetMap[key], false, {
-          role: role + "-suggest",
-          suggested: true,
-          owner: assetMap[key].owner
-        })
-      );
-    }
-
-    el.style.display = "block";
-    if (!myTeam) {
-      el.innerHTML =
-        "<h3>Trade calculator</h3>" +
-        "<p class='muted'>Select <b>My team</b> (header / Import) to start.</p>";
-      return;
-    }
+    const expanded = !!state.trade.verdictExpanded;
 
     el.innerHTML =
-      "<h3>Trade calculator</h3>" +
-      '<div class="tc-board">' +
-      '<div class="tc-col tc-roster">' +
-      '<div class="tc-col-head">' +
-      '<div class="tc-col-title">' +
-      escapeHtml(myTeam) +
+      '<div class="tc-rater' +
+      (expanded ? " is-expanded" : "") +
+      '">' +
+      '<div class="tc-rater-head">' +
+      "<h3>Trade check</h3>" +
+      "<p class='muted tc-sub'>Add the players and picks on each side. We re-pick both teams' best keepers and tell you who comes out ahead.</p>" +
       "</div>" +
-      teamPlanLabelHtml(myTeam) +
+      tradeContextBarHtml(cfg, league, myTeam, state.seasons) +
+      '<div id="tc-toast-host">' +
+      tradeToastHtml() +
       "</div>" +
-      '<div class="tc-list" id="tc-my-list">' +
-      rosterListHtml(myAssets, giveSet, "give", "No assets") +
-      "</div></div>" +
-      '<div class="tc-center">' +
-      '<div class="tc-diff">' +
-      tradeDiffTableHtml(
-        displaySim,
-        "You",
-        otherTeam || "Them",
-        yearSeasons
-      ) +
-      (fillers.balanced
-        ? '<p class="muted tc-balanced">Balanced</p>'
-        : "") +
-      "</div>" +
-      '<div class="tc-inputs">' +
-      '<div class="tc-col tc-tray" id="tc-give-tray">' +
-      confirmedStackHtml(state.trade.give, "give") +
-      suggestStackHtml(fillers.suggestGive, "give") +
-      "</div>" +
-      '<div class="tc-col tc-tray" id="tc-get-tray">' +
-      confirmedStackHtml(state.trade.get, "get") +
-      suggestStackHtml(fillers.suggestGet, "get") +
-      "</div>" +
-      "</div></div>" +
-      '<div class="tc-col tc-roster">' +
-      '<div class="tc-col-head">' +
+      '<div class="tc-layout">' +
+      '<div class="tc-main">' +
+      '<label class="tc-partner">Trading with ' +
       '<select id="tc-other-team">' +
       otherOptions +
-      "</select>" +
-      (otherTeam ? teamPlanLabelHtml(otherTeam) : "") +
-      '<input id="tc-player-search" type="search" placeholder="Search players" value="' +
-      escapeHtml(state.trade.search || "") +
-      '"/>' +
+      "</select></label>" +
+      '<div class="tc-trays">' +
+      '<div class="tc-tray" id="tc-give-tray">' +
+      '<div class="tc-tray-title">You give</div>' +
+      giveCards +
+      '<button type="button" class="tc-add-btn" data-tc-add="give"' +
+      (giveFull ? " disabled" : "") +
+      ">" +
+      (giveFull ? "Max 6 per side" : "+ Add player or pick") +
+      "</button></div>" +
+      '<div class="tc-tray" id="tc-get-tray">' +
+      '<div class="tc-tray-title">You get</div>' +
+      getCards +
+      '<button type="button" class="tc-add-btn" data-tc-add="get"' +
+      (getFull ? " disabled" : "") +
+      ">" +
+      (getFull ? "Max 6 per side" : "+ Add player or pick") +
+      "</button></div>" +
       "</div>" +
-      '<div class="tc-list" id="tc-other-list">' +
-      rosterListHtml(
-        theirAssets,
-        getSet,
-        "get",
-        otherTeam || searchQ ? "No assets" : "Choose a team or search"
-      ) +
+      '<div class="tc-verdict-inline' +
+      (expanded ? " is-open" : "") +
+      '" id="tc-verdict-panel">' +
+      (otherTeam
+        ? verdictPanelHtml(evalResult, myTeam, otherTeam, balanceIdeas, swapped)
+        : '<p class="muted">Select a partner team to rate a trade.</p>') +
       "</div></div>" +
+      '<aside class="tc-aside" id="tc-aside-verdict">' +
+      (otherTeam
+        ? verdictPanelHtml(evalResult, myTeam, otherTeam, balanceIdeas, swapped)
+        : '<p class="muted">Select a partner team.</p>') +
+      "</aside></div>" +
+      stickyBarHtml(evalResult, swapped) +
+      sheetHtml +
       "</div>";
+
+    // Stash for bind handlers (avoid recompute on every click)
+    state.trade._cache = cache;
+    state.trade._eval = evalResult;
+  }
+
+  function scheduleTradeRerender() {
+    if (state.trade._rerenderTimer) clearTimeout(state.trade._rerenderTimer);
+    state.trade.calculating = true;
+    const list = document.getElementById("tc-sheet-list");
+    const savedScroll = list ? list.scrollTop : 0;
+    const hint = document.querySelector(".tc-calc-hint");
+    if (!hint) {
+      const band = document.querySelector(".tc-verdict-band");
+      if (band) {
+        const el = document.createElement("div");
+        el.className = "tc-calc-hint muted";
+        el.textContent = "Calculating…";
+        band.parentNode.insertBefore(el, band);
+      }
+    }
+    state.trade._rerenderTimer = setTimeout(() => {
+      state.trade.calculating = false;
+      renderTradeCalculator(state.rows, state.league, state.cfg);
+      const list2 = document.getElementById("tc-sheet-list");
+      if (list2 && state.trade.sheetOpen) list2.scrollTop = savedScroll;
+    }, 150);
   }
 
   function bindTradeCalculator() {
@@ -4322,90 +5366,297 @@
     const el = document.getElementById("trade-calculator");
     if (!el) return;
 
-    function toggleKey(arrName, key, maxN) {
-      const arr = (state.trade[arrName] || []).slice();
-      const i = arr.indexOf(key);
-      if (i >= 0) arr.splice(i, 1);
-      else {
-        if (arr.length >= maxN) return false;
-        arr.push(key);
-      }
-      state.trade[arrName] = arr;
-      return true;
-    }
+    trackFd("trade_check_opened", {});
 
     el.addEventListener("change", (e) => {
       const t = e.target;
       if (!t) return;
       if (t.id === "tc-other-team") {
+        const prevGet = (state.trade.get || []).slice();
+        const prevOther = state.trade.otherTeam;
         state.trade.otherTeam = t.value || "";
-        state.trade.search = "";
         state.trade.get = [];
-        state.trade.give = [];
+        state.trade.search = "";
+        state.trade.swapped = false;
+        trackFd("partner_selected", { team: state.trade.otherTeam });
+        if (prevGet.length) {
+          state.trade._undoGet = { get: prevGet, other: prevOther };
+          showTradeToast("Cleared You get — undo?");
+        }
         renderTradeCalculator(state.rows, state.league, state.cfg);
       }
     });
 
-    const debouncedTradeSearch = debounce(() => {
+    const debouncedSheetSearch = debounce(() => {
+      // Toggle selection class only — rebuild sheet list via targeted update
+      const list = document.getElementById("tc-sheet-list");
+      const searchEl = document.getElementById("tc-sheet-search");
+      if (!list || !state.trade.sheetOpen) return;
+      // Full sheet re-render of list only by re-calling render (keeps trays)
+      const scroll = list.scrollTop;
       renderTradeCalculator(state.rows, state.league, state.cfg);
-      const inp = document.getElementById("tc-player-search");
-      if (inp) {
-        inp.focus();
-        const len = inp.value.length;
+      const list2 = document.getElementById("tc-sheet-list");
+      const search2 = document.getElementById("tc-sheet-search");
+      if (list2) list2.scrollTop = scroll;
+      if (search2) {
+        search2.focus();
+        const len = search2.value.length;
         try {
-          inp.setSelectionRange(len, len);
+          search2.setSelectionRange(len, len);
         } catch (err) {
           /* ignore */
         }
       }
-    }, 200);
+    }, 150);
+
     el.addEventListener("input", (e) => {
       const t = e.target;
-      if (!t || t.id !== "tc-player-search") return;
+      if (!t || t.id !== "tc-sheet-search") return;
       state.trade.search = t.value || "";
-      debouncedTradeSearch();
+      debouncedSheetSearch();
+    });
+
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && state.trade.sheetOpen) {
+        state.trade.sheetOpen = false;
+        renderTradeCalculator(state.rows, state.league, state.cfg);
+      }
     });
 
     el.addEventListener("click", (e) => {
-      const btn = e.target && e.target.closest ? e.target.closest("[data-tc-asset]") : null;
-      if (!btn) return;
-      const key = btn.getAttribute("data-tc-asset");
-      const role = btn.getAttribute("data-tc-role") || "";
-      const owner = btn.getAttribute("data-tc-owner") || "";
-      if (!key) return;
+      const t = e.target;
+      if (!t || !t.closest) return;
 
-      if (role === "give-suggest" || role === "get-suggest") {
-        const side = role.indexOf("give") === 0 ? "give" : "get";
-        if ((state.trade[side] || []).indexOf(key) < 0) {
-          if ((state.trade[side] || []).length >= TRADE_MAX_ASSETS) return;
+      const goto = t.closest("[data-tc-goto]");
+      if (goto) {
+        setActiveTab(goto.getAttribute("data-tc-goto") || "import");
+        return;
+      }
+
+      if (t.closest(".tc-toast") && state.trade._undoGet) {
+        state.trade.get = state.trade._undoGet.get || [];
+        state.trade.otherTeam = state.trade._undoGet.other || state.trade.otherTeam;
+        state.trade._undoGet = null;
+        state.trade.toast = "";
+        renderTradeCalculator(state.rows, state.league, state.cfg);
+        return;
+      }
+
+      const addBtn = t.closest("[data-tc-add]");
+      if (addBtn && !addBtn.disabled) {
+        state.trade.sheetSide = addBtn.getAttribute("data-tc-add") || "give";
+        state.trade.sheetOpen = true;
+        state.trade.sheetKind = "players";
+        state.trade.sheetPos = "ALL";
+        state.trade.search = "";
+        renderTradeCalculator(state.rows, state.league, state.cfg);
+        const search = document.getElementById("tc-sheet-search");
+        if (search) search.focus();
+        return;
+      }
+
+      if (t.closest("[data-tc-sheet-close]") || t.closest("[data-tc-sheet-done]")) {
+        state.trade.sheetOpen = false;
+        scheduleTradeRerender();
+        return;
+      }
+
+      const kindBtn = t.closest("[data-tc-sheet-kind]");
+      if (kindBtn) {
+        state.trade.sheetKind = kindBtn.getAttribute("data-tc-sheet-kind") || "players";
+        const scrollEl = document.getElementById("tc-sheet-list");
+        const scroll = scrollEl ? scrollEl.scrollTop : 0;
+        renderTradeCalculator(state.rows, state.league, state.cfg);
+        const list2 = document.getElementById("tc-sheet-list");
+        if (list2) list2.scrollTop = scroll;
+        return;
+      }
+
+      const posBtn = t.closest("[data-tc-sheet-pos]");
+      if (posBtn) {
+        state.trade.sheetPos = posBtn.getAttribute("data-tc-sheet-pos") || "ALL";
+        const scrollEl = document.getElementById("tc-sheet-list");
+        const scroll = scrollEl ? scrollEl.scrollTop : 0;
+        renderTradeCalculator(state.rows, state.league, state.cfg);
+        const list2 = document.getElementById("tc-sheet-list");
+        if (list2) list2.scrollTop = scroll;
+        return;
+      }
+
+      const sheetAsset = t.closest("[data-tc-sheet-asset]");
+      if (sheetAsset) {
+        const key = sheetAsset.getAttribute("data-tc-sheet-asset");
+        const owner = sheetAsset.getAttribute("data-tc-owner") || "";
+        const side = state.trade.sheetSide || "give";
+        const arr = (state.trade[side] || []).slice();
+        const i = arr.indexOf(key);
+        if (i >= 0) {
+          arr.splice(i, 1);
+          sheetAsset.classList.remove("is-selected");
+          sheetAsset.setAttribute("aria-pressed", "false");
+          const check = sheetAsset.querySelector(".tc-check");
+          if (check) check.textContent = "";
+        } else {
+          if (arr.length >= TRADE_RATER_MAX) {
+            showTradeToast("Max 6 per side");
+            return;
+          }
+          // Block duplicate across sides
+          const otherSide = side === "give" ? "get" : "give";
+          if ((state.trade[otherSide] || []).indexOf(key) >= 0) {
+            showTradeToast("That asset is already on the other side");
+            return;
+          }
+          if (side === "get" && owner && !state.trade.otherTeam) {
+            state.trade.otherTeam = owner;
+            trackFd("partner_selected", { team: owner });
+          }
+          arr.push(key);
+          sheetAsset.classList.add("is-selected");
+          sheetAsset.setAttribute("aria-pressed", "true");
+          const check = sheetAsset.querySelector(".tc-check");
+          if (check) check.textContent = "✓";
+          trackFd("asset_added", {
+            type:
+              state.trade._cache &&
+              state.trade._cache.assetMap &&
+              state.trade._cache.assetMap[key] &&
+              state.trade._cache.assetMap[key].kind === "pick"
+                ? "pick"
+                : "player"
+          });
+        }
+        state.trade[side] = arr;
+        // Update tray without closing sheet — schedule soft rerender of trays only
+        scheduleTradeRerender();
+        // Preserve sheet open + scroll across rerender
+        state.trade.sheetOpen = true;
+        return;
+      }
+
+      const removeBtn = t.closest("[data-tc-remove]");
+      if (removeBtn) {
+        const key = removeBtn.getAttribute("data-tc-remove");
+        const side = removeBtn.getAttribute("data-tc-side");
+        if (side === "give" || side === "get") {
+          state.trade[side] = (state.trade[side] || []).filter((k) => k !== key);
+          scheduleTradeRerender();
+        }
+        return;
+      }
+
+      if (t.closest("[data-tc-expand-verdict]")) {
+        state.trade.verdictExpanded = !state.trade.verdictExpanded;
+        renderTradeCalculator(state.rows, state.league, state.cfg);
+        return;
+      }
+
+      if (t.closest("[data-tc-xpts-info]")) {
+        const info = document.getElementById("tc-xpts-info");
+        if (info) info.hidden = !info.hidden;
+        return;
+      }
+
+      const bal = t.closest("[data-tc-balance-key]");
+      if (bal) {
+        const side = bal.getAttribute("data-tc-balance-side");
+        const key = bal.getAttribute("data-tc-balance-key");
+        trackFd("balance_it_clicked", { side: side });
+        if (side && key && (state.trade[side] || []).indexOf(key) < 0) {
+          if ((state.trade[side] || []).length >= TRADE_RATER_MAX) return;
           state.trade[side] = (state.trade[side] || []).concat([key]);
+          scheduleTradeRerender();
         }
-        renderTradeCalculator(state.rows, state.league, state.cfg);
         return;
       }
 
-      if (role === "give-locked" || role === "get-locked") {
-        const side = role.indexOf("give") === 0 ? "give" : "get";
-        state.trade[side] = (state.trade[side] || []).filter((k) => k !== key);
-        renderTradeCalculator(state.rows, state.league, state.cfg);
+      const histBtn = t.closest("[data-tc-hist]");
+      if (histBtn) {
+        const idx = Number(histBtn.getAttribute("data-tc-hist"));
+        const hist = loadTradeHistory();
+        const h = hist[idx];
+        if (h) {
+          state.trade.otherTeam = h.otherTeam || "";
+          state.trade.give = (h.give || []).slice();
+          state.trade.get = (h.get || []).slice();
+          state.trade.swapped = false;
+          scheduleTradeRerender();
+        }
         return;
       }
 
-      const inMy = btn.closest("#tc-my-list");
-      const inOther = btn.closest("#tc-other-list");
-      if (inMy) {
-        toggleKey("give", key, TRADE_MAX_ASSETS);
-      } else if (inOther) {
-        if (owner && owner !== state.cfg.myTeam && state.trade.otherTeam !== owner) {
-          state.trade.otherTeam = owner;
+      const fb = t.closest("[data-tc-feedback]");
+      if (fb) {
+        const dir = fb.getAttribute("data-tc-feedback");
+        const ev = state.trade._eval;
+        saveTradeFeedback({
+          at: new Date().toISOString(),
+          dir: dir,
+          give: (state.trade.give || []).slice(),
+          get: (state.trade.get || []).slice(),
+          otherTeam: state.trade.otherTeam,
+          verdict: ev && ev.verdict,
+          ratio: ev && ev.ratio,
+          tags: (ev && ev.tags) || []
+        });
+        trackFd("feedback", { dir: dir, band: ev && ev.verdict });
+        showTradeToast(dir === "up" ? "Thanks for the feedback" : "Thanks — noted for tuning");
+        return;
+      }
+
+      const action = t.closest("[data-tc-action]");
+      if (action) {
+        const act = action.getAttribute("data-tc-action");
+        if (act === "swap") {
+          state.trade.swapped = !state.trade.swapped;
+          trackFd("swap_sides", {});
+          renderTradeCalculator(state.rows, state.league, state.cfg);
+          return;
+        }
+        if (act === "clear") {
+          state.trade.give = [];
           state.trade.get = [];
-          state.trade.search = "";
+          state.trade.swapped = false;
+          scheduleTradeRerender();
+          return;
         }
-        toggleKey("get", key, TRADE_MAX_ASSETS);
-      } else {
-        return;
+        if (act === "copy") {
+          const ev = state.trade._eval;
+          const cache = state.trade._cache;
+          const names = (keys) =>
+            (keys || [])
+              .map((k) => (cache && cache.assetMap[k] && cache.assetMap[k].name) || k)
+              .join(", ");
+          const label = ev
+            ? verdictLabel(ev.verdict, !!state.trade.swapped)
+            : "Fair";
+          const net = ev
+            ? roundXPts(state.trade.swapped ? ev.netThem : ev.netMe)
+            : 0;
+          const text =
+            "Trade check: give [" +
+            names(state.trade.give) +
+            "] get [" +
+            names(state.trade.get) +
+            "] vs " +
+            (state.trade.otherTeam || "?") +
+            " → " +
+            label +
+            " (" +
+            fmtSigned(net) +
+            " xPts). via statsbyjaiden.com.au";
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(
+              () => showTradeToast("Copied summary"),
+              () => showTradeToast("Could not copy")
+            );
+          } else {
+            showTradeToast("Could not copy");
+          }
+          trackFd("copy_summary", {});
+          return;
+        }
       }
-      renderTradeCalculator(state.rows, state.league, state.cfg);
     });
   }
 
@@ -4447,7 +5698,9 @@
 
     const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
     const cutN = Math.max(0, Number(cfg.keeperCount) || 0);
-    const yearSeasons = state.seasons.slice();
+    const yLenLadder =
+      horizonLen(state.seasons, cfg.endSeason) || state.seasons.length;
+    const yearSeasons = state.seasons.slice(0, yLenLadder);
     const myTeam = cfg.myTeam || "";
     const standings = buildTeamStandings(rows, league, cfg);
     const labelMap = assignTeamTrajectoryLabels(standings);
@@ -4872,7 +6125,9 @@
       renderMoversPanel(all, cfg, state.data);
       renderTeamRatings(all, state.league, cfg);
       renderTeamPlanner(all, state.league, cfg);
-      renderTradeCalculator(all, state.league, cfg);
+      if (cfg.tab === "trades") {
+        renderTradeCalculator(all, state.league, cfg);
+      }
       renderDraftOrderEditor();
       state.detailId = null;
       const asof = document.getElementById("futures-asof");
