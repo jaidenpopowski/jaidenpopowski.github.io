@@ -442,6 +442,13 @@
         /* ignore */
       }
     }
+    if (
+      (next === "planner" || next === "trades") &&
+      leagueHasTeams(state.league) &&
+      !myTeamSelected(state.league, state.cfg)
+    ) {
+      openWhoAreYouModal({ afterTab: next });
+    }
   }
 
   function setImportModalStatus(msg, isError) {
@@ -541,7 +548,6 @@
     const title = document.getElementById("fd-import-source-title");
     const nameEl = document.getElementById("fd-import-league-name");
     const updatedEl = document.getElementById("fd-import-last-updated");
-    const countEl = document.getElementById("fd-import-team-count");
     const refreshBtn = document.getElementById("fd-league-refresh");
     if (!card || !leagueHasTeams(league)) return;
 
@@ -563,9 +569,6 @@
       platform.updatedAt ||
       "";
     if (updatedEl) updatedEl.textContent = formatImportDate(updatedRaw);
-
-    const nTeams = (league.owners && league.owners.length) || 0;
-    if (countEl) countEl.textContent = String(nTeams);
 
     syncImportMyTeamSelect(league, state.cfg);
 
@@ -663,9 +666,16 @@
     syncImportMyTeamSelect(state.league, state.cfg);
     rebuildOwnerDropdown(state.league, state.cfg);
     writeCfgToUrl(state.cfg);
-    refresh().then(() => {
-      setActiveTab(afterTab);
-    });
+    const persist =
+      state.accountUser && state.league
+        ? saveLeagueToAccount()
+        : Promise.resolve();
+    Promise.resolve(persist)
+      .catch(() => {})
+      .then(() => refresh())
+      .then(() => {
+        setActiveTab(afterTab);
+      });
   }
 
   /** True when model still has draft picks for the first horizon season (e.g. PICK_2027_01). */
@@ -3315,11 +3325,13 @@
 
   function keeperSelectRowHtml(r, yi, opts) {
     const o = opts || {};
-    const xp = seasonXPoints(r, yi);
     const selected = !!o.selected;
     const belowCut = !!o.belowCut;
+    const withXp = Object.assign({}, r, {
+      xPoints: seasonXPoints(r, yi)
+    });
     return (
-      '<button type="button" class="fp-keep-btn' +
+      '<button type="button" class="tc-asset-btn fp-keep-btn' +
       (selected ? " is-selected" : "") +
       (belowCut ? " is-cut" : "") +
       '" data-fp-id="' +
@@ -3327,21 +3339,7 @@
       '" data-fp-side="' +
       escapeHtml(o.side || "keep") +
       '">' +
-      headshotHtml(r) +
-      '<div class="lt-player-meta">' +
-      '<div class="lt-player-name" title="' +
-      escapeHtml(r.name || "") +
-      '">' +
-      escapeHtml(r.name || "") +
-      "</div>" +
-      '<div class="lt-player-chips">' +
-      teamChipHtml(r.teamAbbr || r.club || "") +
-      posChipsHtml(displayPos(r)) +
-      "</div>" +
-      "</div>" +
-      '<div class="fp-player-xp">' +
-      fmtInt(xp) +
-      "</div>" +
+      tradePlayerRowHtml(withXp, belowCut) +
       "</button>"
     );
   }
@@ -3396,7 +3394,7 @@
       cfg.myTeam && league.owners.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : "";
     if (!myTeam) {
       el.innerHTML =
-        "<p class='muted'>Pick your team in <b>Import</b> to plan keepers.</p>";
+        "<p class='muted'>Pick your team so we know which side is yours.</p>";
       return;
     }
 
@@ -3514,18 +3512,20 @@
       });
       const pickBits = myPicks.length
         ? myPicks
-            .map((p) => {
-              return (
-                '<div class="fp-draft-pick">' +
-                escapeHtml(p.name) +
-                (p.proxyName
-                  ? ' <span class="muted">· ' +
-                    escapeHtml(p.proxyName) +
-                    "</span>"
-                  : "") +
-                "</div>"
-              );
-            })
+            .map((p) =>
+              pickPlayerRowHtml({
+                name: p.name,
+                pick: p.pick,
+                proxyName: p.proxyName,
+                club: p.club || (p.proxyRow && (p.proxyRow.teamAbbr || p.proxyRow.club)) || "",
+                xPoints: p.xPoints != null ? p.xPoints : p.vorp,
+                yearPts: p.yearPts,
+                key: p.key,
+                id: p.id,
+                type: "pick",
+                _asset: p.proxyRow && p.proxyRow._asset
+              })
+            )
             .join("")
         : '<p class="muted">No picks this season.</p>';
       rightBody =
@@ -5404,8 +5404,7 @@
       el.innerHTML =
         '<div class="tc-rater">' +
         "<h3>Trade check</h3>" +
-        "<p class='muted'>Pick your team in <b>Import</b> to start.</p>" +
-        '<button type="button" class="tc-btn" data-tc-goto="import">Import</button>' +
+        "<p class='muted'>Pick your team so we know which side is yours.</p>" +
         "</div>";
       return;
     }
@@ -6284,6 +6283,14 @@
           '<span class="fd-do-name">' +
           escapeHtml(owner) +
           "</span>" +
+          '<span class="fd-do-move">' +
+          '<button type="button" class="fd-do-btn" data-do-dir="-1" aria-label="Move up"' +
+          (i === 0 ? " disabled" : "") +
+          ">▲</button>" +
+          '<button type="button" class="fd-do-btn" data-do-dir="1" aria-label="Move down"' +
+          (i === order.length - 1 ? " disabled" : "") +
+          ">▼</button>" +
+          "</span>" +
           '<button type="button" class="fd-do-handle" aria-label="Drag to reorder" title="Drag to reorder">⠿</button>' +
           "</li>"
         );
@@ -6297,7 +6304,27 @@
     list.dataset.dndBound = "1";
     let dragOwner = null;
 
+    list.addEventListener("click", (e) => {
+      const btn =
+        e.target && e.target.closest
+          ? e.target.closest("button.fd-do-btn[data-do-dir]")
+          : null;
+      if (!btn || btn.disabled) return;
+      const li = btn.closest("li[data-owner]");
+      if (!li) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const owner = li.getAttribute("data-owner");
+      const dir = Number(btn.getAttribute("data-do-dir")) || 0;
+      if (!owner || !dir) return;
+      nudgeDraftOrder(owner, dir);
+    });
+
     list.addEventListener("dragstart", (e) => {
+      if (e.target && e.target.closest && e.target.closest("button")) {
+        e.preventDefault();
+        return;
+      }
       const li = e.target && e.target.closest ? e.target.closest("li[data-owner]") : null;
       if (!li) return;
       dragOwner = li.getAttribute("data-owner");
@@ -6334,13 +6361,30 @@
     });
   }
 
-  function reorderDraftOrder(fromOwner, toOwner) {
-    const league = state.league;
-    if (!league) return;
-    let order = (state.cfg.draftOrder && state.cfg.draftOrder.length
+  function draftOrderWorkingCopy(league) {
+    return (state.cfg.draftOrder && state.cfg.draftOrder.length
       ? state.cfg.draftOrder.slice()
       : currentDraftOrderList(state.rows, league, state.cfg)
     ).slice();
+  }
+
+  function nudgeDraftOrder(owner, delta) {
+    const league = state.league;
+    if (!league || !owner || !delta) return;
+    const order = draftOrderWorkingCopy(league);
+    const from = order.indexOf(owner);
+    const to = from + delta;
+    if (from < 0 || to < 0 || to >= order.length) return;
+    order.splice(from, 1);
+    order.splice(to, 0, owner);
+    state.cfg.draftOrder = order;
+    refresh();
+  }
+
+  function reorderDraftOrder(fromOwner, toOwner) {
+    const league = state.league;
+    if (!league) return;
+    const order = draftOrderWorkingCopy(league);
     const from = order.indexOf(fromOwner);
     const to = order.indexOf(toOwner);
     if (from < 0 || to < 0 || from === to) return;
@@ -6610,6 +6654,9 @@
           state.trade.search = "";
           state.trade.give = [];
           state.trade.get = [];
+          if (state.accountUser && state.league) {
+            saveLeagueToAccount().catch(() => {});
+          }
         }
       });
     });
@@ -6634,7 +6681,7 @@
           : null;
       if (whoClose) {
         closeWhoAreYouModal();
-        setActiveTab("import");
+        // Stay on current tab; Keepers/Trades will re-prompt if still unset.
       }
     });
     document.querySelectorAll(".fd-stepper-btn").forEach((btn) => {
@@ -6863,12 +6910,8 @@
         void shell.offsetHeight;
       }
       await refresh();
-      if (
-        leagueHasTeams(state.league) &&
-        !myTeamSelected(state.league, state.cfg)
-      ) {
-        openWhoAreYouModal({ afterTab: state.cfg.tab || "pool" });
-      }
+      // Who-are-you: after import, or when opening Keepers/Trades without a team.
+      // Persisted myTeam (league settings) prevents re-prompt on refresh.
       if (state.cfg.tab === "pool" && state.table) {
         try {
           state.table.redraw(true);

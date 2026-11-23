@@ -2482,6 +2482,19 @@ border-top: 2px solid darkblue;
 flex: 0 0 28px; font-weight: 700; color: #888; font-variant-numeric: tabular-nums;
 }
 .fd-draft-order-list .fd-do-name { flex: 1 1 auto; min-width: 0; font-weight: 600; }
+.fd-draft-order-list .fd-do-move {
+display: inline-flex; flex-direction: column; gap: 2px; flex: 0 0 auto;
+}
+.fd-draft-order-list .fd-do-btn {
+width: 28px; height: 22px; padding: 0; border: 1px solid darkblue;
+border-radius: 3px; background: #fff; color: darkblue; cursor: pointer;
+font-size: 10px; line-height: 1;
+display: inline-flex; align-items: center; justify-content: center;
+}
+.fd-draft-order-list .fd-do-btn:hover:not(:disabled) { background: #e3f2fd; }
+.fd-draft-order-list .fd-do-btn:disabled {
+opacity: 0.35; cursor: default; border-color: #90a4ae; color: #90a4ae;
+}
 .fd-draft-order-list .fd-do-handle {
 flex: 0 0 auto; width: 28px; height: 28px; border: none; background: transparent;
 color: #888; cursor: grab; font-size: 16px; line-height: 1; padding: 0;
@@ -2702,15 +2715,16 @@ border: 1px solid #e2e2e2; border-radius: 4px; background: #fff;
 max-height: 640px; overflow: auto; padding: 4px 0;
 }
 .fp-keep-btn {
-display: grid; grid-template-columns: 28px minmax(0, 1fr) 48px; gap: 6px;
-align-items: center; width: 100%; padding: 4px 8px; border: none;
-background: transparent; text-align: left; cursor: pointer;
+display: block; width: 100%; border: 1px solid transparent; border-radius: 4px;
+background: transparent; padding: 2px 0; margin: 0; cursor: pointer; text-align: left;
+font: inherit; color: inherit;
 }
 .fp-keep-btn:hover { background: #f5f8fc; }
-.fp-keep-btn.is-selected { background: #e3f2fd; outline: 1px solid #64b5f6; }
+.fp-keep-btn.is-selected { border-color: #64b5f6; background: #e3f2fd; }
 .fp-keep-btn.is-cut { opacity: 0.72; }
+.fp-keep-btn .lt-player { pointer-events: none; }
 .fp-draft-needs { margin: 6px 10px; font-size: 12px; font-weight: 600; }
-.fp-draft-pick { padding: 4px 10px; font-size: 12px; }
+.fp-draft-picks .lt-player { padding: 4px 8px; }
 .tc-windows {
 display: flex; flex-wrap: wrap; gap: 2px 0; align-items: baseline;
 font-size: 12px; font-variant-numeric: tabular-nums; margin: 4px 0 8px;
@@ -2732,10 +2746,17 @@ max-height: min(80vh, 560px); overflow: auto;
 background: #fff; border-radius: 8px; padding: 20px 18px 16px;
 box-shadow: 0 12px 40px rgba(0,0,0,.22);
 }
-.fd-who-card h3 { margin: 0 0 6px; font-size: 18px; font-weight: 700; }
+.fd-who-close {
+position: absolute; top: 10px; right: 10px; width: 32px; height: 32px;
+border: none; border-radius: 4px; background: transparent; color: #666;
+font-size: 22px; line-height: 1; cursor: pointer; padding: 0;
+display: inline-flex; align-items: center; justify-content: center;
+}
+.fd-who-close:hover { background: #f3f3f3; color: #222; }
+.fd-who-card h3 { margin: 0 28px 6px 0; font-size: 18px; font-weight: 700; }
 .fd-who-card > p { margin: 0 0 12px; font-size: 13px; color: #555; }
 .fd-who-list {
-display: flex; flex-direction: column; gap: 4px; margin: 0 0 12px;
+display: flex; flex-direction: column; gap: 4px; margin: 0;
 }
 .fd-who-team-btn {
 display: block; width: 100%; text-align: left; padding: 8px 10px;
@@ -3324,10 +3345,6 @@ Open your league on
 <span class="fd-import-meta-label">Last updated</span>
 <span id="fd-import-last-updated" class="fd-import-meta-value">—</span>
 </div>
-<div>
-<span class="fd-import-meta-label">Teams</span>
-<span id="fd-import-team-count" class="fd-import-meta-value">—</span>
-</div>
 </div>
 <div class="fd-import-source-actions">
 <div class="fd-import-refresh-wrap">
@@ -3512,10 +3529,10 @@ All models are based on over a decade of data that is collected from public sour
 <div id="fd-who-modal" class="fd-who-modal" hidden>
 <div class="fd-who-backdrop" data-who-close="1"></div>
 <div class="fd-who-card" role="dialog" aria-modal="true" aria-labelledby="fd-who-title">
+<button type="button" class="fd-who-close" data-who-close="1" aria-label="Close">×</button>
 <h3 id="fd-who-title">Who are you?</h3>
-<p>Pick your team so Keepers, Trades, and the ladder know which side is yours.</p>
+<p>Pick your team for tailored advice</p>
 <div id="fd-who-list" class="fd-who-list"></div>
-<button type="button" class="tc-btn" data-who-close="1">Cancel</button>
 </div>
 </div>
 <script>/**
@@ -3962,6 +3979,13 @@ All models are based on over a decade of data that is collected from public sour
         /* ignore */
       }
     }
+    if (
+      (next === "planner" || next === "trades") &&
+      leagueHasTeams(state.league) &&
+      !myTeamSelected(state.league, state.cfg)
+    ) {
+      openWhoAreYouModal({ afterTab: next });
+    }
   }
 
   function setImportModalStatus(msg, isError) {
@@ -4061,7 +4085,6 @@ All models are based on over a decade of data that is collected from public sour
     const title = document.getElementById("fd-import-source-title");
     const nameEl = document.getElementById("fd-import-league-name");
     const updatedEl = document.getElementById("fd-import-last-updated");
-    const countEl = document.getElementById("fd-import-team-count");
     const refreshBtn = document.getElementById("fd-league-refresh");
     if (!card || !leagueHasTeams(league)) return;
 
@@ -4083,9 +4106,6 @@ All models are based on over a decade of data that is collected from public sour
       platform.updatedAt ||
       "";
     if (updatedEl) updatedEl.textContent = formatImportDate(updatedRaw);
-
-    const nTeams = (league.owners && league.owners.length) || 0;
-    if (countEl) countEl.textContent = String(nTeams);
 
     syncImportMyTeamSelect(league, state.cfg);
 
@@ -4183,9 +4203,16 @@ All models are based on over a decade of data that is collected from public sour
     syncImportMyTeamSelect(state.league, state.cfg);
     rebuildOwnerDropdown(state.league, state.cfg);
     writeCfgToUrl(state.cfg);
-    refresh().then(() => {
-      setActiveTab(afterTab);
-    });
+    const persist =
+      state.accountUser && state.league
+        ? saveLeagueToAccount()
+        : Promise.resolve();
+    Promise.resolve(persist)
+      .catch(() => {})
+      .then(() => refresh())
+      .then(() => {
+        setActiveTab(afterTab);
+      });
   }
 
   /** True when model still has draft picks for the first horizon season (e.g. PICK_2027_01). */
@@ -6835,11 +6862,13 @@ All models are based on over a decade of data that is collected from public sour
 
   function keeperSelectRowHtml(r, yi, opts) {
     const o = opts || {};
-    const xp = seasonXPoints(r, yi);
     const selected = !!o.selected;
     const belowCut = !!o.belowCut;
+    const withXp = Object.assign({}, r, {
+      xPoints: seasonXPoints(r, yi)
+    });
     return (
-      '<button type="button" class="fp-keep-btn' +
+      '<button type="button" class="tc-asset-btn fp-keep-btn' +
       (selected ? " is-selected" : "") +
       (belowCut ? " is-cut" : "") +
       '" data-fp-id="' +
@@ -6847,21 +6876,7 @@ All models are based on over a decade of data that is collected from public sour
       '" data-fp-side="' +
       escapeHtml(o.side || "keep") +
       '">' +
-      headshotHtml(r) +
-      '<div class="lt-player-meta">' +
-      '<div class="lt-player-name" title="' +
-      escapeHtml(r.name || "") +
-      '">' +
-      escapeHtml(r.name || "") +
-      "</div>" +
-      '<div class="lt-player-chips">' +
-      teamChipHtml(r.teamAbbr || r.club || "") +
-      posChipsHtml(displayPos(r)) +
-      "</div>" +
-      "</div>" +
-      '<div class="fp-player-xp">' +
-      fmtInt(xp) +
-      "</div>" +
+      tradePlayerRowHtml(withXp, belowCut) +
       "</button>"
     );
   }
@@ -6916,7 +6931,7 @@ All models are based on over a decade of data that is collected from public sour
       cfg.myTeam && league.owners.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : "";
     if (!myTeam) {
       el.innerHTML =
-        "<p class='muted'>Pick your team in <b>Import</b> to plan keepers.</p>";
+        "<p class='muted'>Pick your team so we know which side is yours.</p>";
       return;
     }
 
@@ -7034,18 +7049,20 @@ All models are based on over a decade of data that is collected from public sour
       });
       const pickBits = myPicks.length
         ? myPicks
-            .map((p) => {
-              return (
-                '<div class="fp-draft-pick">' +
-                escapeHtml(p.name) +
-                (p.proxyName
-                  ? ' <span class="muted">· ' +
-                    escapeHtml(p.proxyName) +
-                    "</span>"
-                  : "") +
-                "</div>"
-              );
-            })
+            .map((p) =>
+              pickPlayerRowHtml({
+                name: p.name,
+                pick: p.pick,
+                proxyName: p.proxyName,
+                club: p.club || (p.proxyRow && (p.proxyRow.teamAbbr || p.proxyRow.club)) || "",
+                xPoints: p.xPoints != null ? p.xPoints : p.vorp,
+                yearPts: p.yearPts,
+                key: p.key,
+                id: p.id,
+                type: "pick",
+                _asset: p.proxyRow && p.proxyRow._asset
+              })
+            )
             .join("")
         : '<p class="muted">No picks this season.</p>';
       rightBody =
@@ -8924,8 +8941,7 @@ All models are based on over a decade of data that is collected from public sour
       el.innerHTML =
         '<div class="tc-rater">' +
         "<h3>Trade check</h3>" +
-        "<p class='muted'>Pick your team in <b>Import</b> to start.</p>" +
-        '<button type="button" class="tc-btn" data-tc-goto="import">Import</button>' +
+        "<p class='muted'>Pick your team so we know which side is yours.</p>" +
         "</div>";
       return;
     }
@@ -9804,6 +9820,14 @@ All models are based on over a decade of data that is collected from public sour
           '<span class="fd-do-name">' +
           escapeHtml(owner) +
           "</span>" +
+          '<span class="fd-do-move">' +
+          '<button type="button" class="fd-do-btn" data-do-dir="-1" aria-label="Move up"' +
+          (i === 0 ? " disabled" : "") +
+          ">▲</button>" +
+          '<button type="button" class="fd-do-btn" data-do-dir="1" aria-label="Move down"' +
+          (i === order.length - 1 ? " disabled" : "") +
+          ">▼</button>" +
+          "</span>" +
           '<button type="button" class="fd-do-handle" aria-label="Drag to reorder" title="Drag to reorder">⠿</button>' +
           "</li>"
         );
@@ -9817,7 +9841,27 @@ All models are based on over a decade of data that is collected from public sour
     list.dataset.dndBound = "1";
     let dragOwner = null;
 
+    list.addEventListener("click", (e) => {
+      const btn =
+        e.target && e.target.closest
+          ? e.target.closest("button.fd-do-btn[data-do-dir]")
+          : null;
+      if (!btn || btn.disabled) return;
+      const li = btn.closest("li[data-owner]");
+      if (!li) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const owner = li.getAttribute("data-owner");
+      const dir = Number(btn.getAttribute("data-do-dir")) || 0;
+      if (!owner || !dir) return;
+      nudgeDraftOrder(owner, dir);
+    });
+
     list.addEventListener("dragstart", (e) => {
+      if (e.target && e.target.closest && e.target.closest("button")) {
+        e.preventDefault();
+        return;
+      }
       const li = e.target && e.target.closest ? e.target.closest("li[data-owner]") : null;
       if (!li) return;
       dragOwner = li.getAttribute("data-owner");
@@ -9854,13 +9898,30 @@ All models are based on over a decade of data that is collected from public sour
     });
   }
 
-  function reorderDraftOrder(fromOwner, toOwner) {
-    const league = state.league;
-    if (!league) return;
-    let order = (state.cfg.draftOrder && state.cfg.draftOrder.length
+  function draftOrderWorkingCopy(league) {
+    return (state.cfg.draftOrder && state.cfg.draftOrder.length
       ? state.cfg.draftOrder.slice()
       : currentDraftOrderList(state.rows, league, state.cfg)
     ).slice();
+  }
+
+  function nudgeDraftOrder(owner, delta) {
+    const league = state.league;
+    if (!league || !owner || !delta) return;
+    const order = draftOrderWorkingCopy(league);
+    const from = order.indexOf(owner);
+    const to = from + delta;
+    if (from < 0 || to < 0 || to >= order.length) return;
+    order.splice(from, 1);
+    order.splice(to, 0, owner);
+    state.cfg.draftOrder = order;
+    refresh();
+  }
+
+  function reorderDraftOrder(fromOwner, toOwner) {
+    const league = state.league;
+    if (!league) return;
+    const order = draftOrderWorkingCopy(league);
     const from = order.indexOf(fromOwner);
     const to = order.indexOf(toOwner);
     if (from < 0 || to < 0 || from === to) return;
@@ -10130,6 +10191,9 @@ All models are based on over a decade of data that is collected from public sour
           state.trade.search = "";
           state.trade.give = [];
           state.trade.get = [];
+          if (state.accountUser && state.league) {
+            saveLeagueToAccount().catch(() => {});
+          }
         }
       });
     });
@@ -10154,7 +10218,7 @@ All models are based on over a decade of data that is collected from public sour
           : null;
       if (whoClose) {
         closeWhoAreYouModal();
-        setActiveTab("import");
+        // Stay on current tab; Keepers/Trades will re-prompt if still unset.
       }
     });
     document.querySelectorAll(".fd-stepper-btn").forEach((btn) => {
@@ -10383,12 +10447,8 @@ All models are based on over a decade of data that is collected from public sour
         void shell.offsetHeight;
       }
       await refresh();
-      if (
-        leagueHasTeams(state.league) &&
-        !myTeamSelected(state.league, state.cfg)
-      ) {
-        openWhoAreYouModal({ afterTab: state.cfg.tab || "pool" });
-      }
+      // Who-are-you: after import, or when opening Keepers/Trades without a team.
+      // Persisted myTeam (league settings) prevents re-prompt on refresh.
       if (state.cfg.tab === "pool" && state.table) {
         try {
           state.table.redraw(true);
@@ -10414,8 +10474,7 @@ All models are based on over a decade of data that is collected from public sour
 
 document.addEventListener("DOMContentLoaded", function () {
   if (window.FantasyDraftFutures) window.FantasyDraftFutures.init();
-});
-</script>
+});</script>
 
 <hr>
 
