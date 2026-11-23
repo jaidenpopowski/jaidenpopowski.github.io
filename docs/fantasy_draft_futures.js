@@ -4538,10 +4538,59 @@
     );
   }
 
+  function tradePlayerRowHtml(r, belowCut) {
+    const abbr = r.teamAbbr || r.club || "";
+    const teamChip = abbr
+      ? '<span class="fd-team-chip fd-team-' +
+        escapeHtml(abbr) +
+        '">' +
+        escapeHtml(abbr) +
+        "</span>"
+      : "";
+    const pl = r.pListed != null ? Number(r.pListed) : NaN;
+    const plChip =
+      Number.isFinite(pl) && pl < 0.995
+        ? '<span class="fd-pos-chip tc-plisted-chip" title="Probability still on AFL list">' +
+          "pListed " +
+          Math.round(pl * 100) +
+          "%</span>"
+        : "";
+    const contract = r.contract != null ? Number(r.contract) : NaN;
+    const contractChip = Number.isFinite(contract)
+      ? '<span class="fd-pos-chip tc-contract-chip" title="Contract final year">' +
+        "to " +
+        contract +
+        "</span>"
+      : "";
+    return (
+      '<div class="lt-player' +
+      (belowCut ? " lt-below-cut" : "") +
+      '">' +
+      headshotHtml(r) +
+      '<div class="lt-player-meta">' +
+      '<div class="lt-player-name" title="' +
+      escapeHtml(r.name || "") +
+      '">' +
+      escapeHtml(r.name || "") +
+      "</div>" +
+      '<div class="lt-player-chips">' +
+      teamChip +
+      posChipsHtml(displayPos(r)) +
+      plChip +
+      contractChip +
+      "</div>" +
+      "</div>" +
+      '<div class="lt-player-vorp">' +
+      fmtInt(r.vorp) +
+      "</div>" +
+      "</div>"
+    );
+  }
+
   function tradeAssetBodyHtml(asset) {
     if (!asset) return "";
     if (asset.kind === "pick") return pickPlayerRowHtml(asset);
-    return teamPlayerRowHtml(asset.row || asset, !!asset.belowCut);
+    return tradePlayerRowHtml(asset.row || asset, !!asset.belowCut);
   }
 
   function tradeAssetRowHtml(asset, selected, opts) {
@@ -4671,45 +4720,25 @@
         ? seasons[0] + (yLen > 1 ? "–" + seasons[yLen - 1] : "")
         : "—";
     const cutOn = resolveKeeperCut(cfg, state.data, seasons);
-    const cutWords = cutOn
-      ? "Keepers not yet cut (we pick your best " +
-        (Number(cfg.keeperCount) || 20) +
-        ")"
-      : "Rosters as imported";
-    const nPick = nPicksCap(cfg);
     const age = dataAgeDays(league);
-    const ageTxt =
-      age == null ? "" : age <= 0 ? "updated today" : "updated " + age + "d ago";
     let chips = "";
     if (age != null && age > 14) {
       chips +=
-        '<span class="tc-chip tc-chip-warn">League data is ' +
+        '<span class="tc-chip tc-chip-warn">' +
         age +
-        ' days old — <button type="button" class="tc-link-btn" data-tc-goto="import">re-import</button></span>';
+        'd old — <button type="button" class="tc-link-btn" data-tc-goto="import">re-import</button></span>';
     }
-    if (
-      nPick > 0 &&
-      (!cfg.draftOrder || !cfg.draftOrder.length)
-    ) {
+    if (nPicksCap(cfg) > 0 && (!cfg.draftOrder || !cfg.draftOrder.length)) {
       chips +=
-        '<span class="tc-chip">Pick values use projected draft order — <button type="button" class="tc-link-btn" data-tc-goto="import">set order</button></span>';
+        '<span class="tc-chip"><button type="button" class="tc-link-btn" data-tc-goto="import">Set draft order</button></span>';
     }
-    const picksTxt = nPick > 0 ? " · picks " + nPick : "";
     return (
       '<div class="tc-context">' +
-      '<div class="tc-context-main">' +
-      "<span>Using: <b>" +
-      escapeHtml(myTeam || "—") +
-      "</b> · " +
       escapeHtml(through) +
       " · " +
-      escapeHtml(cutWords) +
-      escapeHtml(picksTxt) +
-      (ageTxt ? " · " + escapeHtml(ageTxt) : "") +
-      "</span>" +
-      ' <button type="button" class="tc-link-btn" data-tc-goto="import">Change</button>' +
-      "</div>" +
-      (chips ? '<div class="tc-context-chips">' + chips + "</div>" : "") +
+      (cutOn ? "best " + (Number(cfg.keeperCount) || 20) : "as imported") +
+      ' <button type="button" class="tc-link-btn" data-tc-goto="import">Settings</button>' +
+      (chips ? " " + chips : "") +
       "</div>"
     );
   }
@@ -4735,118 +4764,50 @@
   }
 
   function verdictPanelHtml(evalResult, myTeam, other, balanceIdeas, swapped) {
-    if (!evalResult) {
-      return '<div class="tc-verdict-empty muted">Add something to rate</div>';
-    }
-    if (evalResult.empty && (!evalResult.reasons || !evalResult.reasons.length)) {
-      return '<div class="tc-verdict-empty muted">Add something to rate</div>';
-    }
-    if (evalResult.empty) {
-      return (
-        '<div class="tc-verdict-empty muted">' +
-        escapeHtml((evalResult.reasons && evalResult.reasons[0]) || "Add something to rate") +
-        "</div>"
-      );
+    if (!evalResult || evalResult.empty) {
+      return '<div class="tc-verdict-empty muted">Tap players or picks to build a trade</div>';
     }
     const band = evalResult.verdict;
     const label = verdictLabel(band, swapped);
     const netMe = swapped ? evalResult.netThem : evalResult.netMe;
     const netThem = swapped ? evalResult.netMe : evalResult.netThem;
     const ratioB = swapped ? evalResult.ratio : evalResult.ratioB;
-    const through =
-      evalResult.yearSeasons && evalResult.yearSeasons.length
-        ? evalResult.yearSeasons[0] +
-          (evalResult.yearSeasons.length > 1
-            ? "–" + evalResult.yearSeasons[evalResult.yearSeasons.length - 1]
-            : "")
-        : "";
-    const cutBit = evalResult.cutOn
-      ? " after both teams re-pick their best " +
-        (Number(state.cfg.keeperCount) || 20)
-      : " (rosters as imported)";
-    const explain =
-      "You net " +
-      fmtSigned(roundXPts(netMe)) +
-      " projected points over " +
-      through +
-      cutBit +
-      ".";
     const tags = (evalResult.tags || [])
+      .slice(0, 2)
       .map((t) => '<span class="tc-tag">' + escapeHtml(t) + "</span>")
       .join("");
     const reasons = (evalResult.reasons || [])
+      .slice(0, 2)
       .map((r) => "<li>" + escapeHtml(r) + "</li>")
       .join("");
     const gaps = (swapped ? evalResult.theirs.gaps : evalResult.mine.gaps) || [];
-    const gapHtml = gaps.length
-      ? '<div class="tc-gaps"><h4>Lineup gaps</h4><ul>' +
-        gaps
-          .map(
-            (g) =>
-              '<li class="tc-gap">' + escapeHtml(g.text || g.pos) + "</li>"
-          )
-          .join("") +
-        "</ul></div>"
-      : "";
-    const risks = evalResult.riskFlags || [];
-    const riskHtml = risks.length
-      ? '<div class="tc-risks"><h4>Risk flags</h4><ul>' +
-        risks.map((r) => "<li>" + escapeHtml(r.text) + "</li>").join("") +
-        "</ul></div>"
-      : "";
-    const theirBand = verdictBand(ratioB);
-    const theirLine =
-      '<p class="tc-their-side">From their side: <b>' +
-      escapeHtml(verdictLabel(theirBand, false).replace(" for you", "")) +
-      "</b>. Likely acceptable to them: <b>" +
-      escapeHtml(theirAcceptLabel(ratioB)) +
-      "</b>.</p>";
+    const gapBits = gaps
+      .slice(0, 2)
+      .map((g) => escapeHtml(g.pos || g.text || ""))
+      .filter(Boolean);
+    const risks = (evalResult.riskFlags || []).slice(0, 2);
+    const theirOk = theirAcceptLabel(ratioB);
 
     let balanceHtml = "";
     if (balanceIdeas && balanceIdeas.length) {
       balanceHtml =
-        '<div class="tc-balance">' +
-        '<div class="tc-balance-head">Balance it <span class="muted">Ideas, not advice</span></div>' +
         '<div class="tc-balance-chips">' +
         balanceIdeas
           .map((idea) => {
-            const verb = idea.side === "get" ? "Ask for" : "Offer";
-            const target =
-              idea.verdict === "FAIR"
-                ? "Fair"
-                : verdictLabel(idea.verdict, false);
+            const verb = idea.side === "get" ? "Ask" : "Offer";
             return (
               '<button type="button" class="tc-balance-chip" data-tc-balance-side="' +
               escapeHtml(idea.side) +
               '" data-tc-balance-key="' +
               escapeHtml(idea.key) +
               '">' +
-              escapeHtml(verb + " " + idea.name + " → " + target) +
+              escapeHtml(verb + " " + idea.name) +
               "</button>"
             );
           })
           .join("") +
-        "</div></div>";
+        "</div>";
     }
-
-    const hist = loadTradeHistory();
-    const histHtml = hist.length
-      ? '<div class="tc-history"><h4>Recent checks</h4>' +
-        hist
-          .map((h, i) => {
-            return (
-              '<button type="button" class="tc-history-row" data-tc-hist="' +
-              i +
-              '"><span>' +
-              escapeHtml(h.summary || "Trade") +
-              '</span><span class="tc-tag">' +
-              escapeHtml(h.verdictLabel || "") +
-              "</span></button>"
-            );
-          })
-          .join("") +
-        "</div>"
-      : "";
 
     return (
       '<div class="tc-verdict" aria-live="polite">' +
@@ -4857,112 +4818,54 @@
       escapeHtml(band) +
       '">' +
       escapeHtml(label) +
-      " · " +
-      fmtSigned(roundXPts(netMe)) +
-      " xPts</div>" +
-      '<p class="tc-verdict-explain">' +
-      escapeHtml(explain) +
-      "</p>" +
-      '<p class="tc-verdict-nums muted">You ' +
+      "</div>" +
+      '<div class="tc-verdict-nums">You ' +
       fmtSigned(roundXPts(netMe)) +
       " · Them " +
       fmtSigned(roundXPts(netThem)) +
-      " (xPts, " +
-      escapeHtml(through) +
-      ') <button type="button" class="tc-link-btn" data-tc-xpts-info>What are xPts?</button></p>' +
-      '<div class="tc-xpts-info" id="tc-xpts-info" hidden>' +
-      "<p>xPts = projected fantasy points over " +
-      escapeHtml(through) +
-      " for a team's best " +
-      (Number(state.cfg.keeperCount) || 20) +
-      " keepers (+ picks) after the trade. It's an estimate, not a guarantee.</p>" +
       "</div>" +
       (tags ? '<div class="tc-tags">' + tags + "</div>" : "") +
-      (reasons
-        ? '<div class="tc-why"><h4>Why</h4><ul>' + reasons + "</ul></div>"
-        : "") +
       tradeSeasonTableHtml(evalResult, swapped) +
-      gapHtml +
-      riskHtml +
-      theirLine +
+      (reasons ? "<ul class='tc-why-list'>" + reasons + "</ul>" : "") +
+      (gapBits.length
+        ? '<p class="tc-meta muted">Gap: ' + gapBits.join(", ") + "</p>"
+        : "") +
+      (risks.length
+        ? '<p class="tc-meta muted">' +
+          risks.map((r) => escapeHtml(r.text)).join(" · ") +
+          "</p>"
+        : "") +
+      '<p class="tc-their-side muted">Them: ' +
+      escapeHtml(theirOk) +
+      "</p>" +
       '<div class="tc-actions">' +
-      '<button type="button" class="tc-btn" data-tc-action="swap">Swap sides</button>' +
-      '<button type="button" class="tc-btn" data-tc-action="copy">Copy summary</button>' +
+      '<button type="button" class="tc-btn" data-tc-action="swap">Swap</button>' +
+      '<button type="button" class="tc-btn" data-tc-action="copy">Copy</button>' +
       '<button type="button" class="tc-btn" data-tc-action="clear">Clear</button>' +
+      '<button type="button" class="tc-btn" data-tc-feedback="up" aria-label="Thumbs up">Yes</button>' +
+      '<button type="button" class="tc-btn" data-tc-feedback="down" aria-label="Thumbs down">No</button>' +
       "</div>" +
       balanceHtml +
-      '<div class="tc-feedback">' +
-      '<span class="muted">Does this match your gut?</span> ' +
-      '<button type="button" class="tc-btn" data-tc-feedback="up" aria-label="Thumbs up">👍</button>' +
-      '<button type="button" class="tc-btn" data-tc-feedback="down" aria-label="Thumbs down">👎</button>' +
-      "</div>" +
-      histHtml +
       "</div>"
     );
   }
 
-  function stickyBarHtml(evalResult, swapped) {
-    if (!evalResult || evalResult.empty) {
-      return (
-        '<button type="button" class="tc-sticky-bar" data-tc-expand-verdict>' +
-        '<span class="muted">Add players or picks to rate this trade</span></button>'
-      );
-    }
-    const label = verdictLabel(evalResult.verdict, swapped);
-    const net = swapped ? evalResult.netThem : evalResult.netMe;
-    return (
-      '<button type="button" class="tc-sticky-bar" data-tc-expand-verdict>' +
-      "<span>" +
-      escapeHtml(label) +
-      " · " +
-      fmtSigned(roundXPts(net)) +
-      " xPts</span>" +
-      '<span class="muted">tap for details</span></button>'
-    );
-  }
-
-  function addSheetListHtml(assets, selectedSet, cutOn, showOwners) {
-    if (!assets.length) return '<p class="muted">No assets</p>';
+  function rosterListHtml(list, selectedSet, role, cutOn, emptyMsg) {
+    if (!list.length) return '<p class="muted">' + emptyMsg + "</p>";
     const parts = [];
-    let lastOwner = null;
     let shownCut = false;
-    let keptCount = 0;
-    assets.forEach((a) => {
-      if (!a.belowCut) keptCount++;
-    });
-    assets.forEach((a, idx) => {
-      if (showOwners && a.owner !== lastOwner) {
-        lastOwner = a.owner;
-        parts.push(
-          '<div class="tc-owner-head">' +
-            escapeHtml(a.owner) +
-            teamPlanLabelHtml(a.owner) +
-            "</div>"
-        );
-      }
+    list.forEach((a) => {
       if (cutOn && !shownCut && a.belowCut) {
         shownCut = true;
         parts.push(
-          '<div class="tc-cut-line" role="separator">Cut line · keepers above</div>'
+          '<div class="tc-cut-line" role="separator">Projected cuts</div>'
         );
       }
-      const checked = selectedSet.has(a.key);
       parts.push(
-        '<button type="button" class="tc-asset-btn' +
-          (checked ? " is-selected" : "") +
-          (a.belowCut ? " is-cut" : "") +
-          '" data-tc-sheet-asset="' +
-          escapeHtml(a.key) +
-          '" data-tc-owner="' +
-          escapeHtml(a.owner || "") +
-          '" aria-pressed="' +
-          (checked ? "true" : "false") +
-          '">' +
-          '<span class="tc-check" aria-hidden="true">' +
-          (checked ? "✓" : "") +
-          "</span>" +
-          tradeAssetBodyHtml(a) +
-          "</button>"
+        tradeAssetRowHtml(a, selectedSet.has(a.key), {
+          role: role,
+          owner: a.owner
+        })
       );
     });
     return parts.join("");
@@ -5020,11 +4923,16 @@
     const { picks, assetMap, preCache } = cache;
     const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
 
+    const otherOwners = league.owners
+      .filter((o) => o !== myTeam)
+      .slice()
+      .sort((a, b) => String(a).localeCompare(String(b)));
     let otherTeam =
       state.trade.otherTeam && league.owners.indexOf(state.trade.otherTeam) >= 0
         ? state.trade.otherTeam
         : "";
     if (otherTeam && otherTeam === myTeam) otherTeam = "";
+    if (!otherTeam && otherOwners.length) otherTeam = otherOwners[0];
     state.trade.otherTeam = otherTeam;
 
     // Drop stale assets after re-import
@@ -5142,197 +5050,123 @@
       }
     }
 
-    const otherOptions =
-      '<option value="">Select team</option>' +
-      league.owners
-        .filter((o) => o !== myTeam)
-        .map((o) => {
-          const lab = state.teamLabels && state.teamLabels[o];
-          const label =
-            o + (lab && lab.label ? " · " + lab.label : "");
-          return (
-            '<option value="' +
-            escapeHtml(o) +
-            '"' +
-            (o === otherTeam ? " selected" : "") +
-            ">" +
-            escapeHtml(label) +
-            "</option>"
-          );
-        })
-        .join("");
+    const otherOptions = otherOwners
+      .map((o) => {
+        const lab = state.teamLabels && state.teamLabels[o];
+        const label = o + (lab && lab.label ? " · " + lab.label : "");
+        return (
+          '<option value="' +
+          escapeHtml(o) +
+          '"' +
+          (o === otherTeam ? " selected" : "") +
+          ">" +
+          escapeHtml(label) +
+          "</option>"
+        );
+      })
+      .join("");
+
+    const showPicks =
+      keeperDraftPicksPerTeam(cfg) > 0 && cfg.pickTrading !== false;
+    const searchQ = String(state.trade.search || "")
+      .trim()
+      .toLowerCase();
+
+    function sortAssets(list) {
+      return list.sort((a, b) => {
+        const ac = a.belowCut ? 1 : 0;
+        const bc = b.belowCut ? 1 : 0;
+        if (ac !== bc) return ac - bc;
+        return (
+          yearPtsTotal(b.yearPts) - yearPtsTotal(a.yearPts) ||
+          a.name.localeCompare(b.name)
+        );
+      });
+    }
+
+    const myAssets = sortAssets(
+      Object.keys(assetMap)
+        .map((k) => assetMap[k])
+        .filter((a) => a.owner === myTeam)
+        .filter((a) => showPicks || a.kind !== "pick")
+    );
+
+    const theirAssets = otherTeam
+      ? sortAssets(
+          Object.keys(assetMap)
+            .map((k) => assetMap[k])
+            .filter((a) => a.owner === otherTeam)
+            .filter((a) => showPicks || a.kind !== "pick")
+            .filter((a) => {
+              if (!searchQ) return true;
+              return String(a.name || "")
+                .toLowerCase()
+                .includes(searchQ);
+            })
+        )
+      : [];
 
     const giveCards = state.trade.give.length
       ? state.trade.give
           .map((k) => trayCardHtml(assetMap[k], "give", cutOn))
           .join("")
-      : '<p class="muted tc-tray-empty">Nothing added yet</p>';
+      : '<p class="muted tc-tray-empty">Give</p>';
     const getCards = state.trade.get.length
       ? state.trade.get
           .map((k) => trayCardHtml(assetMap[k], "get", cutOn))
           .join("")
-      : '<p class="muted tc-tray-empty">Nothing added yet</p>';
-
-    const giveFull = state.trade.give.length >= TRADE_RATER_MAX;
-    const getFull = state.trade.get.length >= TRADE_RATER_MAX;
-    const sheetOpen = !!state.trade.sheetOpen;
-    const sheetSide = state.trade.sheetSide || "give";
-    const sheetPos = state.trade.sheetPos || "ALL";
-    const sheetKind = state.trade.sheetKind || "players";
-    const sheetSearch = String(state.trade.search || "")
-      .trim()
-      .toLowerCase();
-    const showPicks =
-      keeperDraftPicksPerTeam(cfg) > 0 && cfg.pickTrading !== false;
-
-    let sheetAssets = [];
-    if (sheetOpen) {
-      const ownerFilter =
-        sheetSide === "give"
-          ? myTeam
-          : otherTeam || null;
-      sheetAssets = Object.keys(assetMap)
-        .map((k) => assetMap[k])
-        .filter((a) => {
-          if (sheetSide === "give") return a.owner === myTeam;
-          if (ownerFilter) return a.owner === ownerFilter;
-          return a.owner && a.owner !== myTeam;
-        })
-        .filter((a) => {
-          if (sheetKind === "picks") return a.kind === "pick";
-          return a.kind !== "pick";
-        })
-        .filter((a) => {
-          if (sheetKind === "picks") return true;
-          if (sheetPos === "ALL") return true;
-          const pos = String(displayPos(a.row || a) || "").toUpperCase();
-          return pos.indexOf(sheetPos) >= 0;
-        })
-        .filter((a) => {
-          if (!sheetSearch) return true;
-          return String(a.name || "")
-            .toLowerCase()
-            .includes(sheetSearch);
-        })
-        .sort((a, b) => {
-          if (!ownerFilter && sheetSide === "get") {
-            const oc = String(a.owner).localeCompare(String(b.owner));
-            if (oc) return oc;
-          }
-          const ac = a.belowCut ? 1 : 0;
-          const bc = b.belowCut ? 1 : 0;
-          if (ac !== bc) return ac - bc;
-          return (
-            yearPtsTotal(b.yearPts) - yearPtsTotal(a.yearPts) ||
-            a.name.localeCompare(b.name)
-          );
-        });
-    }
-    const sheetSelected = sheetSide === "give" ? giveSet : getSet;
-
-    const sheetHtml = sheetOpen
-      ? '<div class="tc-sheet-backdrop" data-tc-sheet-close></div>' +
-        '<div class="tc-sheet" role="dialog" aria-modal="true" aria-label="Add player or pick">' +
-        '<div class="tc-sheet-head">' +
-        "<strong>Add to " +
-        (sheetSide === "give" ? "You give" : "You get") +
-        "</strong>" +
-        '<button type="button" class="tc-btn" data-tc-sheet-done>Done</button>' +
-        "</div>" +
-        '<input id="tc-sheet-search" type="search" placeholder="Search" value="' +
-        escapeHtml(state.trade.search || "") +
-        '" autocomplete="off" />' +
-        '<div class="tc-sheet-tabs">' +
-        '<button type="button" class="tc-tab' +
-        (sheetKind === "players" ? " is-active" : "") +
-        '" data-tc-sheet-kind="players">Players</button>' +
-        (showPicks
-          ? '<button type="button" class="tc-tab' +
-            (sheetKind === "picks" ? " is-active" : "") +
-            '" data-tc-sheet-kind="picks">Picks</button>'
-          : "") +
-        "</div>" +
-        (sheetKind === "players"
-          ? '<div class="tc-pos-filters">' +
-            ["ALL", "DEF", "MID", "RUC", "FWD"]
-              .map(
-                (p) =>
-                  '<button type="button" class="filter-btn pos-filter-btn' +
-                  (sheetPos === p ? " active" : "") +
-                  '" data-tc-sheet-pos="' +
-                  p +
-                  '">' +
-                  p +
-                  "</button>"
-              )
-              .join("") +
-            "</div>"
-          : "") +
-        '<div class="tc-sheet-list" id="tc-sheet-list">' +
-        addSheetListHtml(
-          sheetAssets,
-          sheetSelected,
-          cutOn,
-          sheetSide === "get" && !otherTeam
-        ) +
-        "</div></div>"
-      : "";
-
-    const expanded = !!state.trade.verdictExpanded;
+      : '<p class="muted tc-tray-empty">Get</p>';
 
     el.innerHTML =
-      '<div class="tc-rater' +
-      (expanded ? " is-expanded" : "") +
-      '">' +
-      '<div class="tc-rater-head">' +
+      '<div class="tc-rater">' +
       "<h3>Trade check</h3>" +
-      "<p class='muted tc-sub'>Add the players and picks on each side. We re-pick both teams' best keepers and tell you who comes out ahead.</p>" +
-      "</div>" +
       tradeContextBarHtml(cfg, league, myTeam, state.seasons) +
       '<div id="tc-toast-host">' +
       tradeToastHtml() +
       "</div>" +
-      '<div class="tc-layout">' +
-      '<div class="tc-main">' +
-      '<label class="tc-partner">Trading with ' +
+      '<div class="tc-board">' +
+      '<div class="tc-col tc-roster">' +
+      '<div class="tc-col-head">' +
+      '<div class="tc-col-title">' +
+      escapeHtml(myTeam) +
+      "</div>" +
+      teamPlanLabelHtml(myTeam) +
+      "</div>" +
+      '<div class="tc-list" id="tc-my-list">' +
+      rosterListHtml(myAssets, giveSet, "give", cutOn, "No assets") +
+      "</div></div>" +
+      '<div class="tc-center">' +
+      '<div class="tc-diff">' +
+      verdictPanelHtml(evalResult, myTeam, otherTeam, balanceIdeas, swapped) +
+      "</div>" +
+      '<div class="tc-inputs">' +
+      '<div class="tc-col tc-tray" id="tc-give-tray">' +
+      giveCards +
+      "</div>" +
+      '<div class="tc-col tc-tray" id="tc-get-tray">' +
+      getCards +
+      "</div></div></div>" +
+      '<div class="tc-col tc-roster">' +
+      '<div class="tc-col-head">' +
       '<select id="tc-other-team">' +
       otherOptions +
-      "</select></label>" +
-      '<div class="tc-trays">' +
-      '<div class="tc-tray" id="tc-give-tray">' +
-      '<div class="tc-tray-title">You give</div>' +
-      giveCards +
-      '<button type="button" class="tc-add-btn" data-tc-add="give"' +
-      (giveFull ? " disabled" : "") +
-      ">" +
-      (giveFull ? "Max 6 per side" : "+ Add player or pick") +
-      "</button></div>" +
-      '<div class="tc-tray" id="tc-get-tray">' +
-      '<div class="tc-tray-title">You get</div>' +
-      getCards +
-      '<button type="button" class="tc-add-btn" data-tc-add="get"' +
-      (getFull ? " disabled" : "") +
-      ">" +
-      (getFull ? "Max 6 per side" : "+ Add player or pick") +
-      "</button></div>" +
+      "</select>" +
+      (otherTeam ? teamPlanLabelHtml(otherTeam) : "") +
+      '<input id="tc-player-search" type="search" placeholder="Search" value="' +
+      escapeHtml(state.trade.search || "") +
+      '"/>' +
       "</div>" +
-      '<div class="tc-verdict-inline' +
-      (expanded ? " is-open" : "") +
-      '" id="tc-verdict-panel">' +
-      (otherTeam
-        ? verdictPanelHtml(evalResult, myTeam, otherTeam, balanceIdeas, swapped)
-        : '<p class="muted">Select a partner team to rate a trade.</p>') +
+      '<div class="tc-list" id="tc-other-list">' +
+      rosterListHtml(
+        theirAssets,
+        getSet,
+        "get",
+        cutOn,
+        otherTeam ? "No assets" : "Choose a team"
+      ) +
       "</div></div>" +
-      '<aside class="tc-aside" id="tc-aside-verdict">' +
-      (otherTeam
-        ? verdictPanelHtml(evalResult, myTeam, otherTeam, balanceIdeas, swapped)
-        : '<p class="muted">Select a partner team.</p>') +
-      "</aside></div>" +
-      stickyBarHtml(evalResult, swapped) +
-      sheetHtml +
-      "</div>";
+      "</div></div>";
 
-    // Stash for bind handlers (avoid recompute on every click)
     state.trade._cache = cache;
     state.trade._eval = evalResult;
   }
@@ -5340,23 +5174,17 @@
   function scheduleTradeRerender() {
     if (state.trade._rerenderTimer) clearTimeout(state.trade._rerenderTimer);
     state.trade.calculating = true;
-    const list = document.getElementById("tc-sheet-list");
-    const savedScroll = list ? list.scrollTop : 0;
-    const hint = document.querySelector(".tc-calc-hint");
-    if (!hint) {
-      const band = document.querySelector(".tc-verdict-band");
-      if (band) {
-        const el = document.createElement("div");
-        el.className = "tc-calc-hint muted";
-        el.textContent = "Calculating…";
-        band.parentNode.insertBefore(el, band);
-      }
-    }
+    const myList = document.getElementById("tc-my-list");
+    const otherList = document.getElementById("tc-other-list");
+    const savedMy = myList ? myList.scrollTop : 0;
+    const savedOther = otherList ? otherList.scrollTop : 0;
     state.trade._rerenderTimer = setTimeout(() => {
       state.trade.calculating = false;
       renderTradeCalculator(state.rows, state.league, state.cfg);
-      const list2 = document.getElementById("tc-sheet-list");
-      if (list2 && state.trade.sheetOpen) list2.scrollTop = savedScroll;
+      const my2 = document.getElementById("tc-my-list");
+      const ot2 = document.getElementById("tc-other-list");
+      if (my2) my2.scrollTop = savedMy;
+      if (ot2) ot2.scrollTop = savedOther;
     }, 150);
   }
 
@@ -5368,41 +5196,67 @@
 
     trackFd("trade_check_opened", {});
 
+    function toggleKey(side, key) {
+      const arr = (state.trade[side] || []).slice();
+      const i = arr.indexOf(key);
+      if (i >= 0) {
+        arr.splice(i, 1);
+      } else {
+        if (arr.length >= TRADE_RATER_MAX) {
+          showTradeToast("Max 6 per side");
+          return false;
+        }
+        const otherSide = side === "give" ? "get" : "give";
+        if ((state.trade[otherSide] || []).indexOf(key) >= 0) {
+          showTradeToast("Already on the other side");
+          return false;
+        }
+        arr.push(key);
+        trackFd("asset_added", {
+          type:
+            state.trade._cache &&
+            state.trade._cache.assetMap &&
+            state.trade._cache.assetMap[key] &&
+            state.trade._cache.assetMap[key].kind === "pick"
+              ? "pick"
+              : "player"
+        });
+      }
+      state.trade[side] = arr;
+      return true;
+    }
+
     el.addEventListener("change", (e) => {
       const t = e.target;
-      if (!t) return;
-      if (t.id === "tc-other-team") {
-        const prevGet = (state.trade.get || []).slice();
-        const prevOther = state.trade.otherTeam;
-        state.trade.otherTeam = t.value || "";
-        state.trade.get = [];
-        state.trade.search = "";
-        state.trade.swapped = false;
-        trackFd("partner_selected", { team: state.trade.otherTeam });
-        if (prevGet.length) {
-          state.trade._undoGet = { get: prevGet, other: prevOther };
-          showTradeToast("Cleared You get — undo?");
-        }
-        renderTradeCalculator(state.rows, state.league, state.cfg);
+      if (!t || t.id !== "tc-other-team") return;
+      const prevGet = (state.trade.get || []).slice();
+      const prevOther = state.trade.otherTeam;
+      state.trade.otherTeam = t.value || "";
+      state.trade.get = [];
+      state.trade.search = "";
+      state.trade.swapped = false;
+      trackFd("partner_selected", { team: state.trade.otherTeam });
+      if (prevGet.length) {
+        state.trade._undoGet = { get: prevGet, other: prevOther };
+        showTradeToast("Cleared You get — undo?");
       }
+      renderTradeCalculator(state.rows, state.league, state.cfg);
     });
 
-    const debouncedSheetSearch = debounce(() => {
-      // Toggle selection class only — rebuild sheet list via targeted update
-      const list = document.getElementById("tc-sheet-list");
-      const searchEl = document.getElementById("tc-sheet-search");
-      if (!list || !state.trade.sheetOpen) return;
-      // Full sheet re-render of list only by re-calling render (keeps trays)
-      const scroll = list.scrollTop;
+    const debouncedSearch = debounce(() => {
+      const scrollMy = (document.getElementById("tc-my-list") || {}).scrollTop || 0;
+      const scrollOt = (document.getElementById("tc-other-list") || {}).scrollTop || 0;
       renderTradeCalculator(state.rows, state.league, state.cfg);
-      const list2 = document.getElementById("tc-sheet-list");
-      const search2 = document.getElementById("tc-sheet-search");
-      if (list2) list2.scrollTop = scroll;
-      if (search2) {
-        search2.focus();
-        const len = search2.value.length;
+      const my2 = document.getElementById("tc-my-list");
+      const ot2 = document.getElementById("tc-other-list");
+      const inp = document.getElementById("tc-player-search");
+      if (my2) my2.scrollTop = scrollMy;
+      if (ot2) ot2.scrollTop = scrollOt;
+      if (inp) {
+        inp.focus();
+        const len = inp.value.length;
         try {
-          search2.setSelectionRange(len, len);
+          inp.setSelectionRange(len, len);
         } catch (err) {
           /* ignore */
         }
@@ -5411,16 +5265,9 @@
 
     el.addEventListener("input", (e) => {
       const t = e.target;
-      if (!t || t.id !== "tc-sheet-search") return;
+      if (!t || t.id !== "tc-player-search") return;
       state.trade.search = t.value || "";
-      debouncedSheetSearch();
-    });
-
-    el.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && state.trade.sheetOpen) {
-        state.trade.sheetOpen = false;
-        renderTradeCalculator(state.rows, state.league, state.cfg);
-      }
+      debouncedSearch();
     });
 
     el.addEventListener("click", (e) => {
@@ -5435,102 +5282,11 @@
 
       if (t.closest(".tc-toast") && state.trade._undoGet) {
         state.trade.get = state.trade._undoGet.get || [];
-        state.trade.otherTeam = state.trade._undoGet.other || state.trade.otherTeam;
+        state.trade.otherTeam =
+          state.trade._undoGet.other || state.trade.otherTeam;
         state.trade._undoGet = null;
         state.trade.toast = "";
         renderTradeCalculator(state.rows, state.league, state.cfg);
-        return;
-      }
-
-      const addBtn = t.closest("[data-tc-add]");
-      if (addBtn && !addBtn.disabled) {
-        state.trade.sheetSide = addBtn.getAttribute("data-tc-add") || "give";
-        state.trade.sheetOpen = true;
-        state.trade.sheetKind = "players";
-        state.trade.sheetPos = "ALL";
-        state.trade.search = "";
-        renderTradeCalculator(state.rows, state.league, state.cfg);
-        const search = document.getElementById("tc-sheet-search");
-        if (search) search.focus();
-        return;
-      }
-
-      if (t.closest("[data-tc-sheet-close]") || t.closest("[data-tc-sheet-done]")) {
-        state.trade.sheetOpen = false;
-        scheduleTradeRerender();
-        return;
-      }
-
-      const kindBtn = t.closest("[data-tc-sheet-kind]");
-      if (kindBtn) {
-        state.trade.sheetKind = kindBtn.getAttribute("data-tc-sheet-kind") || "players";
-        const scrollEl = document.getElementById("tc-sheet-list");
-        const scroll = scrollEl ? scrollEl.scrollTop : 0;
-        renderTradeCalculator(state.rows, state.league, state.cfg);
-        const list2 = document.getElementById("tc-sheet-list");
-        if (list2) list2.scrollTop = scroll;
-        return;
-      }
-
-      const posBtn = t.closest("[data-tc-sheet-pos]");
-      if (posBtn) {
-        state.trade.sheetPos = posBtn.getAttribute("data-tc-sheet-pos") || "ALL";
-        const scrollEl = document.getElementById("tc-sheet-list");
-        const scroll = scrollEl ? scrollEl.scrollTop : 0;
-        renderTradeCalculator(state.rows, state.league, state.cfg);
-        const list2 = document.getElementById("tc-sheet-list");
-        if (list2) list2.scrollTop = scroll;
-        return;
-      }
-
-      const sheetAsset = t.closest("[data-tc-sheet-asset]");
-      if (sheetAsset) {
-        const key = sheetAsset.getAttribute("data-tc-sheet-asset");
-        const owner = sheetAsset.getAttribute("data-tc-owner") || "";
-        const side = state.trade.sheetSide || "give";
-        const arr = (state.trade[side] || []).slice();
-        const i = arr.indexOf(key);
-        if (i >= 0) {
-          arr.splice(i, 1);
-          sheetAsset.classList.remove("is-selected");
-          sheetAsset.setAttribute("aria-pressed", "false");
-          const check = sheetAsset.querySelector(".tc-check");
-          if (check) check.textContent = "";
-        } else {
-          if (arr.length >= TRADE_RATER_MAX) {
-            showTradeToast("Max 6 per side");
-            return;
-          }
-          // Block duplicate across sides
-          const otherSide = side === "give" ? "get" : "give";
-          if ((state.trade[otherSide] || []).indexOf(key) >= 0) {
-            showTradeToast("That asset is already on the other side");
-            return;
-          }
-          if (side === "get" && owner && !state.trade.otherTeam) {
-            state.trade.otherTeam = owner;
-            trackFd("partner_selected", { team: owner });
-          }
-          arr.push(key);
-          sheetAsset.classList.add("is-selected");
-          sheetAsset.setAttribute("aria-pressed", "true");
-          const check = sheetAsset.querySelector(".tc-check");
-          if (check) check.textContent = "✓";
-          trackFd("asset_added", {
-            type:
-              state.trade._cache &&
-              state.trade._cache.assetMap &&
-              state.trade._cache.assetMap[key] &&
-              state.trade._cache.assetMap[key].kind === "pick"
-                ? "pick"
-                : "player"
-          });
-        }
-        state.trade[side] = arr;
-        // Update tray without closing sheet — schedule soft rerender of trays only
-        scheduleTradeRerender();
-        // Preserve sheet open + scroll across rerender
-        state.trade.sheetOpen = true;
         return;
       }
 
@@ -5545,43 +5301,13 @@
         return;
       }
 
-      if (t.closest("[data-tc-expand-verdict]")) {
-        state.trade.verdictExpanded = !state.trade.verdictExpanded;
-        renderTradeCalculator(state.rows, state.league, state.cfg);
-        return;
-      }
-
-      if (t.closest("[data-tc-xpts-info]")) {
-        const info = document.getElementById("tc-xpts-info");
-        if (info) info.hidden = !info.hidden;
-        return;
-      }
-
       const bal = t.closest("[data-tc-balance-key]");
       if (bal) {
         const side = bal.getAttribute("data-tc-balance-side");
         const key = bal.getAttribute("data-tc-balance-key");
         trackFd("balance_it_clicked", { side: side });
-        if (side && key && (state.trade[side] || []).indexOf(key) < 0) {
-          if ((state.trade[side] || []).length >= TRADE_RATER_MAX) return;
-          state.trade[side] = (state.trade[side] || []).concat([key]);
-          scheduleTradeRerender();
-        }
-        return;
-      }
-
-      const histBtn = t.closest("[data-tc-hist]");
-      if (histBtn) {
-        const idx = Number(histBtn.getAttribute("data-tc-hist"));
-        const hist = loadTradeHistory();
-        const h = hist[idx];
-        if (h) {
-          state.trade.otherTeam = h.otherTeam || "";
-          state.trade.give = (h.give || []).slice();
-          state.trade.get = (h.get || []).slice();
-          state.trade.swapped = false;
-          scheduleTradeRerender();
-        }
+        if (side && key) toggleKey(side, key);
+        scheduleTradeRerender();
         return;
       }
 
@@ -5600,7 +5326,7 @@
           tags: (ev && ev.tags) || []
         });
         trackFd("feedback", { dir: dir, band: ev && ev.verdict });
-        showTradeToast(dir === "up" ? "Thanks for the feedback" : "Thanks — noted for tuning");
+        showTradeToast(dir === "up" ? "Thanks" : "Noted for tuning");
         return;
       }
 
@@ -5625,7 +5351,10 @@
           const cache = state.trade._cache;
           const names = (keys) =>
             (keys || [])
-              .map((k) => (cache && cache.assetMap[k] && cache.assetMap[k].name) || k)
+              .map(
+                (k) =>
+                  (cache && cache.assetMap[k] && cache.assetMap[k].name) || k
+              )
               .join(", ");
           const label = ev
             ? verdictLabel(ev.verdict, !!state.trade.swapped)
@@ -5647,7 +5376,7 @@
             " xPts). via statsbyjaiden.com.au";
           if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text).then(
-              () => showTradeToast("Copied summary"),
+              () => showTradeToast("Copied"),
               () => showTradeToast("Could not copy")
             );
           } else {
@@ -5657,6 +5386,26 @@
           return;
         }
       }
+
+      const btn = t.closest("[data-tc-asset]");
+      if (!btn) return;
+      const key = btn.getAttribute("data-tc-asset");
+      const role = btn.getAttribute("data-tc-role") || "";
+      if (!key) return;
+
+      if (role === "give-locked" || role === "get-locked") {
+        const side = role.indexOf("give") === 0 ? "give" : "get";
+        state.trade[side] = (state.trade[side] || []).filter((k) => k !== key);
+        scheduleTradeRerender();
+        return;
+      }
+
+      const inMy = btn.closest("#tc-my-list");
+      const inOther = btn.closest("#tc-other-list");
+      if (inMy) toggleKey("give", key);
+      else if (inOther) toggleKey("get", key);
+      else return;
+      scheduleTradeRerender();
     });
   }
 
