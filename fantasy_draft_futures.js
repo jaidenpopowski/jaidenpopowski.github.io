@@ -217,7 +217,6 @@
     pendingWhoAreYou: false,
     trade: {
       otherTeam: "",
-      search: "",
       give: [],
       get: [],
       bound: false,
@@ -1067,7 +1066,6 @@
     state.cfg.draftOrder = [];
     state.cfg.leagueType = null;
     state.trade.otherTeam = "";
-    state.trade.search = "";
     state.trade.give = [];
     state.trade.get = [];
     state.teamLabels = Object.create(null);
@@ -1885,6 +1883,10 @@
       return { asset: a, value, P, score, dxPoints, h };
     });
 
+    // Replacement = positional score at league depth, not the cut player's
+    // full multi-pos value. Using total value lets a thin-DEF / heavy-FWD
+    // dual (e.g. McKercher at Balanced h=3) set an inflated DEF baseline and
+    // crush pure defenders' VORP while MID duals look elite.
     const baselines = {};
     POS_KEYS.forEach((p) => {
       const depth = cfg.teams * ((cfg.slots[p] || 0) + (benchSlots[p] || 0));
@@ -1895,9 +1897,7 @@
         baselines[p] = 0;
       } else {
         const idx = Math.min(depth, ranked.length) - 1;
-        const id = ranked[idx].id;
-        const hit = enriched.find((r) => r.asset.id === id);
-        baselines[p] = hit ? hit.value : 0;
+        baselines[p] = ranked[idx].score || 0;
       }
     });
 
@@ -4267,7 +4267,6 @@
   const TRADE_SUGGEST_MAX = 2;
   const TRADE_FILLER_CANDIDATES = 25;
   const TRADE_HISTORY_KEY = "fd_trade_history_v1";
-  const TRADE_FEEDBACK_KEY = "fd_trade_feedback_v1";
   /** @deprecated alias — tray limit for rater */
   const TRADE_MAX_ASSETS = TRADE_RATER_MAX;
 
@@ -4313,23 +4312,6 @@
     hist.unshift(entry);
     try {
       localStorage.setItem(TRADE_HISTORY_KEY, JSON.stringify(hist.slice(0, 10)));
-    } catch (e) {
-      /* ignore */
-    }
-  }
-
-  function saveTradeFeedback(entry) {
-    let arr = [];
-    try {
-      const raw = localStorage.getItem(TRADE_FEEDBACK_KEY);
-      arr = raw ? JSON.parse(raw) : [];
-      if (!Array.isArray(arr)) arr = [];
-    } catch (e) {
-      arr = [];
-    }
-    arr.unshift(entry);
-    try {
-      localStorage.setItem(TRADE_FEEDBACK_KEY, JSON.stringify(arr.slice(0, 50)));
     } catch (e) {
       /* ignore */
     }
@@ -4531,6 +4513,7 @@
       scale: 800,
       ratio: 0,
       ratioB: 0,
+      edge: 0,
       raw: 0,
       verdict: "FAIR",
       tags: [],
@@ -4578,15 +4561,17 @@
     const netThem = yearPtsTotal(sim.b.yearPts);
     const windowsMe = tradeWindowScores(sim.a.yearPts, yearSeasons);
     const windowsThem = tradeWindowScores(sim.b.yearPts, yearSeasons);
-    // Main band follows Balanced window so now-vs-long tags stay meaningful.
+    // Roster deltas vs package scale. Verdict uses the edge (you − them):
+    // "You ≈ 0, Them −4k" is a clear win, not Fair — absolute≈0 lied on steals.
     const ratio = scale > 0 ? netMeBal / scale : 0;
     const ratioB = scale > 0 ? netThemBal / scale : 0;
-    const verdict = verdictBand(ratio);
+    const edge = ratio - ratioB;
+    const verdict = verdictBand(edge);
 
     const tags = [];
-    if (Math.abs(ratio) < 0.04) tags.push("Close call");
+    if (Math.abs(edge) < 0.04) tags.push("Close call");
     const sign = (x) => (x > 0.001 ? 1 : x < -0.001 ? -1 : 0);
-    if (sign(raw) !== sign(ratio) || Math.abs(raw - ratio) > 0.05) {
+    if (sign(raw) !== sign(edge) || Math.abs(raw - edge) > 0.05) {
       tags.push("Depends on your cut");
     }
     if (ratio >= TRADE_BALANCED_PCT && ratioB >= TRADE_BALANCED_PCT) {
@@ -4775,6 +4760,7 @@
       scale: scale,
       ratio: ratio,
       ratioB: ratioB,
+      edge: edge,
       raw: raw,
       verdict: verdict,
       tags: tags,
@@ -4911,7 +4897,9 @@
       const aFair = a.verdict === "FAIR" || a.verdict === "SLIGHT_WIN" ? 1 : 0;
       const bFair = b.verdict === "FAIR" || b.verdict === "SLIGHT_WIN" ? 1 : 0;
       if (bFair !== aFair) return bFair - aFair;
-      return Math.abs(a.ratio) - Math.abs(b.ratio);
+      const aEdge = a.edge != null ? a.edge : a.ratio - (a.ratioB || 0);
+      const bEdge = b.edge != null ? b.edge : b.ratio - (b.ratioB || 0);
+      return Math.abs(aEdge) - Math.abs(bEdge);
     });
     return candidates.slice(0, 3);
   }
@@ -4996,21 +4984,6 @@
         escapeHtml(abbr) +
         "</span>"
       : "";
-    const pl = r.pListed != null ? Number(r.pListed) : NaN;
-    const plChip =
-      Number.isFinite(pl) && pl < 0.995
-        ? '<span class="fd-pos-chip tc-plisted-chip" title="Probability still on AFL list">' +
-          "pListed " +
-          Math.round(pl * 100) +
-          "%</span>"
-        : "";
-    const contract = r.contract != null ? Number(r.contract) : NaN;
-    const contractChip = Number.isFinite(contract)
-      ? '<span class="fd-pos-chip tc-contract-chip" title="Contract final year">' +
-        "to " +
-        contract +
-        "</span>"
-      : "";
     return (
       '<div class="lt-player' +
       (belowCut ? " lt-below-cut" : "") +
@@ -5025,8 +4998,6 @@
       '<div class="lt-player-chips">' +
       teamChip +
       posChipsHtml(displayPos(r)) +
-      plChip +
-      contractChip +
       "</div>" +
       "</div>" +
       '<div class="lt-player-vorp" title="xPoints">' +
@@ -5165,68 +5136,6 @@
     return "No";
   }
 
-  function tradeWindowsHtml(evalResult, swapped) {
-    const wins = swapped ? evalResult.windowsThem : evalResult.windowsMe;
-    if (!wins || !wins.length) return "";
-    return (
-      '<div class="tc-windows">' +
-      wins
-        .map((w) => {
-          const v = roundXPts(w.value);
-          const cls = v > 0 ? "up" : v < 0 ? "down" : "";
-          return (
-            '<span class="tc-window ' +
-            cls +
-            '">' +
-            escapeHtml(w.label) +
-            ": " +
-            fmtSigned(v) +
-            "</span>"
-          );
-        })
-        .join('<span class="tc-window-sep"> · </span>') +
-      "</div>"
-    );
-  }
-
-  function dataAgeDays(league) {
-    const raw = league && league.updatedAt;
-    if (!raw) return null;
-    const t = Date.parse(raw);
-    if (!Number.isFinite(t)) return null;
-    return Math.floor((Date.now() - t) / 86400000);
-  }
-
-  function tradeContextBarHtml(cfg, league, myTeam, seasons) {
-    const yLen = (seasons || []).length;
-    const through =
-      seasons.length && yLen
-        ? seasons[0] + (yLen > 1 ? "–" + seasons[yLen - 1] : "")
-        : "—";
-    const cutOn = resolveKeeperCut(cfg, state.data, seasons);
-    const age = dataAgeDays(league);
-    let chips = "";
-    if (age != null && age > 14) {
-      chips +=
-        '<span class="tc-chip tc-chip-warn">' +
-        age +
-        'd old — <button type="button" class="tc-link-btn" data-tc-goto="import">re-import</button></span>';
-    }
-    if (nPicksCap(cfg) > 0 && (!cfg.draftOrder || !cfg.draftOrder.length)) {
-      chips +=
-        '<span class="tc-chip"><button type="button" class="tc-link-btn" data-tc-goto="import">Set draft order</button></span>';
-    }
-    return (
-      '<div class="tc-context">' +
-      escapeHtml(through) +
-      " · " +
-      (cutOn ? "best " + (Number(cfg.keeperCount) || 20) : "as imported") +
-      ' <button type="button" class="tc-link-btn" data-tc-goto="import">Settings</button>' +
-      (chips ? " " + chips : "") +
-      "</div>"
-    );
-  }
-
   function tradeToastHtml() {
     const msg = state.trade.toast || "";
     if (!msg) return "";
@@ -5256,10 +5165,6 @@
     const netMe = swapped ? evalResult.netThem : evalResult.netMe;
     const netThem = swapped ? evalResult.netMe : evalResult.netThem;
     const ratioB = swapped ? evalResult.ratio : evalResult.ratioB;
-    const tags = (evalResult.tags || [])
-      .slice(0, 2)
-      .map((t) => '<span class="tc-tag">' + escapeHtml(t) + "</span>")
-      .join("");
     const reasons = (evalResult.reasons || [])
       .slice(0, 2)
       .map((r) => "<li>" + escapeHtml(r) + "</li>")
@@ -5308,8 +5213,6 @@
       " · Them " +
       fmtSigned(roundXPts(netThem)) +
       " <span class='muted'>(balanced)</span></div>" +
-      tradeWindowsHtml(evalResult, swapped) +
-      (tags ? '<div class="tc-tags">' + tags + "</div>" : "") +
       tradeSeasonTableHtml(evalResult, swapped) +
       (reasons ? "<ul class='tc-why-list'>" + reasons + "</ul>" : "") +
       (gapBits.length
@@ -5323,13 +5226,6 @@
       '<p class="tc-their-side muted">Them: ' +
       escapeHtml(theirOk) +
       "</p>" +
-      '<div class="tc-actions">' +
-      '<button type="button" class="tc-btn" data-tc-action="swap">Swap</button>' +
-      '<button type="button" class="tc-btn" data-tc-action="copy">Copy</button>' +
-      '<button type="button" class="tc-btn" data-tc-action="clear">Clear</button>' +
-      '<button type="button" class="tc-btn" data-tc-feedback="up" aria-label="Thumbs up">Yes</button>' +
-      '<button type="button" class="tc-btn" data-tc-feedback="down" aria-label="Thumbs down">No</button>' +
-      "</div>" +
       balanceHtml +
       "</div>"
     );
@@ -5391,7 +5287,6 @@
     if (!league || !league.owners || !league.owners.length) {
       el.innerHTML =
         '<div class="tc-rater">' +
-        "<h3>Trade check</h3>" +
         "<p class='muted'>Import your league to rate offers. We re-pick both teams' best keepers and tell you who comes out ahead.</p>" +
         '<button type="button" class="tc-btn tc-btn-primary" data-tc-goto="import">Import league</button>' +
         "</div>";
@@ -5403,7 +5298,6 @@
     if (!myTeam) {
       el.innerHTML =
         '<div class="tc-rater">' +
-        "<h3>Trade check</h3>" +
         "<p class='muted'>Pick your team so we know which side is yours.</p>" +
         "</div>";
       return;
@@ -5542,15 +5436,13 @@
 
     const otherOptions = otherOwners
       .map((o) => {
-        const lab = state.teamLabels && state.teamLabels[o];
-        const label = o + (lab && lab.label ? " · " + lab.label : "");
         return (
           '<option value="' +
           escapeHtml(o) +
           '"' +
           (o === otherTeam ? " selected" : "") +
           ">" +
-          escapeHtml(label) +
+          escapeHtml(o) +
           "</option>"
         );
       })
@@ -5558,9 +5450,6 @@
 
     const showPicks =
       keeperDraftPicksPerTeam(cfg) > 0 && cfg.pickTrading !== false;
-    const searchQ = String(state.trade.search || "")
-      .trim()
-      .toLowerCase();
 
     function sortAssets(list) {
       return list.sort((a, b) => {
@@ -5587,12 +5476,6 @@
             .map((k) => assetMap[k])
             .filter((a) => a.owner === otherTeam)
             .filter((a) => showPicks || a.kind !== "pick")
-            .filter((a) => {
-              if (!searchQ) return true;
-              return String(a.name || "")
-                .toLowerCase()
-                .includes(searchQ);
-            })
         )
       : [];
 
@@ -5609,8 +5492,6 @@
 
     el.innerHTML =
       '<div class="tc-rater">' +
-      "<h3>Trade check</h3>" +
-      tradeContextBarHtml(cfg, league, myTeam, state.seasons) +
       '<div id="tc-toast-host">' +
       tradeToastHtml() +
       "</div>" +
@@ -5641,10 +5522,6 @@
       '<select id="tc-other-team">' +
       otherOptions +
       "</select>" +
-      (otherTeam ? teamPlanLabelHtml(otherTeam) : "") +
-      '<input id="tc-player-search" type="search" placeholder="Search" value="' +
-      escapeHtml(state.trade.search || "") +
-      '"/>' +
       "</div>" +
       '<div class="tc-list" id="tc-other-list">' +
       rosterListHtml(
@@ -5723,7 +5600,6 @@
       const prevOther = state.trade.otherTeam;
       state.trade.otherTeam = t.value || "";
       state.trade.get = [];
-      state.trade.search = "";
       state.trade.swapped = false;
       trackFd("partner_selected", { team: state.trade.otherTeam });
       if (prevGet.length) {
@@ -5731,33 +5607,6 @@
         showTradeToast("Cleared You get — undo?");
       }
       renderTradeCalculator(state.rows, state.league, state.cfg);
-    });
-
-    const debouncedSearch = debounce(() => {
-      const scrollMy = (document.getElementById("tc-my-list") || {}).scrollTop || 0;
-      const scrollOt = (document.getElementById("tc-other-list") || {}).scrollTop || 0;
-      renderTradeCalculator(state.rows, state.league, state.cfg);
-      const my2 = document.getElementById("tc-my-list");
-      const ot2 = document.getElementById("tc-other-list");
-      const inp = document.getElementById("tc-player-search");
-      if (my2) my2.scrollTop = scrollMy;
-      if (ot2) ot2.scrollTop = scrollOt;
-      if (inp) {
-        inp.focus();
-        const len = inp.value.length;
-        try {
-          inp.setSelectionRange(len, len);
-        } catch (err) {
-          /* ignore */
-        }
-      }
-    }, 150);
-
-    el.addEventListener("input", (e) => {
-      const t = e.target;
-      if (!t || t.id !== "tc-player-search") return;
-      state.trade.search = t.value || "";
-      debouncedSearch();
     });
 
     el.addEventListener("click", (e) => {
@@ -5799,82 +5648,6 @@
         if (side && key) toggleKey(side, key);
         scheduleTradeRerender();
         return;
-      }
-
-      const fb = t.closest("[data-tc-feedback]");
-      if (fb) {
-        const dir = fb.getAttribute("data-tc-feedback");
-        const ev = state.trade._eval;
-        saveTradeFeedback({
-          at: new Date().toISOString(),
-          dir: dir,
-          give: (state.trade.give || []).slice(),
-          get: (state.trade.get || []).slice(),
-          otherTeam: state.trade.otherTeam,
-          verdict: ev && ev.verdict,
-          ratio: ev && ev.ratio,
-          tags: (ev && ev.tags) || []
-        });
-        trackFd("feedback", { dir: dir, band: ev && ev.verdict });
-        showTradeToast(dir === "up" ? "Thanks" : "Noted for tuning");
-        return;
-      }
-
-      const action = t.closest("[data-tc-action]");
-      if (action) {
-        const act = action.getAttribute("data-tc-action");
-        if (act === "swap") {
-          state.trade.swapped = !state.trade.swapped;
-          trackFd("swap_sides", {});
-          renderTradeCalculator(state.rows, state.league, state.cfg);
-          return;
-        }
-        if (act === "clear") {
-          state.trade.give = [];
-          state.trade.get = [];
-          state.trade.swapped = false;
-          scheduleTradeRerender();
-          return;
-        }
-        if (act === "copy") {
-          const ev = state.trade._eval;
-          const cache = state.trade._cache;
-          const names = (keys) =>
-            (keys || [])
-              .map(
-                (k) =>
-                  (cache && cache.assetMap[k] && cache.assetMap[k].name) || k
-              )
-              .join(", ");
-          const label = ev
-            ? verdictLabel(ev.verdict, !!state.trade.swapped)
-            : "Fair";
-          const net = ev
-            ? roundXPts(state.trade.swapped ? ev.netThem : ev.netMe)
-            : 0;
-          const text =
-            "Trade check: give [" +
-            names(state.trade.give) +
-            "] get [" +
-            names(state.trade.get) +
-            "] vs " +
-            (state.trade.otherTeam || "?") +
-            " → " +
-            label +
-            " (" +
-            fmtSigned(net) +
-            " xPts). via statsbyjaiden.com.au";
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(
-              () => showTradeToast("Copied"),
-              () => showTradeToast("Could not copy")
-            );
-          } else {
-            showTradeToast("Could not copy");
-          }
-          trackFd("copy_summary", {});
-          return;
-        }
       }
 
       const btn = t.closest("[data-tc-asset]");
@@ -6276,7 +6049,7 @@
         return (
           '<li data-owner="' +
           escapeHtml(owner) +
-          '" draggable="true">' +
+          '">' +
           '<span class="fd-do-rank">#' +
           (i + 1) +
           "</span>" +
@@ -6291,19 +6064,16 @@
           (i === order.length - 1 ? " disabled" : "") +
           ">▼</button>" +
           "</span>" +
-          '<button type="button" class="fd-do-handle" aria-label="Drag to reorder" title="Drag to reorder">⠿</button>' +
           "</li>"
         );
       })
       .join("");
-    bindDraftOrderDrag(list);
+    bindDraftOrderControls(list);
   }
 
-  function bindDraftOrderDrag(list) {
-    if (!list || list.dataset.dndBound === "1") return;
-    list.dataset.dndBound = "1";
-    let dragOwner = null;
-
+  function bindDraftOrderControls(list) {
+    if (!list || list.dataset.doBound === "1") return;
+    list.dataset.doBound = "1";
     list.addEventListener("click", (e) => {
       const btn =
         e.target && e.target.closest
@@ -6318,46 +6088,6 @@
       const dir = Number(btn.getAttribute("data-do-dir")) || 0;
       if (!owner || !dir) return;
       nudgeDraftOrder(owner, dir);
-    });
-
-    list.addEventListener("dragstart", (e) => {
-      if (e.target && e.target.closest && e.target.closest("button")) {
-        e.preventDefault();
-        return;
-      }
-      const li = e.target && e.target.closest ? e.target.closest("li[data-owner]") : null;
-      if (!li) return;
-      dragOwner = li.getAttribute("data-owner");
-      li.classList.add("fd-do-dragging");
-      if (e.dataTransfer) {
-        e.dataTransfer.effectAllowed = "move";
-        e.dataTransfer.setData("text/plain", dragOwner || "");
-      }
-    });
-    list.addEventListener("dragend", () => {
-      list.querySelectorAll(".fd-do-dragging, .fd-do-drag-over").forEach((el) => {
-        el.classList.remove("fd-do-dragging", "fd-do-drag-over");
-      });
-      dragOwner = null;
-    });
-    list.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      const li = e.target && e.target.closest ? e.target.closest("li[data-owner]") : null;
-      list.querySelectorAll(".fd-do-drag-over").forEach((el) => el.classList.remove("fd-do-drag-over"));
-      if (li) li.classList.add("fd-do-drag-over");
-      if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-    });
-    list.addEventListener("drop", (e) => {
-      e.preventDefault();
-      const li = e.target && e.target.closest ? e.target.closest("li[data-owner]") : null;
-      list.querySelectorAll(".fd-do-dragging, .fd-do-drag-over").forEach((el) => {
-        el.classList.remove("fd-do-dragging", "fd-do-drag-over");
-      });
-      if (!li || !dragOwner) return;
-      const targetOwner = li.getAttribute("data-owner");
-      if (!targetOwner || targetOwner === dragOwner) return;
-      reorderDraftOrder(dragOwner, targetOwner);
-      dragOwner = null;
     });
   }
 
@@ -6377,19 +6107,6 @@
     if (from < 0 || to < 0 || to >= order.length) return;
     order.splice(from, 1);
     order.splice(to, 0, owner);
-    state.cfg.draftOrder = order;
-    refresh();
-  }
-
-  function reorderDraftOrder(fromOwner, toOwner) {
-    const league = state.league;
-    if (!league) return;
-    const order = draftOrderWorkingCopy(league);
-    const from = order.indexOf(fromOwner);
-    const to = order.indexOf(toOwner);
-    if (from < 0 || to < 0 || from === to) return;
-    order.splice(from, 1);
-    order.splice(to, 0, fromOwner);
     state.cfg.draftOrder = order;
     refresh();
   }
@@ -6651,7 +6368,6 @@
           state.planner.swapKeepId = null;
           rebuildOwnerDropdown(state.league, state.cfg);
           state.trade.otherTeam = "";
-          state.trade.search = "";
           state.trade.give = [];
           state.trade.get = [];
           if (state.accountUser && state.league) {
