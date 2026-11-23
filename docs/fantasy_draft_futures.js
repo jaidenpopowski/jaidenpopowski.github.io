@@ -29,7 +29,10 @@
     bench: 12,
     keeperCount: 20,
     keeperCut: null,
+    /** Derived from lens for Pool/Planner; market always uses full feed. */
     endSeason: null,
+    /** win_now | balanced | long_term — user Pool/Planner preference only */
+    lens: "balanced",
     posFilter: "ALL",
     clubs: [],
     owners: [],
@@ -44,6 +47,14 @@
     draftFormat: "snake",
     pickTrading: true
   };
+
+  /** User lens presets: intent label + year count from feed start. */
+  const LENS_PRESETS = {
+    win_now: { id: "win_now", label: "Win now", years: 1 },
+    balanced: { id: "balanced", label: "Balanced", years: 3 },
+    long_term: { id: "long_term", label: "Long-term", years: 5 }
+  };
+  const LENS_IDS = ["win_now", "balanced", "long_term"];
 
   const FD_TABS = ["pool", "planner", "teams", "trades", "ladder", "import", "help"];
   const LEAGUE_REQUIRED_TABS = ["planner", "teams", "trades", "ladder"];
@@ -176,7 +187,12 @@
     cfg: cloneCfg(DEFAULT_CFG),
     data: null,
     seasons: [],
+    /** Alias of rowsMarket (stable for draft order / market helpers). */
     rows: [],
+    /** Full-horizon rows: Teams, Ladder, Trades, labels, other-team keepers. */
+    rowsMarket: [],
+    /** Lens-horizon rows: Pool ranking + my keeper recommendations. */
+    rowsLens: [],
     table: null,
     detailId: null,
     /**
@@ -197,6 +213,8 @@
     accountUser: null,
     /** Session flag: user closed the empty-state Import modal. */
     importModalDismissed: false,
+    /** Pending "Who are you?" after import before navigating away. */
+    pendingWhoAreYou: false,
     trade: {
       otherTeam: "",
       search: "",
@@ -211,6 +229,14 @@
       verdictExpanded: false,
       toast: "",
       calculating: false
+    },
+    planner: {
+      /** null = auto lens ranking; string[] = locked keep ids */
+      lockedIds: null,
+      /** Season view tab index */
+      seasonView: 0,
+      /** Selected kept id waiting to swap with a cut */
+      swapKeepId: null
     },
     /** @type {Object.<string,string>} */
     teamLabels: Object.create(null)
@@ -312,7 +338,13 @@
       const key = k.toLowerCase();
       if (q.has(key)) cfg.slots[k] = clampInt(q.get(key), 0, 20, cfg.slots[k]);
     });
-    if (q.has("end")) cfg.endSeason = parseInt(q.get("end"), 10) || null;
+    if (q.has("lens") && LENS_IDS.indexOf(q.get("lens")) >= 0) {
+      cfg.lens = q.get("lens");
+    } else if (q.has("end")) {
+      // Legacy Through= year → nearest lens preset (resolved once seasons load).
+      cfg.endSeason = parseInt(q.get("end"), 10) || null;
+      cfg._legacyEnd = cfg.endSeason;
+    }
     if (q.has("cut")) {
       cfg.keeperCut = q.get("cut") === "1" || q.get("cut") === "true";
     }
@@ -358,7 +390,7 @@
       q.set("bench", String(cfg.bench));
       q.set("keepers", String(cfg.keeperCount));
       POS_KEYS.forEach((k) => q.set(k.toLowerCase(), String(cfg.slots[k])));
-      if (cfg.endSeason) q.set("end", String(cfg.endSeason));
+      if (cfg.lens && cfg.lens !== "balanced") q.set("lens", String(cfg.lens));
       if (cfg.keeperCut === true) q.set("cut", "1");
       else if (cfg.keeperCut === false) q.set("cut", "0");
       if (cfg.posFilter && cfg.posFilter !== "ALL") q.set("pos", cfg.posFilter);
@@ -400,8 +432,8 @@
     });
     writeCfgToUrl(state.cfg);
     if (next === "import") syncImportTabUi();
-    if (next === "trades" && state.rows) {
-      renderTradeCalculator(state.rows, state.league, state.cfg);
+    if (next === "trades" && (state.rowsMarket || state.rows).length) {
+      renderTradeCalculator(state.rowsMarket || state.rows, state.league, state.cfg);
     }
     if (next === "pool" && state.table) {
       try {
@@ -483,10 +515,24 @@
     return dt.getDate() + " " + MONTH_NAMES[dt.getMonth()] + " " + dt.getFullYear();
   }
 
+  /** Keep a valid myTeam if set; never auto-pick — user chooses via Who are you? / Import. */
   function ensureDefaultMyTeam(league, cfg) {
-    if (!league || !league.owners || !league.owners.length) return;
+    if (!league || !league.owners || !league.owners.length) {
+      if (cfg) cfg.myTeam = "";
+      return;
+    }
     if (cfg.myTeam && league.owners.indexOf(cfg.myTeam) >= 0) return;
-    cfg.myTeam = league.owners[0];
+    cfg.myTeam = "";
+  }
+
+  function myTeamSelected(league, cfg) {
+    const c = cfg || state.cfg;
+    return !!(
+      league &&
+      c.myTeam &&
+      league.owners &&
+      league.owners.indexOf(c.myTeam) >= 0
+    );
   }
 
   function renderImportSourceCard() {
@@ -541,11 +587,15 @@
       sel.innerHTML = "";
       return;
     }
-    const names = league.owners || [];
+    const names = (league.owners || []).slice().sort((a, b) =>
+      String(a).localeCompare(String(b))
+    );
     ensureDefaultMyTeam(league, cfg);
-    const cur = cfg.myTeam && names.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : names[0] || "";
+    const cur = cfg.myTeam && names.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : "";
     cfg.myTeam = cur;
-    sel.innerHTML = names
+    sel.innerHTML =
+      '<option value="">— Select —</option>' +
+      names
       .map(
         (o) =>
           '<option value="' +
@@ -562,9 +612,60 @@
   function afterModalImportSuccess() {
     state.importModalDismissed = false;
     syncImportManageVisibility();
+    if (!myTeamSelected(state.league, state.cfg)) {
+      state.pendingWhoAreYou = true;
+      setImportModalStatus("League imported — pick your team…");
+      setLeagueStatus("League imported — pick your team…");
+      openWhoAreYouModal({ afterTab: "teams" });
+      return;
+    }
     setImportModalStatus("League imported — opening Teams…");
     setLeagueStatus("League imported — opening Teams…");
     window.setTimeout(() => setActiveTab("teams"), 1000);
+  }
+
+  function openWhoAreYouModal(opts) {
+    const o = opts || {};
+    const modal = document.getElementById("fd-who-modal");
+    const list = document.getElementById("fd-who-list");
+    if (!modal || !list || !leagueHasTeams(state.league)) return;
+    const names = (state.league.owners || []).slice().sort((a, b) =>
+      String(a).localeCompare(String(b))
+    );
+    list.innerHTML = names
+      .map(
+        (name) =>
+          '<button type="button" class="fd-who-team-btn" data-who-team="' +
+          escapeHtml(name) +
+          '">' +
+          escapeHtml(name) +
+          "</button>"
+      )
+      .join("");
+    modal.hidden = false;
+    modal.dataset.afterTab = o.afterTab || "teams";
+    state.pendingWhoAreYou = true;
+  }
+
+  function closeWhoAreYouModal() {
+    const modal = document.getElementById("fd-who-modal");
+    if (modal) modal.hidden = true;
+    state.pendingWhoAreYou = false;
+  }
+
+  function confirmWhoAreYou(teamName) {
+    if (!teamName || !leagueHasTeams(state.league)) return;
+    if (state.league.owners.indexOf(teamName) < 0) return;
+    const modal = document.getElementById("fd-who-modal");
+    const afterTab = (modal && modal.dataset.afterTab) || "teams";
+    state.cfg.myTeam = teamName;
+    closeWhoAreYouModal();
+    syncImportMyTeamSelect(state.league, state.cfg);
+    rebuildOwnerDropdown(state.league, state.cfg);
+    writeCfgToUrl(state.cfg);
+    refresh().then(() => {
+      setActiveTab(afterTab);
+    });
   }
 
   /** True when model still has draft picks for the first horizon season (e.g. PICK_2027_01). */
@@ -943,36 +1044,9 @@
   }
 
   function syncMyTeamSelect(league, cfg) {
-    const wrap = document.getElementById("my-team-wrap");
-    const sel = document.getElementById("cfg-myTeam");
     syncOwnerDropdownVisibility(league);
     rebuildOwnerDropdown(league, cfg);
-    if (wrap && sel) {
-      const hasLeague = leagueHasTeams(league);
-      wrap.classList.toggle("is-visible", hasLeague);
-      if (!hasLeague) {
-        sel.innerHTML = "";
-      } else {
-        const names = league.owners || [];
-        ensureDefaultMyTeam(league, cfg);
-        const cur = cfg.myTeam && names.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : names[0] || "";
-        cfg.myTeam = cur;
-        sel.innerHTML =
-          '<option value="">— Select —</option>' +
-          names
-            .map(
-              (o) =>
-                '<option value="' +
-                escapeHtml(o) +
-                '"' +
-                (o === cur ? " selected" : "") +
-                ">" +
-                escapeHtml(o) +
-                "</option>"
-            )
-            .join("");
-      }
-    }
+    ensureDefaultMyTeam(league, cfg);
     syncImportMyTeamSelect(league, cfg);
   }
 
@@ -1088,9 +1162,14 @@
                 ? " · " + missN + " owned unmatched (often delisted / not in model)"
                 : "")
           );
+          state.planner.lockedIds = null;
+          state.planner.swapKeepId = null;
           await refresh();
           if (o.autoSave) await saveLeagueToAccount();
           if (o.redirectToTeams) afterModalImportSuccess();
+          else if (!myTeamSelected(state.league, state.cfg)) {
+            openWhoAreYouModal({ afterTab: "pool" });
+          }
           resolve(true);
         } catch (e) {
           console.error(e);
@@ -1139,10 +1218,19 @@
         if (settings.slots[k] != null) cfg.slots[k] = Number(settings.slots[k]) || 0;
       });
     }
-    if (settings.endSeason != null) cfg.endSeason = Number(settings.endSeason) || cfg.endSeason;
+    if (settings.lens && LENS_IDS.indexOf(settings.lens) >= 0) {
+      cfg.lens = settings.lens;
+    } else if (settings.endSeason != null && state.seasons && state.seasons.length) {
+      const end = Number(settings.endSeason);
+      const idx = state.seasons.indexOf(end);
+      cfg.lens = nearestLensForYears(idx >= 0 ? idx + 1 : state.seasons.length);
+    } else if (settings.endSeason != null) {
+      cfg._legacyEnd = Number(settings.endSeason) || null;
+    }
     if (Array.isArray(settings.draftOrder)) cfg.draftOrder = settings.draftOrder.slice();
     if (settings.myTeam != null) cfg.myTeam = settings.myTeam || "";
     if (settings.leagueType) cfg.leagueType = settings.leagueType;
+    syncLensDerivedEnd(cfg, state.seasons);
     if (settings.draftFormat === "linear" || settings.draftFormat === "snake") {
       cfg.draftFormat = settings.draftFormat;
     }
@@ -1166,13 +1254,6 @@
     if (!lt) return;
     cfg.leagueType = lt;
 
-    const seasons = state.seasons || [];
-    const pickEnd = (offsetFromStart) => {
-      if (!seasons.length) return cfg.endSeason;
-      const idx = Math.min(Math.max(0, offsetFromStart), seasons.length - 1);
-      return seasons[idx];
-    };
-
     if (infer && infer.slots) {
       SLOT_KEYS.forEach((k) => {
         if (infer.slots[k] != null) cfg.slots[k] = Number(infer.slots[k]) || 0;
@@ -1181,11 +1262,11 @@
     if (infer && infer.bench != null) cfg.bench = Number(infer.bench) || 0;
 
     if (lt === "redraft") {
-      cfg.endSeason = pickEnd(0);
+      cfg.lens = "win_now";
       cfg.keeperCount = 0;
       cfg.keeperCut = false;
     } else if (lt === "keeper") {
-      cfg.endSeason = pickEnd(2);
+      cfg.lens = "balanced";
       if (infer && infer.inferredKeeperCount != null) {
         cfg.keeperCount = Number(infer.inferredKeeperCount) || cfg.keeperCount;
       }
@@ -1193,7 +1274,7 @@
         cfg.keeperCut = true;
       }
     } else if (lt === "dynasty") {
-      cfg.endSeason = pickEnd(4);
+      cfg.lens = "long_term";
       cfg.keeperCut = false;
       const squad = squadSlotTotal(cfg.slots) + (Number(cfg.bench) || 0);
       if (infer && infer.reserveDraftRounds != null) {
@@ -1203,6 +1284,7 @@
         cfg.keeperCount = Math.max(0, squad);
       }
     }
+    syncLensDerivedEnd(cfg, state.seasons);
   }
 
   function applyLeagueTypeUi(cfg) {
@@ -1229,16 +1311,36 @@
     const typeSel = document.getElementById("cfg-leagueType");
     if (typeSel && lt) typeSel.value = lt;
 
-    const endSel = document.getElementById("cfg-endSeason");
-    if (endSel) {
-      if (lt === "redraft" && state.seasons && state.seasons.length) {
-        cfg.endSeason = state.seasons[0];
-        endSel.value = String(state.seasons[0]);
-        endSel.disabled = true;
-      } else {
-        endSel.disabled = false;
+    if (lt === "redraft") cfg.lens = "win_now";
+    syncLensDerivedEnd(cfg, state.seasons);
+    syncLensControls(cfg);
+  }
+
+  function syncLensControls(cfg) {
+    const c = cfg || state.cfg;
+    const hide = c.leagueType === "redraft";
+    document.querySelectorAll(".fd-lens-control").forEach((el) => {
+      el.hidden = hide;
+    });
+    document.querySelectorAll(".fd-lens-btn").forEach((btn) => {
+      const id = btn.getAttribute("data-lens");
+      btn.classList.toggle("active", id === c.lens);
+      const range = btn.querySelector(".fd-lens-range");
+      if (range) {
+        range.textContent = hide ? "" : lensRangeLabel(state.seasons, id);
       }
-    }
+    });
+  }
+
+  function setLens(lensId) {
+    if (state.cfg.leagueType === "redraft") return;
+    if (LENS_IDS.indexOf(lensId) < 0) return;
+    state.cfg.lens = lensId;
+    syncLensDerivedEnd(state.cfg, state.seasons);
+    syncLensControls(state.cfg);
+    state.planner.lockedIds = null;
+    state.planner.swapKeepId = null;
+    refresh();
   }
 
   function buildLeaguePersistPayload() {
@@ -1268,7 +1370,7 @@
         keeperCount: cfg.keeperCount,
         keeperCut: cfg.keeperCut,
         slots: { ...cfg.slots },
-        endSeason: cfg.endSeason,
+        lens: cfg.lens || "balanced",
         draftOrder: draftOrderIds,
         myTeam: myTeamId || "",
         leagueType: cfg.leagueType || null,
@@ -1306,6 +1408,7 @@
         keeperCount: settings.keeperCount,
         keeperCut: settings.keeperCut,
         slots: settings.slots,
+        lens: settings.lens,
         endSeason: settings.endSeason,
         leagueType: settings.leagueType,
         draftOrder: draftNames,
@@ -1497,9 +1600,14 @@
             ? " · " + body.platform.leagueName
             : "")
       );
+      state.planner.lockedIds = null;
+      state.planner.swapKeepId = null;
       await refresh();
       if (o.autoSave) await saveLeagueToAccount();
       if (o.redirectToTeams) afterModalImportSuccess();
+      else if (!myTeamSelected(state.league, state.cfg)) {
+        openWhoAreYouModal({ afterTab: "pool" });
+      }
       return true;
     } catch (e) {
       console.error(e);
@@ -1534,6 +1642,66 @@
     const idx = seasons.indexOf(Number(endSeason));
     if (idx < 0) return seasons.length;
     return idx + 1;
+  }
+
+  function marketEndSeason(seasons) {
+    const s = seasons || state.seasons || [];
+    return s.length ? s[s.length - 1] : null;
+  }
+
+  function lensEndSeason(seasons, lens) {
+    const s = seasons || state.seasons || [];
+    if (!s.length) return null;
+    const preset = LENS_PRESETS[lens] || LENS_PRESETS.balanced;
+    const idx = Math.min(Math.max(0, (preset.years || 1) - 1), s.length - 1);
+    return s[idx];
+  }
+
+  function cfgWithEnd(cfg, endSeason) {
+    return Object.assign({}, cfg, { endSeason: endSeason });
+  }
+
+  function marketCfg(cfg, seasons) {
+    return cfgWithEnd(cfg || state.cfg, marketEndSeason(seasons || state.seasons));
+  }
+
+  function lensCfg(cfg, seasons) {
+    const c = cfg || state.cfg;
+    return cfgWithEnd(c, lensEndSeason(seasons || state.seasons, c.lens));
+  }
+
+  function syncLensDerivedEnd(cfg, seasons) {
+    const c = cfg || state.cfg;
+    const s = seasons || state.seasons || [];
+    if (c.leagueType === "redraft") c.lens = "win_now";
+    if (!c.lens || LENS_IDS.indexOf(c.lens) < 0) c.lens = "balanced";
+    // Migrate legacy Through= URL/settings once seasons are known.
+    if (c._legacyEnd != null && s.length) {
+      const end = Number(c._legacyEnd);
+      const idx = s.indexOf(end);
+      const n = idx >= 0 ? idx + 1 : s.length;
+      if (n <= 1) c.lens = "win_now";
+      else if (n <= 3) c.lens = "balanced";
+      else c.lens = "long_term";
+      delete c._legacyEnd;
+    }
+    c.endSeason = lensEndSeason(s, c.lens);
+    return c;
+  }
+
+  function lensRangeLabel(seasons, lens) {
+    const s = seasons || state.seasons || [];
+    if (!s.length) return "";
+    const end = lensEndSeason(s, lens);
+    const h = horizonLen(s, end);
+    if (h <= 1) return String(s[0]);
+    return s[0] + "–" + s[h - 1];
+  }
+
+  function nearestLensForYears(n) {
+    if (n <= 1) return "win_now";
+    if (n <= 3) return "balanced";
+    return "long_term";
   }
 
   function sumSlice(arr, h) {
@@ -2584,7 +2752,7 @@
     return Math.max(0, rosterSize(cfg) - (Number(cfg.keeperCount) || 0));
   }
 
-  /** Per-team kept roster + cover-weighted year xPoints / VORP. Through = endSeason. */
+  /** Per-team kept roster + cover-weighted year xPoints / VORP. Horizon from cfg.endSeason. */
   function buildTeamStandings(rows, league, cfg) {
     const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
     const yLen = horizonLen(state.seasons, cfg.endSeason) || state.seasons.length;
@@ -3114,13 +3282,113 @@
     return i < 0 ? null : i + 1;
   }
 
-  function renderTeamPlanner(rows, league, cfg) {
+  function applyManualKeepSplit(roster, keepIds, cutN) {
+    const byId = Object.create(null);
+    (roster || []).forEach((r) => {
+      if (r && r.id != null) byId[r.id] = r;
+    });
+    const kept = [];
+    const used = new Set();
+    (keepIds || []).forEach((id) => {
+      if (byId[id] && !used.has(id)) {
+        kept.push(byId[id]);
+        used.add(id);
+      }
+    });
+    const rest = (roster || [])
+      .filter((r) => r && !used.has(r.id))
+      .slice()
+      .sort(
+        (a, b) =>
+          (b.vorp || 0) - (a.vorp || 0) ||
+          (a.name || "").localeCompare(b.name || "")
+      );
+    const need = Math.max(0, (cutN || 0) - kept.length);
+    for (let i = 0; i < need && i < rest.length; i++) {
+      kept.push(rest[i]);
+      used.add(rest[i].id);
+    }
+    const cut = (roster || []).filter((r) => r && !used.has(r.id));
+    const keptSet = new Set(kept.map((r) => r.id));
+    return { kept, cut, keptSet };
+  }
+
+  function keeperSelectRowHtml(r, yi, opts) {
+    const o = opts || {};
+    const xp = seasonXPoints(r, yi);
+    const selected = !!o.selected;
+    const belowCut = !!o.belowCut;
+    return (
+      '<button type="button" class="fp-keep-btn' +
+      (selected ? " is-selected" : "") +
+      (belowCut ? " is-cut" : "") +
+      '" data-fp-id="' +
+      escapeHtml(String(r.id)) +
+      '" data-fp-side="' +
+      escapeHtml(o.side || "keep") +
+      '">' +
+      headshotHtml(r) +
+      '<div class="lt-player-meta">' +
+      '<div class="lt-player-name" title="' +
+      escapeHtml(r.name || "") +
+      '">' +
+      escapeHtml(r.name || "") +
+      "</div>" +
+      '<div class="lt-player-chips">' +
+      teamChipHtml(r.teamAbbr || r.club || "") +
+      posChipsHtml(displayPos(r)) +
+      "</div>" +
+      "</div>" +
+      '<div class="fp-player-xp">' +
+      fmtInt(xp) +
+      "</div>" +
+      "</button>"
+    );
+  }
+
+  function marginalKeepWhy(kept, cut) {
+    if (!kept || !kept.length || !cut || !cut.length) return "";
+    const marginal = kept
+      .slice()
+      .sort((a, b) => (a.vorp || 0) - (b.vorp || 0))[0];
+    const topCut = cut
+      .slice()
+      .sort((a, b) => (b.vorp || 0) - (a.vorp || 0))[0];
+    if (!marginal || !topCut) return "";
+    const dv = Math.round((Number(marginal.vorp) || 0) - (Number(topCut.vorp) || 0));
+    if (dv >= 0) {
+      return (
+        marginal.name +
+        " beats " +
+        topCut.name +
+        " by " +
+        fmtSigned(dv) +
+        " VORP under your lens."
+      );
+    }
+    return (
+      topCut.name +
+      " is " +
+      fmtSigned(-dv) +
+      " VORP ahead of " +
+      marginal.name +
+      " — tap to swap."
+    );
+  }
+
+  /**
+   * Keepers tab: left = my post-cut roster (lens); right = cuts or draft plan.
+   * rowsLens = my ranking; rowsMarket = other teams / FA / picks (stable).
+   */
+  function renderTeamPlanner(rowsLens, rowsMarket, league, cfg) {
     const el = document.getElementById("team-planner");
     if (!el) return;
+    const lensRows = rowsLens || state.rowsLens || [];
+    const marketRows = rowsMarket || state.rowsMarket || state.rows || [];
 
     if (!league || !league.owners || !league.owners.length) {
       el.innerHTML =
-        "<p class='muted'>Upload a Keeper Fantasy CSV in <b>Import</b>, then choose <b>My team</b> to plan lineups.</p>";
+        "<p class='muted'>Import a league, then pick your team to plan keepers.</p>";
       return;
     }
 
@@ -3128,192 +3396,301 @@
       cfg.myTeam && league.owners.indexOf(cfg.myTeam) >= 0 ? cfg.myTeam : "";
     if (!myTeam) {
       el.innerHTML =
-        "<p class='muted'>Select <b>My team</b> (next to Through) to see your season-by-season planner.</p>";
+        "<p class='muted'>Pick your team in <b>Import</b> to plan keepers.</p>";
       return;
     }
 
     const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
     const cutN = Math.max(0, Number(cfg.keeperCount) || 0);
-    // Keepers follow Through (endSeason) via VORP in computeRows / selectKeepers*
-    const roster = rows.filter((r) => r.owner === myTeam && r.type !== "pick");
-    const split = splitRosterByKeepers(roster, cfg, myTeam, cutOn);
-    const keepers = split.kept;
-    const initialCut = split.cut || [];
-
     const yearSeasons = state.seasons.slice();
     if (!yearSeasons.length) {
       el.innerHTML = "<p class='muted'>No seasons available.</p>";
       return;
     }
+    if (state.planner.seasonView >= yearSeasons.length) {
+      state.planner.seasonView = 0;
+    }
+    const yi = state.planner.seasonView | 0;
+    const lCfg = lensCfg(cfg, yearSeasons);
+    const mCfg = marketCfg(cfg, yearSeasons);
 
-    // Planner: draft class every season. Trades still call yearCount=1.
-    const unowned = unownedAfterCuts(rows, league, cfg);
+    const roster = lensRows.filter(
+      (r) => r.owner === myTeam && r.type !== "pick"
+    );
+    let split;
+    if (state.planner.lockedIds && state.planner.lockedIds.length) {
+      split = applyManualKeepSplit(roster, state.planner.lockedIds, cutN);
+    } else {
+      split = splitRosterByKeepers(roster, lCfg, myTeam, cutOn);
+    }
+    const keepers = split.kept;
+    const cuts = split.cut || [];
+    const locked = !!(state.planner.lockedIds && state.planner.lockedIds.length);
+
+    // Draft plan uses market FA / pick proxies so lens changes don't reshuffle the pool.
+    const unowned = unownedAfterCuts(marketRows, league, mCfg);
     const allPicks = buildKeeperDraftPicks(
       unowned,
-      cfg,
+      mCfg,
       yearSeasons,
-      rows,
+      marketRows,
       league,
       { yearCount: yearSeasons.length }
     );
-    const picksByOwner = Object.create(null);
-    (league.owners || []).forEach((o) => {
-      picksByOwner[o] = [];
-    });
-    allPicks.forEach((p) => {
-      if (!picksByOwner[p.owner]) picksByOwner[p.owner] = [];
-      picksByOwner[p.owner].push(p);
-    });
-
-    // Rolling keep-20 + add-10 path for every team (Proj ranks + my boards)
-    const pathsByOwner = Object.create(null);
-    const plannerYearPts = (league.owners || []).map((owner) => {
-      const owned = rows.filter((r) => r.owner === owner && r.type !== "pick");
-      const k = splitRosterByKeepers(owned, cfg, owner, cutOn).kept;
-      const path = buildPlannerSeasonPath(
-        k,
-        picksByOwner[owner] || [],
-        cfg,
-        yearSeasons
-      );
-      pathsByOwner[owner] = path;
-      return { owner, yearPts: path.yearPts };
-    });
-
-    const myPath = pathsByOwner[myTeam] || {
-      boards: [],
-      yearPts: []
-    };
-    const boards = myPath.boards.map((b) => {
-      const cutList =
-        b.yi === 0 && cutOn && cutN > 0
-          ? initialCut.concat(b.cutList || [])
-          : b.cutList || [];
-      return {
-        year: b.year,
-        yi: b.yi,
-        lineup: b.lineup,
-        isFirst: b.yi === 0,
-        rank: ladderRankForOwner(plannerYearPts, myTeam, b.yi),
-        yearPts: b.yearPts,
-        cutList,
-        pickCount: b.pickCount,
-        keptCount: (b.kept || []).length
-      };
-    });
-
-    let bestIdx = 0;
-    boards.forEach((b, i) => {
-      const br = boards[bestIdx].rank;
-      const r = b.rank;
-      if (r == null) return;
-      if (
-        br == null ||
-        r < br ||
-        (r === br && b.yearPts > boards[bestIdx].yearPts)
-      ) {
-        bestIdx = i;
-      }
-    });
-    const bestYear = boards[bestIdx].year;
+    const myPicks = allPicks.filter(
+      (p) => p.owner === myTeam && (p.seasonIdx == null || p.seasonIdx === yi)
+    );
 
     const lab = state.teamLabels && state.teamLabels[myTeam];
-    const head =
-      '<div class="fp-head">' +
-      '<h3 class="fp-head-title">' +
-      escapeHtml(myTeam) +
-      "</h3>" +
-      (lab && lab.label
-        ? '<span class="fp-head-tag" title="' +
-          escapeHtml(lab.category || "") +
-          '">' +
-          escapeHtml(lab.label) +
-          "</span>"
-        : "") +
-      '<span class="fp-head-best">Best year · ' +
-      bestYear +
-      "</span>" +
-      "</div>";
+    const why = !locked ? marginalKeepWhy(keepers, cuts) : "";
 
-    const seasonCards = boards
-      .map((b, i) => {
-        const isBest = i === bestIdx;
-        const lineup = b.lineup;
-        let body = "";
-        POS_KEYS.forEach((pos) => {
-          body += plannerPosBlockHtml(
-            pos,
-            lineup.filled[pos],
-            lineup.remaining[pos]
-          );
-        });
-        body += plannerPosBlockHtml("Bench", lineup.bench, 0);
-        if (lineup.overflow.length) {
-          body += plannerPosBlockHtml("Reserve", lineup.overflow, 0);
-        }
-        const cutList = b.cutList || [];
-        if (cutList.length) {
-          const cutTitle = b.isFirst ? "Keeper cut" : "Squad cut";
-          const keptHave = b.isFirst ? keepers.length : b.keptCount;
-          const keptNeed = cutN > 0 ? cutN : keptHave;
-          body +=
-            '<div class="lt-cut" role="separator" title="' +
-            cutTitle +
-            '">' +
-            "<span>" +
-            cutTitle +
-            " · " +
-            keptHave +
-            "/" +
-            keptNeed +
-            "</span>" +
-            "</div>";
-          cutList.forEach((p) => {
-            body += plannerPlayerRowHtml(
-              {
-                player: p,
-                xp: seasonXPoints(p, b.yi),
-                pos: "CUT"
-              },
-              true
-            );
-          });
-        }
-        const projLabel =
-          b.rank != null ? "Proj " + ordinalRank(b.rank) : "Proj —";
-        const sub =
-          b.isFirst && b.pickCount
-            ? "Keepers + " + b.pickCount + " picks"
-            : b.isFirst
-              ? "Current team · keepers"
-              : b.keptCount + " kept + " + b.pickCount + " picks";
+    const seasonTabs = yearSeasons
+      .map((y, i) => {
         return (
-          '<article class="fp-season' +
-          (isBest ? " is-best" : "") +
+          '<button type="button" class="fp-year-tab' +
+          (i === yi ? " active" : "") +
+          '" data-fp-year="' +
+          i +
           '">' +
-          '<header class="fp-season-head">' +
-          "<div>" +
-          '<div class="fp-season-year">' +
-          b.year +
-          (isBest ? '<span class="fp-season-badge">Best</span>' : "") +
-          "</div>" +
-          '<div class="fp-season-sub">' +
-          sub +
-          "</div>" +
-          "</div>" +
-          '<div class="fp-season-total" title="Projected ladder place">' +
-          escapeHtml(projLabel) +
-          "</div>" +
-          "</header>" +
-          '<div class="fp-season-body">' +
-          (body || '<p class="muted" style="padding:8px 10px;">No players</p>') +
-          "</div>" +
-          "</article>"
+          y +
+          "</button>"
         );
       })
       .join("");
 
-    el.innerHTML = head + '<div class="fp-seasons">' + seasonCards + "</div>";
+    const leftRows = keepers
+      .slice()
+      .sort(
+        (a, b) =>
+          (b.vorp || 0) - (a.vorp || 0) ||
+          seasonXPoints(b, yi) - seasonXPoints(a, yi)
+      )
+      .map((r) =>
+        keeperSelectRowHtml(r, yi, {
+          side: "keep",
+          selected: state.planner.swapKeepId === r.id,
+          belowCut: false
+        })
+      )
+      .join("");
+
+    let rightBody = "";
+    let rightTitle = locked ? "Draft plan" : "Cuts";
+    if (!locked) {
+      rightBody =
+        (cuts.length
+          ? cuts
+              .slice()
+              .sort(
+                (a, b) =>
+                  (b.vorp || 0) - (a.vorp || 0) ||
+                  seasonXPoints(b, yi) - seasonXPoints(a, yi)
+              )
+              .map((r) =>
+                keeperSelectRowHtml(r, yi, {
+                  side: "cut",
+                  selected: false,
+                  belowCut: true
+                })
+              )
+              .join("")
+          : '<p class="muted">No cuts under current keepers.</p>');
+    } else {
+      const lineup = buildSeasonLineup(keepers, mCfg, yi, {
+        mustInclude: myPicks.map((pk) => ({
+          id: pk.id,
+          name: pk.name,
+          type: "pick",
+          vorp: pk.vorp,
+          _pick: pk,
+          _asset: pk.proxyRow && pk.proxyRow._asset
+        }))
+      });
+      const gaps = [];
+      POS_KEYS.forEach((pos) => {
+        if ((lineup.remaining[pos] || 0) > 0) {
+          gaps.push(pos + " ×" + lineup.remaining[pos]);
+        }
+      });
+      const pickBits = myPicks.length
+        ? myPicks
+            .map((p) => {
+              return (
+                '<div class="fp-draft-pick">' +
+                escapeHtml(p.name) +
+                (p.proxyName
+                  ? ' <span class="muted">· ' +
+                    escapeHtml(p.proxyName) +
+                    "</span>"
+                  : "") +
+                "</div>"
+              );
+            })
+            .join("")
+        : '<p class="muted">No picks this season.</p>';
+      rightBody =
+        (gaps.length
+          ? '<p class="fp-draft-needs">Need: ' +
+            escapeHtml(gaps.join(", ")) +
+            "</p>"
+          : '<p class="fp-draft-needs muted">Lineup covered</p>') +
+        '<div class="fp-draft-picks">' +
+        pickBits +
+        "</div>";
+    }
+
+    el.innerHTML =
+      '<div class="fp-keep">' +
+      '<div class="fp-keep-head">' +
+      '<div class="fp-keep-title-row">' +
+      '<h3 class="fp-head-title">My team: Keepers</h3>' +
+      (lab && lab.label
+        ? '<span class="fp-head-tag">' + escapeHtml(lab.label) + "</span>"
+        : "") +
+      '<span class="fp-head-best">' +
+      escapeHtml(myTeam) +
+      "</span>" +
+      "</div>" +
+      '<div class="fd-lens-control" id="fd-lens-planner">' +
+      lensControlInnerHtml(cfg) +
+      "</div>" +
+      '<div class="fp-year-tabs" role="tablist">' +
+      seasonTabs +
+      "</div>" +
+      (why ? '<p class="fp-why muted">' + escapeHtml(why) + "</p>" : "") +
+      '<div class="fp-keep-actions">' +
+      (locked
+        ? '<button type="button" class="tc-btn" data-fp-action="unlock">Unlock keepers</button>'
+        : '<button type="button" class="tc-btn tc-btn-primary" data-fp-action="lock">Lock keepers</button>') +
+      (state.planner.swapKeepId
+        ? '<span class="muted">Tap a cut to swap</span>'
+        : "") +
+      "</div>" +
+      "</div>" +
+      '<div class="fp-keep-grid">' +
+      '<section class="fp-keep-col">' +
+      "<h4>Keep · " +
+      keepers.length +
+      (cutN ? "/" + cutN : "") +
+      "</h4>" +
+      '<div class="fp-keep-list">' +
+      (leftRows || '<p class="muted">No keepers</p>') +
+      "</div>" +
+      "</section>" +
+      '<section class="fp-keep-col">' +
+      "<h4>" +
+      escapeHtml(rightTitle) +
+      "</h4>" +
+      '<div class="fp-keep-list">' +
+      rightBody +
+      "</div>" +
+      "</section>" +
+      "</div>" +
+      "</div>";
+
+    bindTeamPlanner(el, keepers, cuts);
+  }
+
+  function lensControlInnerHtml(cfg) {
+    if (cfg.leagueType === "redraft") return "";
+    return (
+      '<div class="fd-lens-seg" role="group" aria-label="Value lens">' +
+      LENS_IDS.map((id) => {
+        const p = LENS_PRESETS[id];
+        return (
+          '<button type="button" class="fd-lens-btn' +
+          (cfg.lens === id ? " active" : "") +
+          '" data-lens="' +
+          id +
+          '">' +
+          '<span class="fd-lens-label">' +
+          escapeHtml(p.label) +
+          "</span>" +
+          '<span class="fd-lens-range">' +
+          escapeHtml(lensRangeLabel(state.seasons, id)) +
+          "</span>" +
+          "</button>"
+        );
+      }).join("") +
+      "</div>"
+    );
+  }
+
+  function bindTeamPlanner(el, keepers, cuts) {
+    if (!el || el.dataset.fpBound === "1") {
+      // Re-bind each render: clear flag after replace
+    }
+    el.dataset.fpBound = "1";
+    el.onclick = function (e) {
+      const t = e.target && e.target.closest ? e.target.closest("[data-fp-action], [data-fp-year], [data-fp-id], [data-lens]") : null;
+      if (!t) return;
+      if (t.getAttribute("data-lens")) {
+        setLens(t.getAttribute("data-lens"));
+        return;
+      }
+      if (t.hasAttribute("data-fp-year")) {
+        state.planner.seasonView = parseInt(t.getAttribute("data-fp-year"), 10) || 0;
+        renderTeamPlanner(
+          state.rowsLens,
+          state.rowsMarket,
+          state.league,
+          state.cfg
+        );
+        return;
+      }
+      const action = t.getAttribute("data-fp-action");
+      if (action === "lock") {
+        state.planner.lockedIds = (keepers || []).map((r) => r.id);
+        state.planner.swapKeepId = null;
+        renderTeamPlanner(
+          state.rowsLens,
+          state.rowsMarket,
+          state.league,
+          state.cfg
+        );
+        return;
+      }
+      if (action === "unlock") {
+        state.planner.lockedIds = null;
+        state.planner.swapKeepId = null;
+        renderTeamPlanner(
+          state.rowsLens,
+          state.rowsMarket,
+          state.league,
+          state.cfg
+        );
+        return;
+      }
+      const id = t.getAttribute("data-fp-id");
+      const side = t.getAttribute("data-fp-side");
+      if (!id || state.planner.lockedIds) return;
+      if (side === "keep") {
+        state.planner.swapKeepId =
+          state.planner.swapKeepId === id ? null : id;
+        renderTeamPlanner(
+          state.rowsLens,
+          state.rowsMarket,
+          state.league,
+          state.cfg
+        );
+        return;
+      }
+      if (side === "cut" && state.planner.swapKeepId) {
+        const keepIds = (keepers || []).map((r) => r.id);
+        const idx = keepIds.indexOf(state.planner.swapKeepId);
+        if (idx >= 0) {
+          keepIds[idx] = id;
+          state.planner.lockedIds = keepIds;
+          state.planner.swapKeepId = null;
+          renderTeamPlanner(
+            state.rowsLens,
+            state.rowsMarket,
+            state.league,
+            state.cfg
+          );
+        }
+      }
+    };
   }
 
   /**
@@ -3557,30 +3934,35 @@
     return (n > 0 ? "+" : "") + String(n);
   }
 
-  function tradeAssetMap(rows, picks, keptSets) {
-    const yLen = horizonLen(state.seasons, state.cfg.endSeason) || state.seasons.length;
+  function tradeAssetMap(rows, picks, keptSets, endSeason) {
+    const end = endSeason != null ? endSeason : marketEndSeason(state.seasons);
+    const yLen = horizonLen(state.seasons, end) || state.seasons.length;
     const map = Object.create(null);
     rows.forEach((r) => {
       if (!r.id || !r.owner) return;
       const kept = keptSets && keptSets[r.owner] ? keptSets[r.owner].has(r.id) : true;
+      const yearPts = yearPointsForRow(r, yLen);
       map[r.id] = {
         key: r.id,
         kind: "player",
         name: r.name,
         vorp: Number(r.vorp) || 0,
-        yearPts: yearPointsForRow(r, yLen),
+        yearPts: yearPts,
+        xPoints: yearPtsTotal(yearPts),
         owner: r.owner,
         belowCut: !kept,
         row: r
       };
     });
     (picks || []).forEach((p) => {
+      const yearPts = (p.yearPts || []).slice(0, yLen);
       map[p.key] = {
         key: p.key,
         kind: "pick",
         name: p.name,
         vorp: p.vorp,
-        yearPts: (p.yearPts || []).slice(0, yLen),
+        yearPts: yearPts,
+        xPoints: yearPtsTotal(yearPts),
         proxyName: p.proxyName,
         pick: p.pick,
         round: p.round,
@@ -3613,7 +3995,10 @@
    */
   function teamTradeTotals(rows, owner, cfg, pickOwnerByKey, picksByKey) {
     const cutOn = resolveKeeperCut(cfg, state.data, state.seasons);
-    const yLen = horizonLen(state.seasons, cfg.endSeason) || state.seasons.length;
+    // Trades always score on the full market horizon.
+    const yLen =
+      horizonLen(state.seasons, marketEndSeason(state.seasons)) ||
+      state.seasons.length;
     const players = rows.filter((r) => r.owner === owner);
     const split = splitRosterByKeepers(players, cfg, owner, cutOn);
     const yearPts = coverWeightedYearPoints(split.kept, cfg, yLen);
@@ -3676,7 +4061,9 @@
   }
 
   function simulateTrade(rows, league, cfg, sideA, sideB, giveKeys, getKeys, picks, preCache) {
-    const yLen = horizonLen(state.seasons, cfg.endSeason) || state.seasons.length;
+    const yLen =
+      horizonLen(state.seasons, marketEndSeason(state.seasons)) ||
+      state.seasons.length;
     const base = buildPickMaps(picks);
     const picksByKey = base.picksByKey;
     const pickOwnerByKey = Object.assign(Object.create(null), base.pickOwnerByKey);
@@ -3809,6 +4196,45 @@
 
   function yearPtsTotal(yearPts) {
     return (yearPts || []).reduce((s, v) => s + (Number(v) || 0), 0);
+  }
+
+  function yearPtsWindow(yearPts, fromIdx, toIdx) {
+    let s = 0;
+    const arr = yearPts || [];
+    const lo = Math.max(0, fromIdx | 0);
+    const hi = Math.min(arr.length - 1, toIdx | 0);
+    for (let i = lo; i <= hi; i++) s += Number(arr[i]) || 0;
+    return s;
+  }
+
+  /** Three scoring windows over the same kept sets: now / balanced / full. */
+  function tradeWindowScores(yearPts, seasons) {
+    const s = seasons || [];
+    const n = Math.max(1, (yearPts && yearPts.length) || s.length || 1);
+    const balEnd = Math.min(2, n - 1);
+    const fullEnd = n - 1;
+    function label(from, to) {
+      if (!s.length) return from === to ? "Y" + (from + 1) : "Y" + (from + 1) + "–" + (to + 1);
+      if (from === to) return String(s[from]);
+      return s[from] + "–" + s[to];
+    }
+    return [
+      { id: "now", label: label(0, 0), from: 0, to: 0, value: yearPtsWindow(yearPts, 0, 0) },
+      {
+        id: "balanced",
+        label: label(0, balEnd),
+        from: 0,
+        to: balEnd,
+        value: yearPtsWindow(yearPts, 0, balEnd)
+      },
+      {
+        id: "long",
+        label: label(0, fullEnd),
+        from: 0,
+        to: fullEnd,
+        value: yearPtsWindow(yearPts, 0, fullEnd)
+      }
+    ];
   }
 
   function scoreTradePackage(sim, giveKeys, getKeys, assetMap, myTeam, other) {
@@ -4077,7 +4503,8 @@
       getKeys,
       preCache
     } = opts;
-    const yLen = horizonLen(seasons, cfg.endSeason) || (seasons || []).length || 1;
+    // Trades always use the full feed; lens must not flip cuts or verdicts.
+    const yLen = (seasons || []).length || 1;
     const yearSeasons = (seasons || []).slice(0, yLen);
     const give = giveKeys || [];
     const get = getKeys || [];
@@ -4112,7 +4539,15 @@
       trimmedPicks: [],
       sim: emptyTradeSim(yLen),
       yearSeasons: yearSeasons,
-      cutOn: cutOn
+      cutOn: cutOn,
+      windowsMe: tradeWindowScores(
+        Array.from({ length: yLen }, () => 0),
+        yearSeasons
+      ),
+      windowsThem: tradeWindowScores(
+        Array.from({ length: yLen }, () => 0),
+        yearSeasons
+      )
     };
     if (!myTeam || !other || myTeam === other) return empty;
     if (!give.length && !get.length) {
@@ -4136,10 +4571,16 @@
       picks,
       preCache
     );
+    const balEnd = Math.min(2, yLen - 1);
+    const netMeBal = yearPtsWindow(sim.a.yearPts, 0, balEnd);
+    const netThemBal = yearPtsWindow(sim.b.yearPts, 0, balEnd);
     const netMe = yearPtsTotal(sim.a.yearPts);
     const netThem = yearPtsTotal(sim.b.yearPts);
-    const ratio = scale > 0 ? netMe / scale : 0;
-    const ratioB = scale > 0 ? netThem / scale : 0;
+    const windowsMe = tradeWindowScores(sim.a.yearPts, yearSeasons);
+    const windowsThem = tradeWindowScores(sim.b.yearPts, yearSeasons);
+    // Main band follows Balanced window so now-vs-long tags stay meaningful.
+    const ratio = scale > 0 ? netMeBal / scale : 0;
+    const ratioB = scale > 0 ? netThemBal / scale : 0;
     const verdict = verdictBand(ratio);
 
     const tags = [];
@@ -4157,6 +4598,10 @@
     ) {
       tags.push("Lopsided");
     }
+    const nowV = windowsMe[0] && windowsMe[0].value;
+    const longV = windowsMe[2] && windowsMe[2].value;
+    if (sign(nowV) > 0 && sign(longV) < 0) tags.push("Wins now, loses long-term");
+    else if (sign(nowV) < 0 && sign(longV) > 0) tags.push("Loses now, wins long-term");
 
     function sideDiff(sideSim, sideName) {
       const preKept = keptSetIds(sideSim.pre && sideSim.pre.split);
@@ -4341,8 +4786,12 @@
       cutOn: cutOn,
       giveSum: giveSum,
       getSum: getSum,
-      netMe: netMe,
-      netThem: netThem
+      netMe: netMeBal,
+      netThem: netThemBal,
+      netMeFull: netMe,
+      netThemFull: netThem,
+      windowsMe: windowsMe,
+      windowsThem: windowsThem
     };
   }
 
@@ -4495,8 +4944,8 @@
       pUsedChip +
       "</div>" +
       "</div>" +
-      '<div class="lt-player-vorp">' +
-      fmtInt(p.vorp) +
+      '<div class="lt-player-vorp" title="xPoints">' +
+      fmtInt(p.xPoints != null ? p.xPoints : yearPtsTotal(p.yearPts)) +
       "</div>" +
       "</div>"
     );
@@ -4580,8 +5029,12 @@
       contractChip +
       "</div>" +
       "</div>" +
-      '<div class="lt-player-vorp">' +
-      fmtInt(r.vorp) +
+      '<div class="lt-player-vorp" title="xPoints">' +
+      fmtInt(
+        r.xPoints != null
+          ? r.xPoints
+          : yearPtsTotal(yearPointsForRow(r, (state.seasons || []).length))
+      ) +
       "</div>" +
       "</div>"
     );
@@ -4590,7 +5043,14 @@
   function tradeAssetBodyHtml(asset) {
     if (!asset) return "";
     if (asset.kind === "pick") return pickPlayerRowHtml(asset);
-    return tradePlayerRowHtml(asset.row || asset, !!asset.belowCut);
+    const row = asset.row || asset;
+    const withXp = Object.assign({}, row, {
+      xPoints:
+        asset.xPoints != null
+          ? asset.xPoints
+          : yearPtsTotal(asset.yearPts || yearPointsForRow(row, (state.seasons || []).length))
+    });
+    return tradePlayerRowHtml(withXp, !!asset.belowCut);
   }
 
   function tradeAssetRowHtml(asset, selected, opts) {
@@ -4705,6 +5165,30 @@
     return "No";
   }
 
+  function tradeWindowsHtml(evalResult, swapped) {
+    const wins = swapped ? evalResult.windowsThem : evalResult.windowsMe;
+    if (!wins || !wins.length) return "";
+    return (
+      '<div class="tc-windows">' +
+      wins
+        .map((w) => {
+          const v = roundXPts(w.value);
+          const cls = v > 0 ? "up" : v < 0 ? "down" : "";
+          return (
+            '<span class="tc-window ' +
+            cls +
+            '">' +
+            escapeHtml(w.label) +
+            ": " +
+            fmtSigned(v) +
+            "</span>"
+          );
+        })
+        .join('<span class="tc-window-sep"> · </span>') +
+      "</div>"
+    );
+  }
+
   function dataAgeDays(league) {
     const raw = league && league.updatedAt;
     if (!raw) return null;
@@ -4714,7 +5198,7 @@
   }
 
   function tradeContextBarHtml(cfg, league, myTeam, seasons) {
-    const yLen = horizonLen(seasons, cfg.endSeason) || seasons.length;
+    const yLen = (seasons || []).length;
     const through =
       seasons.length && yLen
         ? seasons[0] + (yLen > 1 ? "–" + seasons[yLen - 1] : "")
@@ -4823,7 +5307,8 @@
       fmtSigned(roundXPts(netMe)) +
       " · Them " +
       fmtSigned(roundXPts(netThem)) +
-      "</div>" +
+      " <span class='muted'>(balanced)</span></div>" +
+      tradeWindowsHtml(evalResult, swapped) +
       (tags ? '<div class="tc-tags">' + tags + "</div>" : "") +
       tradeSeasonTableHtml(evalResult, swapped) +
       (reasons ? "<ul class='tc-why-list'>" + reasons + "</ul>" : "") +
@@ -4872,19 +5357,25 @@
   }
 
   function buildTradeCache(rows, league, cfg, picks) {
-    const unowned = unownedAfterCuts(rows, league, cfg);
+    const mCfg = marketCfg(cfg, state.seasons);
+    const unowned = unownedAfterCuts(rows, league, mCfg);
     const pickList =
       picks ||
-      buildKeeperDraftPicks(unowned, cfg, state.seasons, rows, league);
-    const keptSets = buildKeptSets(rows, league, cfg);
-    const assetMap = tradeAssetMap(rows, pickList, keptSets);
+      buildKeeperDraftPicks(unowned, mCfg, state.seasons, rows, league);
+    const keptSets = buildKeptSets(rows, league, mCfg);
+    const assetMap = tradeAssetMap(
+      rows,
+      pickList,
+      keptSets,
+      marketEndSeason(state.seasons)
+    );
     const baseMaps = buildPickMaps(pickList);
     const preCache = Object.create(null);
     (league.owners || []).forEach((owner) => {
       preCache[owner] = teamTradeTotals(
         rows,
         owner,
-        cfg,
+        mCfg,
         baseMaps.pickOwnerByKey,
         baseMaps.picksByKey
       );
@@ -4913,8 +5404,8 @@
       el.innerHTML =
         '<div class="tc-rater">' +
         "<h3>Trade check</h3>" +
-        "<p class='muted'>Select <b>My team</b> (header / Import) to start.</p>" +
-        '<button type="button" class="tc-btn" data-tc-goto="import">Change</button>' +
+        "<p class='muted'>Pick your team in <b>Import</b> to start.</p>" +
+        '<button type="button" class="tc-btn" data-tc-goto="import">Import</button>' +
         "</div>";
       return;
     }
@@ -5862,20 +6353,30 @@
   function refresh() {
     if (!state.data) return Promise.resolve();
     const cfg = state.cfg;
+    syncLensDerivedEnd(cfg, state.seasons);
     writeCfgToUrl(cfg);
-    const all = applyLeagueOwnership(
-      computeRows(state.data.assets, cfg, state.seasons),
+    syncLensControls(cfg);
+    const mCfg = marketCfg(cfg, state.seasons);
+    const lCfg = lensCfg(cfg, state.seasons);
+    const rowsMarket = applyLeagueOwnership(
+      computeRows(state.data.assets, mCfg, state.seasons),
       state.league
     );
-    state.rows = all;
-    const filtered = filterRows(all, cfg).map((r) => flattenRow(r, state.seasons));
+    const rowsLens = applyLeagueOwnership(
+      computeRows(state.data.assets, lCfg, state.seasons),
+      state.league
+    );
+    state.rowsMarket = rowsMarket;
+    state.rowsLens = rowsLens;
+    state.rows = rowsMarket;
+    const filtered = filterRows(rowsLens, cfg).map((r) => flattenRow(r, state.seasons));
     const columns = buildColumnDefs();
     return ensureTable(columns, filtered).then(function () {
-      renderMoversPanel(all, cfg, state.data);
-      renderTeamRatings(all, state.league, cfg);
-      renderTeamPlanner(all, state.league, cfg);
+      renderMoversPanel(rowsLens, lCfg, state.data);
+      renderTeamRatings(rowsMarket, state.league, mCfg);
+      renderTeamPlanner(rowsLens, rowsMarket, state.league, cfg);
       if (cfg.tab === "trades") {
-        renderTradeCalculator(all, state.league, cfg);
+        renderTradeCalculator(rowsMarket, state.league, mCfg);
       }
       renderDraftOrderEditor();
       state.detailId = null;
@@ -5902,14 +6403,7 @@
       if (cfg.slots[k] == null) cfg.slots[k] = k === "FLX" ? 0 : cfg.slots[k] || 0;
       setVal("cfg-" + k.toLowerCase(), cfg.slots[k] || 0);
     });
-    const endSel = document.getElementById("cfg-endSeason");
-    if (endSel && seasons.length) {
-      endSel.innerHTML = seasons
-        .map((y) => "<option value='" + y + "'>" + y + "</option>")
-        .join("");
-      cfg.endSeason = cfg.endSeason || seasons[seasons.length - 1];
-      endSel.value = String(cfg.endSeason);
-    }
+    syncLensDerivedEnd(cfg, seasons);
     const finalised = document.getElementById("cfg-keepersFinalised");
     if (finalised) {
       // Keepers finalised ON ⇔ keeperCut false
@@ -5929,6 +6423,7 @@
     syncClubDropdown(cfg);
     syncMyTeamSelect(state.league, cfg);
     applyLeagueTypeUi(cfg);
+    syncLensControls(cfg);
   }
 
   function updateClubDropdownLabel(cfg) {
@@ -6051,8 +6546,6 @@
     SLOT_KEYS.forEach((k) => {
       cfg.slots[k] = Math.max(0, num("cfg-" + k.toLowerCase(), cfg.slots[k] || 0));
     });
-    const endSel = document.getElementById("cfg-endSeason");
-    if (endSel) cfg.endSeason = parseInt(endSel.value, 10);
     if (o.includeCut) {
       const finalised = document.getElementById("cfg-keepersFinalised");
       if (finalised) cfg.keeperCut = !finalised.checked;
@@ -6063,12 +6556,11 @@
     if (fmtSel) cfg.draftFormat = fmtSel.value === "linear" ? "linear" : "snake";
     const pickEl = document.getElementById("cfg-pickTrading");
     if (pickEl) cfg.pickTrading = !!pickEl.checked;
-    const my = document.getElementById("cfg-myTeam");
-    if (my) cfg.myTeam = my.value || "";
     const importMy = document.getElementById("fd-import-myTeam");
-    if (importMy && importMy.value) cfg.myTeam = importMy.value;
+    if (importMy) cfg.myTeam = importMy.value || "";
     const search = document.getElementById("cfg-search");
     if (search) cfg.search = search.value.trim();
+    syncLensDerivedEnd(cfg, state.seasons);
     return cfg;
   }
 
@@ -6101,8 +6593,6 @@
       "cfg-ruc",
       "cfg-fwd",
       "cfg-flx",
-      "cfg-endSeason",
-      "cfg-myTeam",
       "fd-import-myTeam",
       "cfg-leagueType",
       "cfg-draftFormat"
@@ -6112,11 +6602,9 @@
       if (!el) return;
       el.addEventListener("change", () => {
         onImportSettingsChanged();
-        if (id === "cfg-myTeam" || id === "fd-import-myTeam") {
-          const importMy = document.getElementById("fd-import-myTeam");
-          const headerMy = document.getElementById("cfg-myTeam");
-          if (id === "fd-import-myTeam" && headerMy) headerMy.value = state.cfg.myTeam;
-          if (id === "cfg-myTeam" && importMy) importMy.value = state.cfg.myTeam;
+        if (id === "fd-import-myTeam") {
+          state.planner.lockedIds = null;
+          state.planner.swapKeepId = null;
           rebuildOwnerDropdown(state.league, state.cfg);
           state.trade.otherTeam = "";
           state.trade.search = "";
@@ -6124,6 +6612,30 @@
           state.trade.get = [];
         }
       });
+    });
+    document.addEventListener("click", (e) => {
+      const lensBtn =
+        e.target && e.target.closest ? e.target.closest(".fd-lens-btn[data-lens]") : null;
+      if (lensBtn && !lensBtn.closest("#team-planner")) {
+        setLens(lensBtn.getAttribute("data-lens"));
+        return;
+      }
+      const whoBtn =
+        e.target && e.target.closest
+          ? e.target.closest("#fd-who-list [data-who-team]")
+          : null;
+      if (whoBtn) {
+        confirmWhoAreYou(whoBtn.getAttribute("data-who-team"));
+        return;
+      }
+      const whoClose =
+        e.target && e.target.closest
+          ? e.target.closest("[data-who-close]")
+          : null;
+      if (whoClose) {
+        closeWhoAreYouModal();
+        setActiveTab("import");
+      }
     });
     document.querySelectorAll(".fd-stepper-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -6332,14 +6844,13 @@
       if (!data.assets || !data.meta) throw new Error("Invalid payload");
       state.data = data;
       state.seasons = (data.meta.seasons || []).map(Number);
-      if (!state.cfg.endSeason) {
+      if (!state.cfg.lens || LENS_IDS.indexOf(state.cfg.lens) < 0) {
         const dh = Number(data.meta.defaultHorizon);
-        if (Number.isFinite(dh) && dh > 0 && dh <= state.seasons.length) {
-          state.cfg.endSeason = state.seasons[dh - 1];
-        } else {
-          state.cfg.endSeason = state.seasons[state.seasons.length - 1];
+        if (Number.isFinite(dh) && dh > 0) {
+          state.cfg.lens = nearestLensForYears(dh);
         }
       }
+      syncLensDerivedEnd(state.cfg, state.seasons);
       await loadLeagueFromAccount();
       syncControlsToDom(state.cfg, state.seasons);
       applyLeagueTypeUi(state.cfg);
@@ -6352,6 +6863,12 @@
         void shell.offsetHeight;
       }
       await refresh();
+      if (
+        leagueHasTeams(state.league) &&
+        !myTeamSelected(state.league, state.cfg)
+      ) {
+        openWhoAreYouModal({ afterTab: state.cfg.tab || "pool" });
+      }
       if (state.cfg.tab === "pool" && state.table) {
         try {
           state.table.redraw(true);
