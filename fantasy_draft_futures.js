@@ -5,7 +5,7 @@
   "use strict";
 
   const POS_KEYS = ["DEF", "MID", "RUC", "FWD"];
-  /** Squad slots shown in Import steppers (VORP still uses POS_KEYS only). */
+  /** Squad slots shown in Import steppers; FLX adds proportional VORP depth. */
   const SLOT_KEYS = ["DEF", "MID", "RUC", "FWD", "FLX"];
   const STORAGE_URL =
     "https://firebasestorage.googleapis.com/v0/b/statsbyjaiden.firebasestorage.app/o/fantasy_draft_futures.json?alt=media";
@@ -333,9 +333,9 @@
     if (q.has("teams")) cfg.teams = clampInt(q.get("teams"), 2, 30, 10);
     if (q.has("bench")) cfg.bench = clampInt(q.get("bench"), 0, 40, 12);
     if (q.has("keepers")) cfg.keeperCount = clampInt(q.get("keepers"), 0, 40, 20);
-    POS_KEYS.forEach((k) => {
+    SLOT_KEYS.forEach((k) => {
       const key = k.toLowerCase();
-      if (q.has(key)) cfg.slots[k] = clampInt(q.get(key), 0, 20, cfg.slots[k]);
+      if (q.has(key)) cfg.slots[k] = clampInt(q.get(key), 0, 20, cfg.slots[k] || 0);
     });
     if (q.has("lens") && LENS_IDS.indexOf(q.get("lens")) >= 0) {
       cfg.lens = q.get("lens");
@@ -388,7 +388,9 @@
       q.set("teams", String(cfg.teams));
       q.set("bench", String(cfg.bench));
       q.set("keepers", String(cfg.keeperCount));
-      POS_KEYS.forEach((k) => q.set(k.toLowerCase(), String(cfg.slots[k])));
+      SLOT_KEYS.forEach((k) =>
+        q.set(k.toLowerCase(), String((cfg.slots && cfg.slots[k]) || 0))
+      );
       if (cfg.lens && cfg.lens !== "balanced") q.set("lens", String(cfg.lens));
       if (cfg.keeperCut === true) q.set("cut", "1");
       else if (cfg.keeperCut === false) q.set("cut", "0");
@@ -471,7 +473,8 @@
     if (guest) guest.hidden = !(!hasLeague && !loggedIn);
     if (empty) empty.hidden = !(!hasLeague && loggedIn);
     if (leaguePane) leaguePane.hidden = !hasLeague;
-    if (squad) squad.hidden = !hasLeague;
+    // Squad formation (Teams + slots + bench) always available for Pool VORP.
+    if (squad) squad.hidden = false;
     if (options) options.hidden = !hasLeague;
     if (draft) draft.hidden = !hasLeague;
     if (hasLeague) renderImportSourceCard();
@@ -1107,6 +1110,159 @@
     syncImportManageVisibility();
   }
 
+  /** League-wide position weights from Keeper CSV positions (owned only). Duals split evenly. */
+  function leaguePosSharesFromKeeper(matched) {
+    const weights = { DEF: 0, MID: 0, RUC: 0, FWD: 0 };
+    const ownership = (matched && matched.ownership) || {};
+    const positions = (matched && matched.positions) || {};
+    Object.keys(ownership).forEach((pid) => {
+      const raw = positions[pid] || "";
+      const parts = String(raw)
+        .split("/")
+        .map((p) => p.trim().toUpperCase())
+        .filter((p) => POS_KEYS.indexOf(p) >= 0);
+      if (!parts.length) return;
+      const w = 1 / parts.length;
+      parts.forEach((p) => {
+        weights[p] += w;
+      });
+    });
+    const total = POS_KEYS.reduce((s, k) => s + weights[k], 0);
+    const shares = { DEF: 0, MID: 0, RUC: 0, FWD: 0 };
+    if (total <= 0) return shares;
+    POS_KEYS.forEach((k) => {
+      shares[k] = weights[k] / total;
+    });
+    return shares;
+  }
+
+  /** Largest-remainder integers that sum to `total` from non-negative weights. */
+  function allocateByShares(keys, weights, total) {
+    const out = Object.create(null);
+    keys.forEach((k) => {
+      out[k] = 0;
+    });
+    if (total <= 0 || !keys.length) return out;
+    let wSum = 0;
+    keys.forEach((k) => {
+      wSum += Math.max(0, Number(weights[k]) || 0);
+    });
+    if (wSum <= 0) {
+      // Even split fallback
+      const base = Math.floor(total / keys.length);
+      let rem = total - base * keys.length;
+      keys.forEach((k) => {
+        out[k] = base + (rem > 0 ? 1 : 0);
+        if (rem > 0) rem -= 1;
+      });
+      return out;
+    }
+    const exact = keys.map((k) => {
+      const v = (total * Math.max(0, Number(weights[k]) || 0)) / wSum;
+      return { k, floor: Math.floor(v), frac: v - Math.floor(v) };
+    });
+    let assigned = 0;
+    exact.forEach((e) => {
+      out[e.k] = e.floor;
+      assigned += e.floor;
+    });
+    let rem = total - assigned;
+    exact
+      .slice()
+      .sort((a, b) => b.frac - a.frac || a.k.localeCompare(b.k))
+      .forEach((e) => {
+        if (rem > 0) {
+          out[e.k] += 1;
+          rem -= 1;
+        }
+      });
+    return out;
+  }
+
+  /**
+   * Guess DEF/MID/RUC/FWD/FLX + bench from Keeper CSV ownership (formulaic).
+   * - squadSize = min owned roster count
+   * - field:bench ≈ 3:2
+   * - RUC from ownership share (clamped 1–2)
+   * - DEF≈FWD symmetry; MID/DEF/FWD from league-wide CSV position mix
+   * - leftover odd seat → FLX
+   */
+  function inferKeeperFormationFromCsv(matched) {
+    const ownership = (matched && matched.ownership) || {};
+    const teams = (matched && matched.teams) || {};
+    const counts = Object.create(null);
+    Object.keys(teams).forEach((id) => {
+      counts[id] = 0;
+    });
+    Object.keys(ownership).forEach((pid) => {
+      const tid = ownership[pid];
+      if (tid == null || !Object.prototype.hasOwnProperty.call(counts, tid)) return;
+      counts[tid] += 1;
+    });
+    const sizes = Object.keys(counts)
+      .map((id) => counts[id])
+      .filter((n) => n > 0);
+    const squadSize = sizes.length ? Math.min.apply(null, sizes) : 0;
+    if (squadSize < 8) {
+      return {
+        slots: { ...DEFAULT_CFG.slots },
+        bench: DEFAULT_CFG.bench,
+        squadSize: squadSize || null,
+        label: null
+      };
+    }
+
+    const field = Math.max(8, Math.round((squadSize * 3) / 5));
+    const bench = Math.max(0, squadSize - field);
+    const shares = leaguePosSharesFromKeeper(matched);
+
+    const rucMax = field >= 20 ? 2 : 1;
+    let ruc = Math.round((shares.RUC || 0) * field);
+    if (!Number.isFinite(ruc) || ruc < 1) ruc = 1;
+    if (ruc > rucMax) ruc = rucMax;
+
+    let rem = field - ruc;
+    let flx = 0;
+    // Prefer DEF==FWD; if rem is odd, peel one FLX so wings stay equal.
+    if (rem >= 3 && rem % 2 === 1) {
+      flx = 1;
+      rem -= 1;
+    }
+
+    const wing = ((shares.DEF || 0) + (shares.FWD || 0)) / 2;
+    const midW = shares.MID || 0;
+    const lineWeights = { DEF: wing, MID: midW, FWD: wing };
+    // Classic-ish fallback when CSV positions are missing: 2:3:2 wings/mid.
+    if (wing + midW <= 0) {
+      lineWeights.DEF = 2;
+      lineWeights.MID = 3;
+      lineWeights.FWD = 2;
+    }
+    const line = allocateByShares(["DEF", "MID", "FWD"], lineWeights, rem);
+    // Enforce DEF == FWD after rounding.
+    const wingSlots = Math.floor(((line.DEF || 0) + (line.FWD || 0)) / 2);
+    let mid = rem - wingSlots * 2;
+    if (mid < 0) {
+      mid = 0;
+    }
+    const slots = {
+      DEF: wingSlots,
+      MID: mid,
+      RUC: ruc,
+      FWD: wingSlots,
+      FLX: flx
+    };
+
+    const label =
+      [slots.DEF, slots.MID, slots.RUC, slots.FWD].join("-") +
+      (slots.FLX ? " +" + slots.FLX + " FLX" : "") +
+      " + " +
+      bench +
+      " bench";
+
+    return { slots, bench, squadSize, label };
+  }
+
   function handleKeeperCsvFile(file, opts) {
     const o = opts || {};
     if (!file) return Promise.resolve(false);
@@ -1130,6 +1286,7 @@
           if (!Object.keys(matched.teams).length) {
             throw new Error("No fantasy teams found (every row was Free Agent?)");
           }
+          const guessed = inferKeeperFormationFromCsv(matched);
           const meta = parseKeeperCsvMeta(file.name || "players.csv");
           const prevCreated =
             state.league && state.league.source === "keeper"
@@ -1154,7 +1311,11 @@
           };
           state.cfg.leagueType = "keeper";
           applyImportedLeague(league, {
-            infer: { leagueType: "keeper" },
+            infer: {
+              leagueType: "keeper",
+              slots: guessed.slots,
+              bench: guessed.bench
+            },
             updatedAt: meta.updatedAt || undefined
           });
           const missN = matched.unmatchedOwnedCount;
@@ -1168,7 +1329,8 @@
               " rostered players" +
               (missN
                 ? " · " + missN + " owned unmatched (often delisted / not in model)"
-                : "")
+                : "") +
+              (guessed.label ? " · guessed " + guessed.label : "")
           );
           state.planner.lockedIds = null;
           state.planner.swapKeepId = null;
@@ -1311,7 +1473,9 @@
     if (finalisedRow) finalisedRow.hidden = !isKeeper;
 
     const keepersRow = document.getElementById("fd-keepers-stepper-row");
-    if (keepersRow) keepersRow.hidden = !isKeeper;
+    if (keepersRow) {
+      keepersRow.hidden = !isKeeper || !leagueHasTeams(state.league);
+    }
 
     const pickRow = document.getElementById("fd-pick-trading-row");
     if (pickRow) pickRow.hidden = lt === "redraft";
@@ -1870,6 +2034,10 @@
   function computeRows(assets, cfg, seasons) {
     const h = horizonLen(seasons, cfg.endSeason);
     const benchSlots = allocateBenchSlots(cfg.slots, cfg.bench);
+    const flxSlots = allocateBenchSlots(
+      cfg.slots,
+      Number(cfg.slots && cfg.slots.FLX) || 0
+    );
 
     const enriched = assets.map((a) => {
       const value = sumSlice(a.xPoints, h);
@@ -1887,9 +2055,12 @@
     // full multi-pos value. Using total value lets a thin-DEF / heavy-FWD
     // dual (e.g. McKercher at Balanced h=3) set an inflated DEF baseline and
     // crush pure defenders' VORP while MID duals look elite.
+    // FLX seats are allocated across POS_KEYS like bench (flexible depth).
     const baselines = {};
     POS_KEYS.forEach((p) => {
-      const depth = cfg.teams * ((cfg.slots[p] || 0) + (benchSlots[p] || 0));
+      const depth =
+        cfg.teams *
+        ((cfg.slots[p] || 0) + (benchSlots[p] || 0) + (flxSlots[p] || 0));
       const ranked = enriched
         .map((r) => ({ id: r.asset.id, score: r.score[p] }))
         .sort((a, b) => b.score - a.score);
@@ -2743,11 +2914,11 @@
       );
   }
 
-  /** Full roster = on-field slots + bench. Draft picks/team = roster − keepers. */
+  /** Full roster = on-field slots (incl. FLX) + bench. Draft picks/team = roster − keepers. */
   function rosterSize(cfg) {
     const slots = cfg.slots || {};
     return (
-      POS_KEYS.reduce((s, k) => s + (Number(slots[k]) || 0), 0) +
+      SLOT_KEYS.reduce((s, k) => s + (Number(slots[k]) || 0), 0) +
       (Number(cfg.bench) || 0)
     );
   }
