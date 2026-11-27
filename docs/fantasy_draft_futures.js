@@ -56,7 +56,7 @@
   };
   const LENS_IDS = ["win_now", "balanced", "long_term"];
 
-  const FD_TABS = ["pool", "planner", "teams", "trades", "ladder", "import", "help"];
+  const FD_TABS = ["pool", "planner", "teams", "trades", "ladder", "import", "about"];
   const LEAGUE_REQUIRED_TABS = ["planner", "teams", "trades", "ladder"];
 
   const CLUB_FILTER_ORDER = [
@@ -211,6 +211,8 @@
      */
     league: null,
     accountUser: null,
+    /** JSON fingerprint of last saved/loaded persistable league (for Save dirty state). */
+    leaguePersistBaseline: null,
     /** Session flag: user closed the empty-state Import modal. */
     importModalDismissed: false,
     /** Pending "Who are you?" after import before navigating away. */
@@ -375,6 +377,7 @@
       let tab = q.get("tab");
       if (tab === "movers") tab = "pool";
       if (tab === "league") tab = "ladder";
+      if (tab === "help") tab = "about";
       if (FD_TABS.indexOf(tab) >= 0) cfg.tab = tab;
     }
     return cfg;
@@ -619,13 +622,11 @@
     syncImportManageVisibility();
     if (!myTeamSelected(state.league, state.cfg)) {
       state.pendingWhoAreYou = true;
-      setImportModalStatus("League imported — pick your team…");
-      setLeagueStatus("League imported — pick your team…");
+      setImportModalStatus("");
       openWhoAreYouModal({ afterTab: "teams" });
       return;
     }
-    setImportModalStatus("League imported — opening Teams…");
-    setLeagueStatus("League imported — opening Teams…");
+    setImportModalStatus("");
     window.setTimeout(() => setActiveTab("teams"), 1000);
   }
 
@@ -1064,6 +1065,7 @@
 
   function clearKeeperLeague() {
     state.league = null;
+    state.leaguePersistBaseline = null;
     state.cfg.myTeam = "";
     state.cfg.owners = [];
     state.cfg.draftOrder = [];
@@ -1512,10 +1514,12 @@
     syncLensControls(state.cfg);
     state.planner.lockedIds = null;
     state.planner.swapKeepId = null;
+    updateAccountSyncUi();
     refresh();
   }
 
-  function buildLeaguePersistPayload() {
+  /** Persistable league body without mutating timestamps (for dirty checks). */
+  function buildLeaguePersistBody() {
     const league = state.league;
     const cfg = state.cfg;
     if (!league || !leagueHasTeams(league)) return null;
@@ -1524,15 +1528,9 @@
       .map((name) => teamIdByName(league, name))
       .filter(Boolean);
     const myTeamId = teamIdByName(league, cfg.myTeam);
-    const nowIso = new Date().toISOString();
-    const createdAt = league.createdAt || nowIso;
-    league.createdAt = createdAt;
-    league.updatedAt = nowIso;
 
     return {
       source: league.source || "keeper",
-      createdAt,
-      updatedAt: nowIso,
       platform: league.platform || {},
       teams: league.teams,
       ownership: league.ownership || {},
@@ -1549,6 +1547,37 @@
         draftFormat: cfg.draftFormat || "snake",
         pickTrading: cfg.pickTrading !== false
       }
+    };
+  }
+
+  function leaguePersistFingerprint() {
+    const body = buildLeaguePersistBody();
+    return body ? JSON.stringify(body) : null;
+  }
+
+  function markLeaguePersistClean() {
+    state.leaguePersistBaseline = leaguePersistFingerprint();
+    updateAccountSyncUi();
+  }
+
+  function leaguePersistIsDirty() {
+    if (!state.leaguePersistBaseline) return !!leagueHasTeams(state.league);
+    const cur = leaguePersistFingerprint();
+    return !!cur && cur !== state.leaguePersistBaseline;
+  }
+
+  function buildLeaguePersistPayload() {
+    const body = buildLeaguePersistBody();
+    if (!body) return null;
+    const league = state.league;
+    const nowIso = new Date().toISOString();
+    const createdAt = league.createdAt || nowIso;
+    league.createdAt = createdAt;
+    league.updatedAt = nowIso;
+    return {
+      ...body,
+      createdAt,
+      updatedAt: nowIso
     };
   }
 
@@ -1604,7 +1633,11 @@
     const delBtn = document.getElementById("fd-league-delete");
     const hasLeague = leagueHasTeams(state.league);
     const loggedIn = !!state.accountUser;
-    if (saveBtn) saveBtn.disabled = !hasLeague || !loggedIn;
+    const dirty = leaguePersistIsDirty();
+    if (saveBtn) {
+      // Inactive (secondary look) when nothing to save; dark blue when dirty.
+      saveBtn.disabled = !hasLeague || !loggedIn || !dirty;
+    }
     if (delBtn) delBtn.disabled = !hasLeague;
     syncImportManageVisibility();
   }
@@ -1643,8 +1676,8 @@
         state.league.createdAt = payload.createdAt;
         state.league.updatedAt = payload.updatedAt;
       }
-      setLeagueStatus("Saved league to your account.");
-      updateAccountSyncUi();
+      setLeagueStatus("");
+      markLeaguePersistClean();
       renderImportSourceCard();
       writeCfgToUrl(state.cfg);
     } catch (e) {
@@ -1667,7 +1700,7 @@
       const userRef = doc(sbj.db, "users", sbj.currentUser.uid);
       await setDoc(userRef, { league: deleteField() }, { merge: true });
       clearKeeperLeague();
-      setLeagueStatus("Deleted saved league from your account.");
+      setLeagueStatus("");
     } catch (e) {
       console.error(e);
       setLeagueStatus(
@@ -1695,7 +1728,7 @@
         const data = snap.data() || {};
         if (data.league) {
           hydrateLeagueFromPersist(data.league);
-          setLeagueStatus("Loaded league from your account.");
+          markLeaguePersistClean();
           await refresh();
         }
       }
@@ -6279,6 +6312,7 @@
     order.splice(from, 1);
     order.splice(to, 0, owner);
     state.cfg.draftOrder = order;
+    updateAccountSyncUi();
     refresh();
   }
 
@@ -6512,6 +6546,7 @@
   function onImportSettingsChanged(extra) {
     readControlsFromDom(extra || {});
     applyLeagueTypeUi(state.cfg);
+    updateAccountSyncUi();
     refresh();
   }
 
@@ -6754,6 +6789,7 @@
           state.league,
           state.cfg
         );
+        updateAccountSyncUi();
         refresh();
       });
     }

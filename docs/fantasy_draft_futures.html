@@ -2842,8 +2842,14 @@ font-weight: 700; font-size: 14px; padding: 10px 22px;
 #fd-league-save:focus {
 background: #00008b; border-color: #00008b; color: #fff;
 }
+
 #fd-league-save:disabled {
-background: #999; border-color: #999; cursor: not-allowed;
+background: #eef2ff; border-color: #eef2ff; color: #111;
+cursor: not-allowed; opacity: 1;
+}
+#fd-league-save:disabled:hover,
+#fd-league-save:disabled:focus {
+background: #eef2ff; border-color: #eef2ff; color: #111;
 }
 .fd-stepper-grid {
 display: grid; grid-template-columns: 1fr;
@@ -3191,7 +3197,7 @@ flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
 <button class="fd-tab-btn" type="button" data-tab="trades">Trades</button>
 <button class="fd-tab-btn" type="button" data-tab="ladder">Ladder</button>
 <button class="fd-tab-btn" type="button" data-tab="import">Import</button>
-<button class="fd-tab-btn" type="button" data-tab="help">Help</button>
+<button class="fd-tab-btn" type="button" data-tab="about">About</button>
 </nav>
 <div id="fd-tab-pool" class="fd-tab-panel is-active">
 <div class="futures-pool-layout">
@@ -3254,7 +3260,7 @@ flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
 <div id="fd-import-source">
 <div id="fd-import-pane-guest" class="fd-import-guest-card" hidden>
 <h3>Import your league</h3>
-<p>Log in to import from AFL Fantasy or Keeper Fantasy, save ownership, and plan trades. You can still set squad size below — it drives Pool VORP and stays in the URL for bookmarks.</p>
+<p>Log in to import from AFL Fantasy or Keeper Fantasy, save ownership, and plan trades.</p>
 <a href="#" id="fd-import-get-started" class="btn-auth">Log in to import</a>
 </div>
 <div id="fd-import-pane-empty" class="fd-import-empty-split" hidden>
@@ -3434,20 +3440,12 @@ Open your league on
 </div>
 </div>
 </div>
-<div id="fd-tab-help" class="fd-tab-panel" hidden>
+<div id="fd-tab-about" class="fd-tab-panel" hidden>
 <div id="futures-help" class="fd-help">
 <h3>Statistical modelling</h3>
-<p>Jaiden has built models to estimate player value over the next 5 seasons for AFL Fantasy keeper and dynasty leagues. On Pool and Keepers, pick a lens — Win now, Balanced, or Long-term — to rank value for your own decisions. League ladder, team labels, and trades always use the full feed so other teams stay stable.</p>
+<p>Jaiden has built models to estimate player value over the next 5 seasons for AFL Fantasy keeper and dynasty leagues. Apply your own team strategy - Win now, Balanced, or Long-term. This takes in a different horizon of years. At this stage, only the next 5 years are available to view as modelling further doesn't add much value.</p>
 <p>For SuperCoach players, I intend to add its scoring layer at some point, but all metrics related to contracts &amp; expected games are still relevant.</p>
-<p>
-All models are based on over a decade of data that is collected from public sources. I do not own any of the data presented. Player data, weekly injury lists, and player images are collected from 
-<a>the AFL website</a>
-. Fantasy positions are sourced from 
-<a href="https://fantasy.afl.com.au">the official AFL Fantasy platform</a>
-. Contract updates come from the AFL website and its affiliated club websites. List updates come from 
-<a href="https://www.draftguru.com.au/">Draftguru</a>
-.
-</p>
+<p>All models are based on over a decade of data that is collected from public sources. I do not own any of the data presented. Player data, weekly injury lists, and player images are collected from <a>the AFL website</a>. Fantasy positions are sourced from <a href="https://fantasy.afl.com.au">the official AFL Fantasy platform</a>. Contract updates come from the AFL website and its affiliated club websites. List updates come from <a href="https://www.draftguru.com.au/">Draftguru</a>.</p>
 <ul>
 <li>
 <b>pListed</b>
@@ -3473,12 +3471,7 @@ All models are based on over a decade of data that is collected from public sour
 <b>Age</b>
  is the player&#39;s current age.
 </li>
-<li>
-<b>Contract</b>
- is the player&#39;s current contract. I update these manually, so 
-<a href="privacy">email me</a>
- if you find something outdated. Third-party websites have a lot of errors, so I prefer official AFL articles.
-</li>
+<li><b>Contract</b> is the player&#39;s current contract. I update these manually, so <a href="privacy">email me</a> if you find something outdated. Third-party websites have a lot of errors, so I prefer official AFL articles.</li>
 <li>
 <b>Pos</b>
  column is the player&#39;s positional future for fantasy perspective. It is modelled separately and used to calculate VORP for each future horizon. For example, when viewing many years into the future, the position splits represent the proportion of those seasons with DEF, MID, RUC, FWD status respectively. For current season, it will be the player&#39;s current position(s) plus the chance of gaining a new one. It is assumed that players can be assigned up to 3 unique positions at one time as per the official AFL Fantasy platform.
@@ -3554,7 +3547,7 @@ All models are based on over a decade of data that is collected from public sour
   };
   const LENS_IDS = ["win_now", "balanced", "long_term"];
 
-  const FD_TABS = ["pool", "planner", "teams", "trades", "ladder", "import", "help"];
+  const FD_TABS = ["pool", "planner", "teams", "trades", "ladder", "import", "about"];
   const LEAGUE_REQUIRED_TABS = ["planner", "teams", "trades", "ladder"];
 
   const CLUB_FILTER_ORDER = [
@@ -3709,6 +3702,8 @@ All models are based on over a decade of data that is collected from public sour
      */
     league: null,
     accountUser: null,
+    /** JSON fingerprint of last saved/loaded persistable league (for Save dirty state). */
+    leaguePersistBaseline: null,
     /** Session flag: user closed the empty-state Import modal. */
     importModalDismissed: false,
     /** Pending "Who are you?" after import before navigating away. */
@@ -3873,6 +3868,7 @@ All models are based on over a decade of data that is collected from public sour
       let tab = q.get("tab");
       if (tab === "movers") tab = "pool";
       if (tab === "league") tab = "ladder";
+      if (tab === "help") tab = "about";
       if (FD_TABS.indexOf(tab) >= 0) cfg.tab = tab;
     }
     return cfg;
@@ -4117,13 +4113,11 @@ All models are based on over a decade of data that is collected from public sour
     syncImportManageVisibility();
     if (!myTeamSelected(state.league, state.cfg)) {
       state.pendingWhoAreYou = true;
-      setImportModalStatus("League imported — pick your team…");
-      setLeagueStatus("League imported — pick your team…");
+      setImportModalStatus("");
       openWhoAreYouModal({ afterTab: "teams" });
       return;
     }
-    setImportModalStatus("League imported — opening Teams…");
-    setLeagueStatus("League imported — opening Teams…");
+    setImportModalStatus("");
     window.setTimeout(() => setActiveTab("teams"), 1000);
   }
 
@@ -4562,6 +4556,7 @@ All models are based on over a decade of data that is collected from public sour
 
   function clearKeeperLeague() {
     state.league = null;
+    state.leaguePersistBaseline = null;
     state.cfg.myTeam = "";
     state.cfg.owners = [];
     state.cfg.draftOrder = [];
@@ -5010,10 +5005,12 @@ All models are based on over a decade of data that is collected from public sour
     syncLensControls(state.cfg);
     state.planner.lockedIds = null;
     state.planner.swapKeepId = null;
+    updateAccountSyncUi();
     refresh();
   }
 
-  function buildLeaguePersistPayload() {
+  /** Persistable league body without mutating timestamps (for dirty checks). */
+  function buildLeaguePersistBody() {
     const league = state.league;
     const cfg = state.cfg;
     if (!league || !leagueHasTeams(league)) return null;
@@ -5022,15 +5019,9 @@ All models are based on over a decade of data that is collected from public sour
       .map((name) => teamIdByName(league, name))
       .filter(Boolean);
     const myTeamId = teamIdByName(league, cfg.myTeam);
-    const nowIso = new Date().toISOString();
-    const createdAt = league.createdAt || nowIso;
-    league.createdAt = createdAt;
-    league.updatedAt = nowIso;
 
     return {
       source: league.source || "keeper",
-      createdAt,
-      updatedAt: nowIso,
       platform: league.platform || {},
       teams: league.teams,
       ownership: league.ownership || {},
@@ -5047,6 +5038,37 @@ All models are based on over a decade of data that is collected from public sour
         draftFormat: cfg.draftFormat || "snake",
         pickTrading: cfg.pickTrading !== false
       }
+    };
+  }
+
+  function leaguePersistFingerprint() {
+    const body = buildLeaguePersistBody();
+    return body ? JSON.stringify(body) : null;
+  }
+
+  function markLeaguePersistClean() {
+    state.leaguePersistBaseline = leaguePersistFingerprint();
+    updateAccountSyncUi();
+  }
+
+  function leaguePersistIsDirty() {
+    if (!state.leaguePersistBaseline) return !!leagueHasTeams(state.league);
+    const cur = leaguePersistFingerprint();
+    return !!cur && cur !== state.leaguePersistBaseline;
+  }
+
+  function buildLeaguePersistPayload() {
+    const body = buildLeaguePersistBody();
+    if (!body) return null;
+    const league = state.league;
+    const nowIso = new Date().toISOString();
+    const createdAt = league.createdAt || nowIso;
+    league.createdAt = createdAt;
+    league.updatedAt = nowIso;
+    return {
+      ...body,
+      createdAt,
+      updatedAt: nowIso
     };
   }
 
@@ -5102,7 +5124,11 @@ All models are based on over a decade of data that is collected from public sour
     const delBtn = document.getElementById("fd-league-delete");
     const hasLeague = leagueHasTeams(state.league);
     const loggedIn = !!state.accountUser;
-    if (saveBtn) saveBtn.disabled = !hasLeague || !loggedIn;
+    const dirty = leaguePersistIsDirty();
+    if (saveBtn) {
+      // Inactive (secondary look) when nothing to save; dark blue when dirty.
+      saveBtn.disabled = !hasLeague || !loggedIn || !dirty;
+    }
     if (delBtn) delBtn.disabled = !hasLeague;
     syncImportManageVisibility();
   }
@@ -5141,8 +5167,8 @@ All models are based on over a decade of data that is collected from public sour
         state.league.createdAt = payload.createdAt;
         state.league.updatedAt = payload.updatedAt;
       }
-      setLeagueStatus("Saved league to your account.");
-      updateAccountSyncUi();
+      setLeagueStatus("");
+      markLeaguePersistClean();
       renderImportSourceCard();
       writeCfgToUrl(state.cfg);
     } catch (e) {
@@ -5165,7 +5191,7 @@ All models are based on over a decade of data that is collected from public sour
       const userRef = doc(sbj.db, "users", sbj.currentUser.uid);
       await setDoc(userRef, { league: deleteField() }, { merge: true });
       clearKeeperLeague();
-      setLeagueStatus("Deleted saved league from your account.");
+      setLeagueStatus("");
     } catch (e) {
       console.error(e);
       setLeagueStatus(
@@ -5193,7 +5219,7 @@ All models are based on over a decade of data that is collected from public sour
         const data = snap.data() || {};
         if (data.league) {
           hydrateLeagueFromPersist(data.league);
-          setLeagueStatus("Loaded league from your account.");
+          markLeaguePersistClean();
           await refresh();
         }
       }
@@ -9777,6 +9803,7 @@ All models are based on over a decade of data that is collected from public sour
     order.splice(from, 1);
     order.splice(to, 0, owner);
     state.cfg.draftOrder = order;
+    updateAccountSyncUi();
     refresh();
   }
 
@@ -10010,6 +10037,7 @@ All models are based on over a decade of data that is collected from public sour
   function onImportSettingsChanged(extra) {
     readControlsFromDom(extra || {});
     applyLeagueTypeUi(state.cfg);
+    updateAccountSyncUi();
     refresh();
   }
 
@@ -10252,6 +10280,7 @@ All models are based on over a decade of data that is collected from public sour
           state.league,
           state.cfg
         );
+        updateAccountSyncUi();
         refresh();
       });
     }
